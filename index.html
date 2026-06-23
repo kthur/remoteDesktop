@@ -220,15 +220,15 @@
                   <input type="text" inputmode="numeric" class="form-input money-input opt-dep-card" value="1,500,000" placeholder="연간 합계(원)">
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
-                  <label>가족 의료비 <span class="tooltip-icon" data-tooltip="해당 가족을 위해 지출한 연간 병원비/약값 등 총액입니다. 연말정산 의료비 세액공제(15%) 대상이 되며, 맞벌이 부부 중 더 유리한 쪽에 배정할 수 있습니다.">?</span></label>
+                  <label>가족 의료비 <span class="tooltip-icon" data-tooltip="해당 가족을 위해 지출한 연간 의료비입니다. 의료비 세액공제는 총급여의 3% 초과 지출액부터 15% 공제 혜택이 적용됩니다.">?</span></label>
                   <input type="text" inputmode="numeric" class="form-input money-input opt-dep-medical" value="1,200,000" placeholder="연간 합계(원)">
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
-                  <label>가족 교육비 <span class="tooltip-icon" data-tooltip="가족의 학원비, 학교 등록금 등 교육 비용입니다. 교육비 공제(15%)를 위해 기본공제를 받는 사람 명의로 묶어서 공제받아야 합니다.">?</span></label>
+                  <label>가족 교육비 <span class="tooltip-icon" data-tooltip="가족의 학원비, 학교 등록금 등 교육 비용입니다. 취학전아동/초중고생 1인당 연 300만원, 대학생 연 900만원 한도로 15% 공제됩니다.">?</span></label>
                   <input type="text" inputmode="numeric" class="form-input money-input opt-dep-edu" value="2,000,000" placeholder="연간 합계(원)">
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
-                  <label>학자금 대출 상환 <span class="tooltip-icon" data-tooltip="가족의 한국장학재단 등 학자금 대출에 대해 당해 연도에 실제로 상환한 원리금액입니다. 15% 세액공제를 받습니다.">?</span></label>
+                  <label>학자금 대출 상환 <span class="tooltip-icon" data-tooltip="본인 또는 부양가족 명의의 학자금 대출 상환 원리금입니다. 연 한도 없이 15% 세액공제를 받습니다.">?</span></label>
                   <input type="text" inputmode="numeric" class="form-input money-input opt-dep-student-loan" value="0" placeholder="연간 합계(원)">
                 </div>
               </div>
@@ -256,6 +256,8 @@
           <div style="background:rgba(108,99,255,0.05); padding:12px; border-radius:8px;">
             <h4 style="font-size:0.9rem; color:var(--accent-primary); margin-bottom:5px; font-weight:700;">남편 세금 리포트</h4>
             <div style="font-size:0.85rem; display:flex; flex-direction:column; gap:4px;">
+              <div>소득공제(근로소득공제/필요경비): <span id="res-h-expense" style="font-weight:bold;">0원</span></div>
+              <div>인적공제(본인/부양가족): <span id="res-h-person" style="font-weight:bold;">0원</span></div>
               <div>과세표준: <span id="res-h-taxable" style="font-weight:bold;">0원</span></div>
               <div>세율구간: <span id="res-h-rate" style="font-weight:bold;">0%</span></div>
               <div>결정세액: <span id="res-h-total" style="font-weight:bold; color:var(--accent-primary);">0원</span></div>
@@ -264,6 +266,8 @@
           <div style="background:rgba(0,212,170,0.05); padding:12px; border-radius:8px;">
             <h4 style="font-size:0.9rem; color:var(--accent-secondary); margin-bottom:5px; font-weight:700;">아내 세금 리포트</h4>
             <div style="font-size:0.85rem; display:flex; flex-direction:column; gap:4px;">
+              <div>소득공제(근로소득공제/필요경비): <span id="res-w-expense" style="font-weight:bold;">0원</span></div>
+              <div>인적공제(본인/부양가족): <span id="res-w-person" style="font-weight:bold;">0원</span></div>
               <div>과세표준: <span id="res-w-taxable" style="font-weight:bold;">0원</span></div>
               <div>세율구간: <span id="res-w-rate" style="font-weight:bold;">0%</span></div>
               <div>결정세액: <span id="res-w-total" style="font-weight:bold; color:var(--accent-secondary);">0원</span></div>
@@ -442,8 +446,12 @@
           </div>
         </div>
       </div>
-    </section>
   </div>
+
+  <!-- Disclaimer Footer -->
+  <footer style="max-width: 1200px; margin: 2rem auto; padding: 1.5rem; text-align: center; font-size: 0.8rem; line-height: 1.6; opacity: 0.7; border-top: 1px solid rgba(128,128,128,0.15);">
+    본 계산기는 입력된 데이터를 바탕으로 한 모의 시뮬레이션 결과이며, 사용자의 실제 세액 및 공제 요건에 따라 차이가 발생할 수 있습니다. 정확한 과세 여부는 세무 전문가와 상의하시기 바랍니다.
+  </footer>
 
   <!-- Scripts -->
   <script src="tax-calculator.js"></script>

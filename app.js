@@ -272,10 +272,14 @@ document.addEventListener('DOMContentLoaded', () => {
       ventureInvestment: 0 // 벤처투자는 배우자 1 명의로 적용 시뮬레이션
     });
 
+    document.getElementById('res-h-expense').textContent = (hResult.salaryDeduction || hResult.expense || 0).toLocaleString() + ' 원';
+    document.getElementById('res-h-person').textContent = (hResult.personDeduction || 0).toLocaleString() + ' 원';
     document.getElementById('res-h-taxable').textContent = hResult.taxableIncome.toLocaleString() + ' 원';
     document.getElementById('res-h-rate').textContent = hResult.bracketRate + '%';
     document.getElementById('res-h-total').textContent = hResult.totalTax.toLocaleString() + ' 원';
 
+    document.getElementById('res-w-expense').textContent = (wResult.salaryDeduction || wResult.expense || 0).toLocaleString() + ' 원';
+    document.getElementById('res-w-person').textContent = (wResult.personDeduction || 0).toLocaleString() + ' 원';
     document.getElementById('res-w-taxable').textContent = wResult.taxableIncome.toLocaleString() + ' 원';
     document.getElementById('res-w-rate').textContent = wResult.bracketRate + '%';
     document.getElementById('res-w-total').textContent = wResult.totalTax.toLocaleString() + ' 원';
@@ -311,6 +315,21 @@ document.addEventListener('DOMContentLoaded', () => {
         (단독 몰아주기 대비 <strong style="color:var(--accent-secondary);">약 ${optResult.savings.toLocaleString()} 원 절약</strong>)<br>
         <span style="font-size:0.8rem; opacity:0.8;">* 의료비 공제는 <strong>${best.medicalTarget === 'husband' ? '남편' : '아내'}</strong> 밑으로 수렴하는 것이 절세에 최적입니다.</span>
       `;
+
+      // Update individual report sections with optimized details
+      document.getElementById('res-h-expense').textContent = (best.hResult.salaryDeduction || best.hResult.expense || 0).toLocaleString() + ' 원';
+      document.getElementById('res-h-person').textContent = (best.hResult.personDeduction || 0).toLocaleString() + ' 원';
+      document.getElementById('res-h-taxable').textContent = best.hResult.taxableIncome.toLocaleString() + ' 원';
+      const hRate = best.hResult.bracketRate !== undefined ? best.hResult.bracketRate : (TaxCalculator.calculateIncomeTax(best.hResult.taxableIncome).rate * 100);
+      document.getElementById('res-h-rate').textContent = hRate + '%';
+      document.getElementById('res-h-total').textContent = best.hResult.totalTax.toLocaleString() + ' 원';
+
+      document.getElementById('res-w-expense').textContent = (best.wResult.salaryDeduction || best.wResult.expense || 0).toLocaleString() + ' 원';
+      document.getElementById('res-w-person').textContent = (best.wResult.personDeduction || 0).toLocaleString() + ' 원';
+      document.getElementById('res-w-taxable').textContent = best.wResult.taxableIncome.toLocaleString() + ' 원';
+      const wRate = best.wResult.bracketRate !== undefined ? best.wResult.bracketRate : (TaxCalculator.calculateIncomeTax(best.wResult.taxableIncome).rate * 100);
+      document.getElementById('res-w-rate').textContent = wRate + '%';
+      document.getElementById('res-w-total').textContent = best.wResult.totalTax.toLocaleString() + ' 원';
     }
 
     // ④ AI 절세 추천 연동
@@ -454,6 +473,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultDetails = document.getElementById('opt-gs-result-details');
     resultCard.style.display = 'block';
 
+    let warningDetail = '';
+    if (type === 'stock') {
+      warningDetail = '<br><span style="color:var(--accent-warning); font-weight:bold;">⚠️ 개정 세법에 따라 배우자 증여 후 1년 이내 양도 시 증여자의 취득가액 기준으로 이월과세(취득가액 이월)가 적용될 수 있으므로, 최소 1년 이상의 보유 타임라인 확보가 권장됩니다.</span>';
+    } else {
+      warningDetail = '<br><span style="color:var(--accent-warning); font-weight:bold;">⚠️ 부동산은 증여 후 10년 이내 양도 시 이월과세가 적용되므로 최소 10년 이상 보유 후 매도가 권장됩니다.</span>';
+    }
+
     resultDetails.innerHTML = `
       <p style="margin-bottom:8px;">최초 양도차익: ${result.originalGain.toLocaleString()} 원</p>
       <p style="margin-bottom:8px;">이전 전 예상 양도세: ${result.originalTax.toLocaleString()} 원</p>
@@ -462,7 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
         🎯 총 예상 절세 금액: 약 +${result.savings.toLocaleString()} 원
       </p>
       <p style="font-size:0.75rem; opacity:0.7; margin-top:8px; line-height:1.3;">
-        * 증여재산가액 한도 6억 원을 적용한 취득가액 갱신 시뮬레이션입니다. 부동산은 증여 후 10년 뒤 매도(이월과세 방지) 요건을 준수해야 합니다.
+        * 증여재산가액 한도 6억 원을 적용한 취득가액 갱신 시뮬레이션입니다. 개정 세법에 따라 배우자 증여 후 1년 이내 양도 시 증여자의 취득가액 기준으로 이월과세가 적용될 수 있으므로 주의하시기 바랍니다. ${warningDetail}
       </p>
     `;
   });

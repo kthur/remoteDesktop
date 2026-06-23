@@ -117,7 +117,9 @@ const TaxOptimizer = {
             wifeDeps: wifeDeps.map(d => d.name),
             husbandTax: hResult.totalTax,
             wifeTax: wResult.totalTax,
-            totalTax: coupleTax
+            totalTax: coupleTax,
+            hResult: hResult,
+            wResult: wResult
           };
         }
       }

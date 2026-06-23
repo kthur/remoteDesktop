@@ -73,9 +73,22 @@ const TaxCalculator = {
     financialOverseas = 0, // 해외 이자/배당 (무조건 종합과세 대상)
     isaIncome = 0, // ISA 총 수익
     isaType = 'general', // ISA 유형 ('general': 200만 비과세, 'sub': 400만 비과세)
-    bondSeparated = 0 // 장기채권 30% 분리과세 신청액
+    bondSeparated = 0, // 장기채권 30% 분리과세 신청액
+    dependentsCount = 0,
+    hasSeniorDependent = false,
+    hasDisabledDependent = false
   }) {
     let calculatedExpense = expense;
+    let salaryDeduction = 0;
+    if (incomeType === 'wage') {
+      if (totalIncome <= 5000000) salaryDeduction = totalIncome * 0.7;
+      else if (totalIncome <= 15000000) salaryDeduction = 3500000 + (totalIncome - 5000000) * 0.4;
+      else if (totalIncome <= 45000000) salaryDeduction = 7500000 + (totalIncome - 15000000) * 0.15;
+      else if (totalIncome <= 100000000) salaryDeduction = 12000000 + (totalIncome - 45000000) * 0.05;
+      else salaryDeduction = 14750000 + (totalIncome - 100000000) * 0.02;
+      calculatedExpense = Math.floor(salaryDeduction);
+    }
+    
     let netIncome = Math.max(0, totalIncome - calculatedExpense);
     
     // 노란우산공제
@@ -87,8 +100,13 @@ const TaxCalculator = {
     const baseIncome = Math.max(0, netIncome - yellowUmbrellaDeduction);
     const ventureDeduction = this.calculateVentureInvestmentDeduction(baseIncome, ventureInvestment);
 
+    // 기본공제 및 부양가족 기본공제 (종합소득세 인적공제)
+    const personDeduction = (1 + dependentsCount) * 1500000 
+      + (hasSeniorDependent ? 1000000 : 0) 
+      + (hasDisabledDependent ? 2000000 : 0);
+
     // 과세표준 (금융소득 제외한 일반 종합소득 과표)
-    let taxableIncome = Math.max(0, baseIncome - ventureDeduction);
+    let taxableIncome = Math.max(0, baseIncome - ventureDeduction - personDeduction);
 
     // ISA 금융소득 계산 (비과세 한도 차감 및 초과분 9.9% 분리과세)
     const isaLimit = isaType === 'sub' ? 4000000 : 2000000;
@@ -150,6 +168,8 @@ const TaxCalculator = {
       isFinancialCompTax,
       financialCompAmount,
       expense: calculatedExpense,
+      salaryDeduction: incomeType === 'wage' ? calculatedExpense : 0,
+      personDeduction,
       yellowUmbrellaDeduction,
       ventureDeduction,
       taxableIncome,
