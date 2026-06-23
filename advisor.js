@@ -48,16 +48,16 @@ const TaxAdvisor = {
 
     // ③ ISA 계좌 전환을 통한 비과세/분리과세(9.9%) 추천
     if (financialGeneral > 0 && isaIncome === 0) {
-      const estimatedIsaSaving = Math.floor(Math.min(financialGeneral, 2000000) * 0.154) + Math.floor(Math.max(0, financialGeneral - 2000000) * (0.154 - 0.099));
+      const estimatedIsaSaving = Math.floor(Math.min(financialGeneral, 5000000) * 0.154) + Math.floor(Math.max(0, financialGeneral - 5000000) * (0.154 - 0.099));
       advice.push({
         id: 'income_isa_switch',
         type: 'success',
         priority: 'high',
         saving: estimatedIsaSaving,
         title: "💎 일반 계좌 금융소득의 ISA 전환 추천",
-        desc: `현재 발생하는 일반 금융소득 중 일부를 ISA(개인종합자산관리계좌)로 운용 시 일반형 기준 200만 원(서민형 400만 원)까지 완전 비과세 혜택을 받으며, 한도 초과분은 종합과세에 합산되지 않고 9.9%로 저율 분리과세되어 세금을 크게 아낄 수 있습니다.`,
+        desc: `현재 발생하는 일반 금융소득 중 일부를 ISA(개인종합자산관리계좌)로 운용 시 일반형 기준 500만 원(서민형 1,000만 원)까지 완전 비과세 혜택을 받으며, 한도 초과분은 종합과세에 합산되지 않고 9.9%로 저율 분리과세되어 세금을 크게 아낄 수 있습니다.`,
         actionText: "ISA 일반형 비과세 적용",
-        actionValue: 2000000
+        actionValue: 5000000
       });
     }
 

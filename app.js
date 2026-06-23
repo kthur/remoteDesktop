@@ -425,23 +425,58 @@ document.addEventListener('DOMContentLoaded', () => {
     const housingSubscription = parseVal('inc-housing-sub');
     const housingLoanRepay = parseVal('inc-housing-loan');
 
-    // 부양가족 데이터 수집
+    // 1. 소득금액 기본 검증 (음수 제한 등)
+    if (hSalary < 0 || wSalary < 0) {
+      alert("⚠️ 소득금액은 0원 이상이어야 합니다.");
+      return;
+    }
+    if (hCard < 0 || wCard < 0 || hYellow < 0 || wYellow < 0 || hPension < 0 || wPension < 0 ||
+        hFinancialGen < 0 || hFinancialOverseas < 0 || hIsaIncome < 0 || hBondSeparated < 0 ||
+        wFinancialGen < 0 || wFinancialOverseas < 0 || wIsaIncome < 0 || wBondSeparated < 0 ||
+        ventureInvestment < 0 || housingSubscription < 0 || housingLoanRepay < 0) {
+      alert("⚠️ 모든 입력금액은 0원 이상이어야 합니다.");
+      return;
+    }
+
+    // 부양가족 데이터 수집 및 이름 중복 검증
     const cards = optCoupleYePeople.querySelectorAll('.person-card');
     const dependents = [];
-    cards.forEach(card => {
+    const depNames = [];
+    for (const card of cards) {
+      const name = (card.querySelector('.opt-dep-name').value || '').trim();
+      if (!name) {
+        alert("⚠️ 부양가족 이름을 입력해주세요.");
+        return;
+      }
+      if (depNames.includes(name)) {
+        alert(`⚠️ 중복된 부양가족 이름이 존재합니다: "${name}". 부양가족 이름은 고유해야 합니다.`);
+        return;
+      }
+      depNames.push(name);
+      
+      const cardVal = parseVal(card.querySelector('.opt-dep-card'));
+      const medicalVal = parseVal(card.querySelector('.opt-dep-medical'));
+      const eduVal = parseVal(card.querySelector('.opt-dep-edu'));
+      const studentLoanRepayVal = parseVal(card.querySelector('.opt-dep-student-loan'));
+      
+      if (cardVal < 0 || medicalVal < 0 || eduVal < 0 || studentLoanRepayVal < 0) {
+        alert("⚠️ 부양가족 지출액은 0원 이상이어야 합니다.");
+        return;
+      }
+      
       dependents.push({
-        name: card.querySelector('.opt-dep-name').value || '무명',
+        name,
         relation: card.querySelector('.opt-dep-relation').value,
-        card: parseVal(card.querySelector('.opt-dep-card')),
-        medical: parseVal(card.querySelector('.opt-dep-medical')),
-        edu: parseVal(card.querySelector('.opt-dep-edu')),
-        studentLoanRepay: parseVal(card.querySelector('.opt-dep-student-loan')),
+        card: cardVal,
+        medical: medicalVal,
+        edu: eduVal,
+        studentLoanRepay: studentLoanRepayVal,
         senior: card.querySelector('.opt-dep-senior').checked,
         disabled: card.querySelector('.opt-dep-disabled').checked,
         birth: card.querySelector('.opt-dep-birth').checked,
         birthOrder: 1
       });
-    });
+    }
 
     // ① 배우자 1 개별 세액 정밀 연산 (금융소득 개별 합산)
     const hResult = TaxCalculator.calculateComprehensiveIncome({
@@ -531,7 +566,26 @@ document.addEventListener('DOMContentLoaded', () => {
       const wRate = best.wResult.bracketRate !== undefined ? best.wResult.bracketRate : (TaxCalculator.calculateIncomeTax(best.wResult.taxableIncome).rate * 100);
       document.getElementById('res-w-rate').textContent = wRate + '%';
       document.getElementById('res-w-total').textContent = best.wResult.totalTax.toLocaleString() + ' 원';
+
+      // Update visual comparison bars
+      const worstTax = Math.max(optResult.allHusbandTax, optResult.allWifeTax);
+      const bestTax = best.totalTax;
+      const savings = Math.max(0, worstTax - bestTax);
+
+      document.getElementById('comp-worst-val').textContent = worstTax.toLocaleString() + ' 원';
+      document.getElementById('comp-opt-val').textContent = bestTax.toLocaleString() + ' 원';
+      document.getElementById('comp-savings-val').textContent = savings.toLocaleString() + ' 원';
+
+      if (worstTax > 0) {
+        const optPercent = Math.max(5, Math.min(100, Math.round((bestTax / worstTax) * 100)));
+        document.getElementById('comp-worst-bar').style.width = '100%';
+        document.getElementById('comp-opt-bar').style.width = optPercent + '%';
+      } else {
+        document.getElementById('comp-worst-bar').style.width = '0%';
+        document.getElementById('comp-opt-bar').style.width = '0%';
+      }
     }
+  });
 
     // ④ AI 절세 추천 연동
     const advice = TaxAdvisor.getIncomeTaxAdvice({

@@ -4,23 +4,29 @@
  */
 
 const TaxCalculator = {
-  // 1. 종합소득세율 테이블 및 계산
-  incomeTaxBrackets: [
-    { limit: 14000000, rate: 0.06, deduction: 0 },
-    { limit: 50000000, rate: 0.15, deduction: 1260000 },
-    { limit: 88000000, rate: 0.24, deduction: 5760000 },
-    { limit: 150000000, rate: 0.35, deduction: 15440000 },
-    { limit: 300000000, rate: 0.38, deduction: 19940000 },
-    { limit: 500000000, rate: 0.40, deduction: 25940000 },
-    { limit: 1000000000, rate: 0.42, deduction: 35940000 },
-    { limit: Infinity, rate: 0.45, deduction: 65940000 }
-  ],
+  // 1. 세법 구조화 및 세율 테이블 설정
+  bracketsConfig: {
+    incomeTaxBrackets: [
+      { limit: 14000000, rate: 0.06, deduction: 0 },
+      { limit: 50000000, rate: 0.15, deduction: 1260000 },
+      { limit: 88000000, rate: 0.24, deduction: 5760000 },
+      { limit: 150000000, rate: 0.35, deduction: 15440000 },
+      { limit: 300000000, rate: 0.38, deduction: 19940000 },
+      { limit: 500000000, rate: 0.40, deduction: 25940000 },
+      { limit: 1000000000, rate: 0.42, deduction: 35940000 },
+      { limit: Infinity, rate: 0.45, deduction: 65940000 }
+    ],
+    isaLimits: {
+      sub: 10000000,
+      general: 5000000
+    }
+  },
 
   calculateIncomeTax(taxableIncome) {
     if (taxableIncome <= 0) return { tax: 0, rate: 0, deduction: 0 };
     
-    let targetBracket = this.incomeTaxBrackets[0];
-    for (const bracket of this.incomeTaxBrackets) {
+    let targetBracket = this.bracketsConfig.incomeTaxBrackets[0];
+    for (const bracket of this.bracketsConfig.incomeTaxBrackets) {
       if (taxableIncome <= bracket.limit) {
         targetBracket = bracket;
         break;
@@ -52,11 +58,11 @@ const TaxCalculator = {
     if (investment <= 30000000) {
       deduction = investment;
     } else if (investment <= 50000000) {
-      deduction = 30000000 + (investment - 30000000) * 0.7;
+      deduction = Math.floor(30000000 + (investment - 30000000) * 0.7);
     } else {
-      deduction = 44000000 + (investment - 50000000) * 0.3;
+      deduction = Math.floor(44000000 + (investment - 50000000) * 0.3);
     }
-    return Math.min(deduction, incomeAmount * 0.5);
+    return Math.min(deduction, Math.floor(incomeAmount * 0.5));
   },
 
   // 종합소득세 전체 계산 (금융소득 세부 유형 및 벤처투자 소득공제 연동)
@@ -72,7 +78,7 @@ const TaxCalculator = {
     financialGeneral = 0, // 일반 이자/배당 (원천징수 15.4% 대상)
     financialOverseas = 0, // 해외 이자/배당 (무조건 종합과세 대상)
     isaIncome = 0, // ISA 총 수익
-    isaType = 'general', // ISA 유형 ('general': 200만 비과세, 'sub': 400만 비과세)
+    isaType = 'general', // ISA 유형 ('general': 500만 비과세, 'sub': 1,000만 비과세)
     bondSeparated = 0, // 장기채권 30% 분리과세 신청액
     dependentsCount = 0,
     hasSeniorDependent = false,
@@ -81,11 +87,11 @@ const TaxCalculator = {
     let calculatedExpense = expense;
     let salaryDeduction = 0;
     if (incomeType === 'wage') {
-      if (totalIncome <= 5000000) salaryDeduction = totalIncome * 0.7;
-      else if (totalIncome <= 15000000) salaryDeduction = 3500000 + (totalIncome - 5000000) * 0.4;
-      else if (totalIncome <= 45000000) salaryDeduction = 7500000 + (totalIncome - 15000000) * 0.15;
-      else if (totalIncome <= 100000000) salaryDeduction = 12000000 + (totalIncome - 45000000) * 0.05;
-      else salaryDeduction = 14750000 + (totalIncome - 100000000) * 0.02;
+      if (totalIncome <= 5000000) salaryDeduction = Math.floor(totalIncome * 0.7);
+      else if (totalIncome <= 15000000) salaryDeduction = Math.floor(3500000 + (totalIncome - 5000000) * 0.4);
+      else if (totalIncome <= 45000000) salaryDeduction = Math.floor(7500000 + (totalIncome - 15000000) * 0.15);
+      else if (totalIncome <= 100000000) salaryDeduction = Math.floor(12000000 + (totalIncome - 45000000) * 0.05);
+      else salaryDeduction = Math.floor(14750000 + (totalIncome - 100000000) * 0.02);
       calculatedExpense = Math.floor(salaryDeduction);
     }
     
@@ -109,7 +115,7 @@ const TaxCalculator = {
     let taxableIncome = Math.max(0, baseIncome - ventureDeduction - personDeduction);
 
     // ISA 금융소득 계산 (비과세 한도 차감 및 초과분 9.9% 분리과세)
-    const isaLimit = isaType === 'sub' ? 4000000 : 2000000;
+    const isaLimit = isaType === 'sub' ? 10000000 : 5000000;
     const isaTaxfreeAmount = Math.min(isaIncome, isaLimit);
     const isaOverLimitAmount = Math.max(0, isaIncome - isaLimit);
     const isaSeparatedTax = Math.floor(isaOverLimitAmount * 0.09); // 9.9% 분리과세 (지방세 0.9% 제외 원세 9%)
@@ -155,7 +161,7 @@ const TaxCalculator = {
     const totalTax = finalTax + localTax;
     
     const allFinancialIncome = financialGeneral + financialOverseas + isaIncome + bondSeparated;
-    const effectiveRate = totalIncome > 0 ? (totalTax / (totalIncome + allFinancialIncome)) * 100 : 0;
+    const effectiveRate = totalIncome > 0 ? Math.round((totalTax / (totalIncome + allFinancialIncome)) * 10000) / 100 : 0;
 
     return {
       totalIncome,
@@ -351,11 +357,11 @@ const TaxCalculator = {
     ventureInvestment = 0 
   }) {
     let salaryDeduction = 0;
-    if (totalSalary <= 5000000) salaryDeduction = totalSalary * 0.7;
-    else if (totalSalary <= 15000000) salaryDeduction = 3500000 + (totalSalary - 5000000) * 0.4;
-    else if (totalSalary <= 45000000) salaryDeduction = 7500000 + (totalSalary - 15000000) * 0.15;
-    else if (totalSalary <= 100000000) salaryDeduction = 12000000 + (totalSalary - 45000000) * 0.05;
-    else salaryDeduction = 14750000 + (totalSalary - 100000000) * 0.02;
+    if (totalSalary <= 5000000) salaryDeduction = Math.floor(totalSalary * 0.7);
+    else if (totalSalary <= 15000000) salaryDeduction = Math.floor(3500000 + (totalSalary - 5000000) * 0.4);
+    else if (totalSalary <= 45000000) salaryDeduction = Math.floor(7500000 + (totalSalary - 15000000) * 0.15);
+    else if (totalSalary <= 100000000) salaryDeduction = Math.floor(12000000 + (totalSalary - 45000000) * 0.05);
+    else salaryDeduction = Math.floor(14750000 + (totalSalary - 100000000) * 0.02);
 
     const grossIncome = Math.max(0, totalSalary - salaryDeduction);
 
@@ -371,21 +377,21 @@ const TaxCalculator = {
 
     let housingDeduction = 0;
     if (totalSalary <= 70000000) {
-      housingDeduction += Math.min(1200000, housingSubscription * 0.4);
+      housingDeduction += Math.min(1200000, Math.floor(housingSubscription * 0.4));
     }
-    housingDeduction += Math.min(4000000, housingLoanRepay * 0.4);
+    housingDeduction += Math.min(4000000, Math.floor(housingLoanRepay * 0.4));
     housingDeduction += Math.min(18000000, mortgageInterest);
 
-    const threshold = totalSalary * 0.25;
+    const threshold = Math.floor(totalSalary * 0.25);
     const totalCardUsage = cardUsage + cashUsage;
     let cardDeduction = 0;
 
     if (totalCardUsage > threshold) {
       const excess = totalCardUsage - threshold;
       if (cardUsage >= threshold) {
-        cardDeduction = (cardUsage - threshold) * 0.15 + cashUsage * 0.3;
+        cardDeduction = Math.floor((cardUsage - threshold) * 0.15) + Math.floor(cashUsage * 0.3);
       } else {
-        cardDeduction = excess * 0.3;
+        cardDeduction = Math.floor(excess * 0.3);
       }
       let limit = 3000000;
       if (totalSalary > 120000000) limit = 2000000;
@@ -405,8 +411,8 @@ const TaxCalculator = {
     let taxCredits = 0;
 
     let workTaxCredit = 0;
-    if (calculatedTax <= 1300000) workTaxCredit = calculatedTax * 0.55;
-    else workTaxCredit = 715000 + (calculatedTax - 1300000) * 0.3;
+    if (calculatedTax <= 1300000) workTaxCredit = Math.floor(calculatedTax * 0.55);
+    else workTaxCredit = Math.floor(715000 + (calculatedTax - 1300000) * 0.3);
     let workCreditLimit = totalSalary > 70000000 ? 660000 : 740000;
     workTaxCredit = Math.min(workCreditLimit, workTaxCredit);
     taxCredits += workTaxCredit;
@@ -429,37 +435,37 @@ const TaxCalculator = {
     let pensionCredit = 0;
     if (totalPension > 0) {
       const rate = totalSalary <= 55000000 ? 0.15 : 0.12;
-      pensionCredit = totalPension * rate;
+      pensionCredit = Math.floor(totalPension * rate);
       taxCredits += pensionCredit;
     }
 
-    let insuranceCredit = Math.min(120000, insurancePremium * 0.12);
+    let insuranceCredit = Math.min(120000, Math.floor(insurancePremium * 0.12));
     taxCredits += insuranceCredit;
 
     let medicalCredit = 0;
-    const medicalThreshold = totalSalary * 0.03;
+    const medicalThreshold = Math.floor(totalSalary * 0.03);
     if (medicalExpense > medicalThreshold) {
-      medicalCredit = (medicalExpense - medicalThreshold) * 0.15;
+      medicalCredit = Math.floor((medicalExpense - medicalThreshold) * 0.15);
       taxCredits += medicalCredit;
     }
 
     const totalEdu = educationExpense + studentLoanRepay;
-    let eduCredit = totalEdu * 0.15;
+    let eduCredit = Math.floor(totalEdu * 0.15);
     taxCredits += eduCredit;
 
     let rentCredit = 0;
     if (monthlyRent > 0 && totalSalary <= 80000000) {
       const rate = totalSalary <= 55000000 ? 0.17 : 0.15;
-      rentCredit = Math.min(10000000, monthlyRent * 12) * rate;
+      rentCredit = Math.floor(Math.min(10000000, monthlyRent * 12) * rate);
       taxCredits += rentCredit;
     }
 
     let donationCredit = 0;
     if (localDonation > 0) {
       if (localDonation <= 100000) donationCredit += localDonation;
-      else donationCredit += 100000 + (localDonation - 100000) * 0.15;
+      else donationCredit += Math.floor(100000 + (localDonation - 100000) * 0.15);
     }
-    donationCredit += donationAmount * 0.15;
+    donationCredit += Math.floor(donationAmount * 0.15);
     taxCredits += donationCredit;
 
     if (isMarriedThisYear) {
