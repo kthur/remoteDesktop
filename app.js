@@ -1,5 +1,5 @@
 /**
- * 메인 애플리케이션 UI 제어, 이벤트 바인딩 및 차트 렌더링 (통합 리포트 2대 탭 개편)
+ * 메인 애플리케이션 UI 제어, 이벤트 바인딩 및 차트 렌더링 (배우자 1,2 금융소득 개별 연산 적용)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -118,25 +118,35 @@ document.addEventListener('DOMContentLoaded', () => {
   // 1. 종합소득세 & 연말정산 원스톱 대통합 계산
   const btnCalcIncomeIntegrated = document.getElementById('btn-calc-income-integrated');
   btnCalcIncomeIntegrated.addEventListener('click', () => {
-    // 남편(배우자1) 및 아내(배우자2) 기본 데이터 확보
+    // 배우자 1 (남편) 기본 데이터 확보
     const hSalary = parseFloat(document.getElementById('inc-h-salary').value) || 0;
     const hType = document.getElementById('inc-h-type').value;
     const hCard = parseFloat(document.getElementById('inc-h-card').value) || 0;
     const hYellow = parseFloat(document.getElementById('inc-h-yellow').value) || 0;
     const hPension = parseFloat(document.getElementById('inc-h-pension').value) || 0;
 
+    // 🆕 배우자 1 금융소득 상세 설정 분리 반영
+    const hFinancialGen = parseFloat(document.getElementById('inc-h-financial-gen').value) || 0;
+    const hFinancialOverseas = parseFloat(document.getElementById('inc-h-financial-overseas').value) || 0;
+    const hIsaIncome = parseFloat(document.getElementById('inc-h-isa').value) || 0;
+    const hIsaType = document.getElementById('inc-h-isa-type').value;
+    const hBondSeparated = parseFloat(document.getElementById('inc-h-bond').value) || 0;
+
+    // 배우자 2 (아내) 기본 데이터 확보
     const wSalary = parseFloat(document.getElementById('inc-w-salary').value) || 0;
     const wType = document.getElementById('inc-w-type').value;
     const wCard = parseFloat(document.getElementById('inc-w-card').value) || 0;
     const wYellow = parseFloat(document.getElementById('inc-w-yellow').value) || 0;
     const wPension = parseFloat(document.getElementById('inc-w-pension').value) || 0;
 
-    // 금융소득 상세 설정
-    const financialGeneral = parseFloat(document.getElementById('inc-financial-gen').value) || 0;
-    const financialOverseas = parseFloat(document.getElementById('inc-financial-overseas').value) || 0;
-    const isaIncome = parseFloat(document.getElementById('inc-isa').value) || 0;
-    const isaType = document.getElementById('inc-isa-type').value;
-    const bondSeparated = parseFloat(document.getElementById('inc-bond').value) || 0;
+    // 🆕 배우자 2 금융소득 상세 설정 분리 반영
+    const wFinancialGen = parseFloat(document.getElementById('inc-w-financial-gen').value) || 0;
+    const wFinancialOverseas = parseFloat(document.getElementById('inc-w-financial-overseas').value) || 0;
+    const wIsaIncome = parseFloat(document.getElementById('inc-w-isa').value) || 0;
+    const wIsaType = document.getElementById('inc-w-isa-type').value;
+    const wBondSeparated = parseFloat(document.getElementById('inc-w-bond').value) || 0;
+
+    // 공통 투자 설정
     const ventureInvestment = parseFloat(document.getElementById('inc-venture').value) || 0;
     const housingSubscription = parseFloat(document.getElementById('inc-housing-sub').value) || 0;
     const housingLoanRepay = parseFloat(document.getElementById('inc-housing-loan').value) || 0;
@@ -159,32 +169,34 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // ① 개별 결정세액 계산 (간략화된 단독 시뮬레이션용)
+    // ① 배우자 1 개별 세액 정밀 연산 (금융소득 개별 합산)
     const hResult = TaxCalculator.calculateComprehensiveIncome({
       totalIncome: hSalary,
       incomeType: hType,
       expense: hType === 'business' ? Math.floor(hSalary * 0.3) : 0,
       yellowUmbrella: hYellow,
       pensionSavings: hPension,
-      financialGeneral,
-      financialOverseas,
-      isaIncome,
-      isaType,
-      bondSeparated,
+      financialGeneral: hFinancialGen,
+      financialOverseas: hFinancialOverseas,
+      isaIncome: hIsaIncome,
+      isaType: hIsaType,
+      bondSeparated: hBondSeparated,
       ventureInvestment
     });
 
+    // ② 배우자 2 개별 세액 정밀 연산 (금융소득 개별 합산)
     const wResult = TaxCalculator.calculateComprehensiveIncome({
       totalIncome: wSalary,
       incomeType: wType,
       expense: wType === 'business' ? Math.floor(wSalary * 0.3) : 0,
       yellowUmbrella: wYellow,
       pensionSavings: wPension,
-      financialGeneral: 0, // 금융소득은 일단 남편에게 세팅되었다고 가정
-      financialOverseas: 0,
-      isaIncome: 0,
-      bondSeparated: 0,
-      ventureInvestment: 0
+      financialGeneral: wFinancialGen,
+      financialOverseas: wFinancialOverseas,
+      isaIncome: wIsaIncome,
+      isaType: wIsaType,
+      bondSeparated: wBondSeparated,
+      ventureInvestment: 0 // 벤처투자는 배우자 1 명의로 적용 시뮬레이션
     });
 
     document.getElementById('res-h-taxable').textContent = hResult.taxableIncome.toLocaleString() + ' 원';
@@ -195,11 +207,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('res-w-rate').textContent = wResult.bracketRate + '%';
     document.getElementById('res-w-total').textContent = wResult.totalTax.toLocaleString() + ' 원';
 
-    // ② 금융소득 결과 렌더링
-    document.getElementById('res-isa-free').textContent = hResult.isaTaxfreeAmount.toLocaleString() + ' 원';
-    document.getElementById('res-isa-tax').textContent = hResult.isaSeparatedTax.toLocaleString() + ' 원';
-    document.getElementById('res-bond-tax').textContent = hResult.bondSeparatedTax.toLocaleString() + ' 원';
-    document.getElementById('res-financial-comp').textContent = hResult.financialCompAmount.toLocaleString() + ' 원';
+    // 배우자 1, 2 금융소득 개별 산출 결과 출력
+    document.getElementById('res-h-isa-free').textContent = hResult.isaTaxfreeAmount.toLocaleString() + ' 원';
+    document.getElementById('res-h-isa-tax').textContent = hResult.isaSeparatedTax.toLocaleString() + ' 원';
+    document.getElementById('res-h-bond-tax').textContent = hResult.bondSeparatedTax.toLocaleString() + ' 원';
+    document.getElementById('res-h-financial-comp').textContent = hResult.financialCompAmount.toLocaleString() + ' 원';
+
+    document.getElementById('res-w-isa-free').textContent = wResult.isaTaxfreeAmount.toLocaleString() + ' 원';
+    document.getElementById('res-w-isa-tax').textContent = wResult.isaSeparatedTax.toLocaleString() + ' 원';
+    document.getElementById('res-w-bond-tax').textContent = wResult.bondSeparatedTax.toLocaleString() + ' 원';
+    document.getElementById('res-w-financial-comp').textContent = wResult.financialCompAmount.toLocaleString() + ' 원';
 
     // ③ 맞벌이 부양가족 최적 배정 연동
     const husbandOptData = {
@@ -226,7 +243,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ④ AI 절세 추천 연동
     const advice = TaxAdvisor.getIncomeTaxAdvice({
       totalIncome: hSalary, expense: hType === 'business' ? hSalary * 0.3 : 0, incomeType: hType,
-      yellowUmbrella: hYellow, pensionSavings: hPension, financialGeneral, financialOverseas, isaIncome, isaType, bondSeparated, ventureInvestment
+      yellowUmbrella: hYellow, pensionSavings: hPension, financialGeneral: hFinancialGen, 
+      financialOverseas: hFinancialOverseas, isaIncome: hIsaIncome, isaType: hIsaType, bondSeparated: hBondSeparated, ventureInvestment
     }, hResult);
 
     renderAdvice('income-advice-list', advice, (id, val) => {
@@ -237,13 +255,13 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (id === 'income_venture_investment') {
         document.getElementById('inc-venture').value = val;
       } else if (id === 'income_isa_switch') {
-        document.getElementById('inc-isa').value = val;
-        document.getElementById('inc-financial-gen').value = Math.max(0, financialGeneral - val);
+        document.getElementById('inc-h-isa').value = val;
+        document.getElementById('inc-h-financial-gen').value = Math.max(0, hFinancialGen - val);
       }
       btnCalcIncomeIntegrated.click();
     });
 
-    // 결과 활성화
+    // 결과 뷰 활성화
     document.getElementById('inc-result-card').style.display = 'block';
   });
 
@@ -355,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   });
 
-  // 초기 렌더링 작동
+  // 초기 실행
   btnCalcIncomeIntegrated.click();
   btnCalcVat.click();
 });

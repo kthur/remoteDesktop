@@ -63,7 +63,7 @@ body.light-mode {
 
 /* 3. 레이아웃 컨테이너 */
 .app-container {
-  max-width: 1200px;
+  max-width: 1300px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
 }
@@ -187,11 +187,11 @@ body.light-mode .tab-btn:hover:not(.active) {
 
 .calculator-panel.active {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
+  grid-template-columns: 1.15fr 0.85fr;
   gap: 2rem;
 }
 
-@media (max-width: 968px) {
+@media (max-width: 1024px) {
   .calculator-panel.active {
     grid-template-columns: 1fr;
   }
@@ -473,6 +473,7 @@ body.light-mode .opt-tab-btn {
   display: flex;
   align-items: center;
   gap: 10px;
+  position: relative;
 }
 body.light-mode .person-card {
   background: rgba(255, 255, 255, 0.5);
@@ -521,6 +522,50 @@ body.light-mode .person-card {
 .btn-add-person:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: var(--accent-primary);
+}
+
+/* 🆕 툴팁(Tooltip) 관련 스타일 */
+.tooltip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  font-size: 9px;
+  margin-left: 4px;
+  cursor: help;
+  position: relative;
+  vertical-align: middle;
+}
+body.light-mode .tooltip-icon {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.tooltip-icon::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #334155;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: normal;
+  width: 220px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 100;
+}
+
+.tooltip-icon:hover::before {
+  opacity: 1;
 }
 
 /* 11. 애니메이션 효과 */

@@ -45,10 +45,12 @@
       <div class="input-card">
         <h2 class="card-title">💵 종합소득세 &amp; 연말정산 통합 입력</h2>
         
-        <!-- [1] 부부 기본 소득 정보 -->
+        <!-- 부부 소득 및 개별 금융소득 입력 영역 -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:1.5rem;">
+          
+          <!-- 배우자 1 (남편) 입력 영역 -->
           <div style="background:rgba(255,255,255,0.02); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
-            <h4 style="font-size:0.85rem; color:var(--accent-primary); margin-bottom:8px;">배우자 1 (남편)</h4>
+            <h4 style="font-size:0.9rem; color:var(--accent-primary); margin-bottom:8px; font-weight:700;">배우자 1 (남편)</h4>
             <div class="form-group">
               <label>연봉(총급여) 또는 사업소득</label>
               <input type="number" id="inc-h-salary" class="form-input" value="70000000">
@@ -68,14 +70,45 @@
               <label>노란우산공제 납입</label>
               <input type="number" id="inc-h-yellow" class="form-input" value="0">
             </div>
-            <div class="form-group" style="margin-bottom:0;">
+            <div class="form-group">
               <label>연금저축/IRP 납입</label>
               <input type="number" id="inc-h-pension" class="form-input" value="0">
             </div>
+
+            <!-- 배우자 1 금융소득 상세 설정 분리 -->
+            <div style="background: rgba(108,99,255,0.03); padding: 8px; border-radius: 6px; margin-top: 10px;">
+              <h5 style="font-size:0.75rem; color:var(--accent-primary); margin-bottom:6px; font-weight:bold;">💰 배우자 1 금융소득</h5>
+              <div class="form-group">
+                <label style="font-size:0.7rem;">국내 일반 이자/배당</label>
+                <input type="number" id="inc-h-financial-gen" class="form-input" style="padding:6px; font-size:0.8rem;" value="0">
+              </div>
+              <div class="form-group">
+                <label style="font-size:0.7rem;">해외 이자/배당 (무조건합산)</label>
+                <input type="number" id="inc-h-financial-overseas" class="form-input" style="padding:6px; font-size:0.8rem;" value="0">
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px;">
+                <div class="form-group">
+                  <label style="font-size:0.7rem;">ISA 연수익</label>
+                  <input type="number" id="inc-h-isa" class="form-input" style="padding:6px; font-size:0.8rem;" value="0">
+                </div>
+                <div class="form-group">
+                  <label style="font-size:0.7rem;">ISA 유형</label>
+                  <select id="inc-h-isa-type" class="form-input" style="padding:5px; font-size:0.8rem;">
+                    <option value="general">일반(200만)</option>
+                    <option value="sub">서민(400만)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label style="font-size:0.7rem;">장기채권 분리과세(30%)</label>
+                <input type="number" id="inc-h-bond" class="form-input" style="padding:6px; font-size:0.8rem;" value="0">
+              </div>
+            </div>
           </div>
 
+          <!-- 배우자 2 (아내) 입력 영역 -->
           <div style="background:rgba(255,255,255,0.02); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
-            <h4 style="font-size:0.85rem; color:var(--accent-secondary); margin-bottom:8px;">배우자 2 (아내)</h4>
+            <h4 style="font-size:0.9rem; color:var(--accent-secondary); margin-bottom:8px; font-weight:700;">배우자 2 (아내)</h4>
             <div class="form-group">
               <label>연봉(총급여) 또는 사업소득</label>
               <input type="number" id="inc-w-salary" class="form-input" value="45000000">
@@ -95,62 +128,70 @@
               <label>노란우산공제 납입</label>
               <input type="number" id="inc-w-yellow" class="form-input" value="0">
             </div>
-            <div class="form-group" style="margin-bottom:0;">
+            <div class="form-group">
               <label>연금저축/IRP 납입</label>
               <input type="number" id="inc-w-pension" class="form-input" value="0">
             </div>
+
+            <!-- 배우자 2 금융소득 상세 설정 분리 -->
+            <div style="background: rgba(0,212,170,0.03); padding: 8px; border-radius: 6px; margin-top: 10px;">
+              <h5 style="font-size:0.75rem; color:var(--accent-secondary); margin-bottom:6px; font-weight:bold;">💰 배우자 2 금융소득</h5>
+              <div class="form-group">
+                <label style="font-size:0.7rem;">국내 일반 이자/배당</label>
+                <input type="number" id="inc-w-financial-gen" class="form-input" style="padding:6px; font-size:0.8rem;" value="0">
+              </div>
+              <div class="form-group">
+                <label style="font-size:0.7rem;">해외 이자/배당 (무조건합산)</label>
+                <input type="number" id="inc-w-financial-overseas" class="form-input" style="padding:6px; font-size:0.8rem;" value="0">
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px;">
+                <div class="form-group">
+                  <label style="font-size:0.7rem;">ISA 연수익</label>
+                  <input type="number" id="inc-w-isa" class="form-input" style="padding:6px; font-size:0.8rem;" value="0">
+                </div>
+                <div class="form-group">
+                  <label style="font-size:0.7rem;">ISA 유형</label>
+                  <select id="inc-w-isa-type" class="form-input" style="padding:5px; font-size:0.8rem;">
+                    <option value="general">일반(200만)</option>
+                    <option value="sub">서민(400만)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label style="font-size:0.7rem;">장기채권 분리과세(30%)</label>
+                <input type="number" id="inc-w-bond" class="form-input" style="padding:6px; font-size:0.8rem;" value="0">
+              </div>
+            </div>
           </div>
+          
         </div>
 
-        <!-- [2] 금융소득 및 벤처투자/주택자금 통합 상세 설정 -->
+        <!-- 기타공제 및 벤처투자/주택자금 통합 상세 설정 (부부 공유 공제성 자금) -->
         <div style="background: rgba(255,255,255,0.01); padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.05);">
-          <h4 style="font-size: 0.9rem; margin-bottom: 10px; color: var(--accent-info)">💰 금융소득 &amp; 기타투자 상세 설정</h4>
+          <h4 style="font-size: 0.9rem; margin-bottom: 10px; color: var(--accent-info)">🚀 공제성 투자 &amp; 주택자금 설정</h4>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div class="form-group">
-              <label>국내 일반 이자/배당</label>
-              <input type="number" id="inc-financial-gen" class="form-input" value="0">
-            </div>
-            <div class="form-group">
-              <label>해외 이자/배당 (무조건종합)</label>
-              <input type="number" id="inc-financial-overseas" class="form-input" value="0">
-            </div>
-          </div>
-          <div style="display:grid; grid-template-columns:1.2fr 0.8fr; gap:10px;">
-            <div class="form-group">
-              <label>ISA 계좌 연간 수익</label>
-              <input type="number" id="inc-isa" class="form-input" value="0">
-            </div>
-            <div class="form-group">
-              <label>ISA 유형</label>
-              <select id="inc-isa-type" class="form-input">
-                <option value="general">일반 (200만)</option>
-                <option value="sub">서민 (400만)</option>
-              </select>
-            </div>
-          </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom:0;">
               <label>벤처기업 투자금액</label>
               <input type="number" id="inc-venture" class="form-input" value="0">
             </div>
-            <div class="form-group">
-              <label>장기채권 분리과세(30%)</label>
-              <input type="number" id="inc-bond" class="form-input" value="0">
-            </div>
-          </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:0;">
             <div class="form-group" style="margin-bottom:0;">
               <label>주택청약저축 납입</label>
               <input type="number" id="inc-housing-sub" class="form-input" value="0">
             </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
             <div class="form-group" style="margin-bottom:0;">
               <label>전세대출 원리금상환액</label>
               <input type="number" id="inc-housing-loan" class="form-input" value="0">
             </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>부부 합산 기존 벤처공제</label>
+              <input type="number" id="inc-venture-existing" class="form-input" value="0" disabled style="opacity:0.5;">
+            </div>
           </div>
         </div>
 
-        <!-- [3] 조율할 부양가족 목록 -->
+        <!-- 조율할 부양가족 목록 -->
         <h4 style="font-size: 0.95rem; margin-bottom: 10px; font-weight:700;">👥 부양가족 및 지출내역 상세조율</h4>
         <div class="people-list" id="inc-couple-ye-people">
           <div class="person-card" data-id="1">
@@ -160,16 +201,36 @@
                 <button class="btn-remove-person">✖</button>
               </div>
               <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
-                <input type="text" class="form-input opt-dep-name" value="첫째 자녀" placeholder="이름">
-                <select class="form-input opt-dep-relation">
-                  <option value="child">자녀 (8세 이상)</option>
-                  <option value="parent">부모 (기본공제)</option>
-                  <option value="other">기타</option>
-                </select>
-                <input type="number" class="form-input opt-dep-card" value="1500000" placeholder="카드사용액">
-                <input type="number" class="form-input opt-dep-medical" value="1200000" placeholder="의료비">
-                <input type="number" class="form-input opt-dep-edu" value="2000000" placeholder="교육비">
-                <input type="number" class="form-input opt-dep-student-loan" value="0" placeholder="학자금상환">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label>가족 이름</label>
+                  <input type="text" class="form-input opt-dep-name" value="첫째 자녀" placeholder="예: 홍길동">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label>관계 설정</label>
+                  <select class="form-input opt-dep-relation">
+                    <option value="child">자녀 (8세 이상)</option>
+                    <option value="parent">부모 (기본공제)</option>
+                    <option value="other">기타</option>
+                  </select>
+                </div>
+                
+                <!-- 각 텍스트 필드에 물음표 툴팁 적용 -->
+                <div class="form-group" style="margin-bottom:0;">
+                  <label>가족 카드사용액 <span class="tooltip-icon" data-tooltip="부양가족 명의의 신용카드/체크카드 사용액입니다. 기본공제를 받는 배우자에게 자동으로 합산되어 한도 내 소득공제됩니다.">?</span></label>
+                  <input type="number" class="form-input opt-dep-card" value="1500000" placeholder="연간 합계(원)">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label>가족 의료비 <span class="tooltip-icon" data-tooltip="해당 가족을 위해 지출한 연간 병원비/약값 등 총액입니다. 연말정산 의료비 세액공제(15%) 대상이 되며, 맞벌이 부부 중 더 유리한 쪽에 배정할 수 있습니다.">?</span></label>
+                  <input type="number" class="form-input opt-dep-medical" value="1200000" placeholder="연간 합계(원)">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label>가족 교육비 <span class="tooltip-icon" data-tooltip="가족의 학원비, 학교 등록금 등 교육 비용입니다. 교육비 공제(15%)를 위해 기본공제를 받는 사람 명의로 묶어서 공제받아야 합니다.">?</span></label>
+                  <input type="number" class="form-input opt-dep-edu" value="2000000" placeholder="연간 합계(원)">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label>학자금 대출 상환 <span class="tooltip-icon" data-tooltip="가족의 한국장학재단 등 학자금 대출에 대해 당해 연도에 실제로 상환한 원리금액입니다. 15% 세액공제를 받습니다.">?</span></label>
+                  <input type="number" class="form-input opt-dep-student-loan" value="0" placeholder="연간 합계(원)">
+                </div>
               </div>
               <div style="display:flex; gap:15px; margin-top:5px; font-size:0.8rem;">
                 <label><input type="checkbox" class="opt-dep-senior"> 경로우대(70세+)</label>
@@ -190,7 +251,7 @@
       <div class="result-card" id="inc-result-card" style="display:none;">
         <h2 class="card-title">🏆 종합 절세 통합 리포트</h2>
         
-        <!-- [1] 개별 결정세액 리포트 -->
+        <!-- 개별 결정세액 리포트 -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:1.5rem;">
           <div style="background:rgba(108,99,255,0.05); padding:12px; border-radius:8px;">
             <h4 style="font-size:0.9rem; color:var(--accent-primary); margin-bottom:5px; font-weight:700;">남편 세금 리포트</h4>
@@ -210,29 +271,36 @@
           </div>
         </div>
 
-        <!-- [2] 금융소득 세부 산출 결과 -->
-        <div style="background:rgba(255,255,255,0.02); padding:12px; border-radius:8px; margin-bottom:1.5rem; font-size:0.85rem;">
-          <h4 style="font-weight:700; color:var(--accent-info); margin-bottom:6px;">💰 금융소득 계산 내역</h4>
-          <div style="display:flex; flex-direction:column; gap:4px;">
-            <div>ISA 비과세 차감액: <span id="res-isa-free">0 원</span></div>
-            <div>ISA 9.9% 분리과세액: <span id="res-isa-tax">0 원</span></div>
-            <div>채권 30% 분리과세액: <span id="res-bond-tax">0 원</span></div>
-            <div>종합합산 대상 금융소득: <span id="res-financial-comp">0 원</span></div>
+        <!-- 부부 각각의 금융소득 정밀 산출 내역 분리 표시 -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:1.5rem;">
+          <div style="background:rgba(255,255,255,0.02); padding:12px; border-radius:8px; font-size:0.85rem;">
+            <h4 style="font-weight:700; color:var(--accent-primary); margin-bottom:6px;">배우자 1 금융소득 결과</h4>
+            <div>ISA 비과세액: <span id="res-h-isa-free">0 원</span></div>
+            <div>ISA 분리세(9.9%): <span id="res-h-isa-tax">0 원</span></div>
+            <div>채권 분리세(30%): <span id="res-h-bond-tax">0 원</span></div>
+            <div>종합과세합산 금융소득: <span id="res-h-financial-comp">0 원</span></div>
+          </div>
+          <div style="background:rgba(255,255,255,0.02); padding:12px; border-radius:8px; font-size:0.85rem;">
+            <h4 style="font-weight:700; color:var(--accent-secondary); margin-bottom:6px;">배우자 2 금융소득 결과</h4>
+            <div>ISA 비과세액: <span id="res-w-isa-free">0 원</span></div>
+            <div>ISA 분리세(9.9%): <span id="res-w-isa-tax">0 원</span></div>
+            <div>채권 분리세(30%): <span id="res-w-bond-tax">0 원</span></div>
+            <div>종합과세합산 금융소득: <span id="res-w-financial-comp">0 원</span></div>
           </div>
         </div>
 
-        <!-- [3] 맞벌이 연말정산 최적 몰아주기 배정안 -->
+        <!-- 맞벌이 연말정산 최적 몰아주기 배정안 -->
         <div style="background:rgba(0,212,170,0.1); padding:1rem; border-radius:8px; border-left:4px solid var(--accent-secondary); margin-bottom:1.5rem;" id="res-couple-ye-container">
           <h4 style="font-weight:700; margin-bottom:5px;">🎯 맞벌이 부부 부양가족 배정 최적안</h4>
           <p id="res-couple-ye-desc" style="font-size:0.85rem; line-height:1.4;"></p>
         </div>
 
-        <!-- [4] AI 절세 개선 추천 카드 리스트 -->
+        <!-- AI 절세 개선 추천 카드 리스트 -->
         <h3 class="card-title" style="font-size:1.1rem; margin-bottom:10px;">💡 맞춤형 절세 추가 가이드</h3>
         <div class="advice-card-list" id="income-advice-list" style="display:grid; grid-template-columns:1fr; gap:10px;"></div>
       </div>
       
-      <!-- 부가가치세 계산기는 분리 유지 -->
+      <!-- 부가가치세 계산기 -->
       <div class="input-card" style="grid-column: 1 / -1; margin-top: 1.5rem;">
         <h2 class="card-title">🧾 개인사업자 부가가치세 계산</h2>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
@@ -346,7 +414,7 @@
         <div class="advice-card-list" id="capital-advice-list" style="margin-top:1.5rem; display:grid; grid-template-columns:1fr; gap:10px;"></div>
       </div>
 
-      <!-- 양도소득 명의 이전 절세 시뮬레이터 합산 -->
+      <!-- 양도소득 명의 이전 절세 시뮬레이터 -->
       <div class="input-card" style="grid-column: 1 / -1; margin-top: 1.5rem;">
         <h2 class="card-title">🎁 자산 이전(배우자 증여 후 매도) 절세 시뮬레이션</h2>
         <div style="display:grid; grid-template-columns: 1.1fr 0.9fr; gap:1.5rem;">
