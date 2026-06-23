@@ -421,7 +421,7 @@
       <!-- 양도소득 명의 이전 절세 시뮬레이터 -->
       <div class="input-card" style="grid-column: 1 / -1; margin-top: 1.5rem;">
         <h2 class="card-title">🎁 자산 이전(배우자 증여 후 매도) 절세 시뮬레이션</h2>
-        <div style="display:grid; grid-template-columns: 1.1fr 0.9fr; gap:1.5rem;">
+        <div class="gift-sell-grid">
           <div>
             <div class="form-group">
               <label for="opt-gs-type">증여 대상 자산</label>
@@ -437,6 +437,14 @@
             <div class="form-group">
               <label for="opt-gs-current">현재 평가액 (시가)</label>
               <input type="text" inputmode="numeric" id="opt-gs-current" class="form-input money-input" value="450,000,000">
+            </div>
+            <div class="form-group">
+              <label for="opt-gs-years">증여 후 매도까지 경과 기간 (보유기간)</label>
+              <select id="opt-gs-years" class="form-input">
+                <option value="0">1년 미만 (즉시 매도 등)</option>
+                <option value="1">1년 이상 ~ 10년 미만</option>
+                <option value="10">10년 이상</option>
+              </select>
             </div>
             <button class="btn-primary" id="btn-calc-opt-gs">🎯 절세 효과 시뮬레이션</button>
           </div>

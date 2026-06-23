@@ -579,3 +579,30 @@ body.light-mode .tooltip-icon {
     transform: translateY(0);
   }
 }
+
+/* Responsive Table & Layout Improvements */
+.table-responsive {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.gift-sell-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .gift-sell-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -64,6 +64,187 @@ document.addEventListener('DOMContentLoaded', () => {
     el.value = formatNumberWithCommas(val);
   };
 
+  // Local Storage Save & Load logic
+  function saveStateToLocalStorage() {
+    const state = {
+      statics: {},
+      dependents: []
+    };
+
+    // Save all static inputs and select elements that have an ID
+    const staticElements = document.querySelectorAll('input[id], select[id]');
+    staticElements.forEach(el => {
+      if (el.type === 'checkbox' || el.type === 'radio') {
+        state.statics[el.id] = el.checked;
+      } else {
+        state.statics[el.id] = el.value;
+      }
+    });
+
+    // Save dynamic dependents
+    const dependentCards = document.querySelectorAll('#inc-couple-ye-people .person-card');
+    dependentCards.forEach(card => {
+      state.dependents.push({
+        name: card.querySelector('.opt-dep-name').value,
+        relation: card.querySelector('.opt-dep-relation').value,
+        card: card.querySelector('.opt-dep-card').value,
+        medical: card.querySelector('.opt-dep-medical').value,
+        edu: card.querySelector('.opt-dep-edu').value,
+        studentLoan: card.querySelector('.opt-dep-student-loan').value,
+        senior: card.querySelector('.opt-dep-senior').checked,
+        disabled: card.querySelector('.opt-dep-disabled').checked,
+        birth: card.querySelector('.opt-dep-birth').checked
+      });
+    });
+
+    localStorage.setItem('tax_calculator_state', JSON.stringify(state));
+  }
+
+  function loadStateFromLocalStorage() {
+    const savedStr = localStorage.getItem('tax_calculator_state');
+    if (!savedStr) return;
+    try {
+      const state = JSON.parse(savedStr);
+      if (!state) return;
+
+      // Restore static elements
+      if (state.statics) {
+        for (const id in state.statics) {
+          const el = document.getElementById(id);
+          if (!el) continue;
+          if (el.type === 'checkbox' || el.type === 'radio') {
+            el.checked = state.statics[id];
+            el.dispatchEvent(new Event('change'));
+          } else {
+            el.value = state.statics[id];
+          }
+        }
+      }
+
+      // Restore dynamic dependents
+      if (state.dependents && state.dependents.length > 0) {
+        const container = document.getElementById('inc-couple-ye-people');
+        if (container) {
+          container.innerHTML = '';
+          state.dependents.forEach((dep, idx) => {
+            const card = document.createElement('div');
+            card.className = 'person-card';
+            card.dataset.id = idx + 1;
+            card.innerHTML = `
+              <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="person-name">부양가족 ${idx + 1}</span>
+                  <button class="btn-remove-person">✖</button>
+                </div>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>가족 이름</label>
+                    <input type="text" class="form-input opt-dep-name" value="${dep.name}" placeholder="예: 홍길동">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>관계 설정</label>
+                    <select class="form-input opt-dep-relation">
+                      <option value="child" ${dep.relation === 'child' ? 'selected' : ''}>자녀 (8세 이상)</option>
+                      <option value="parent" ${dep.relation === 'parent' ? 'selected' : ''}>부모 (기본공제)</option>
+                      <option value="other" ${dep.relation === 'other' ? 'selected' : ''}>기타</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>가족 카드사용액 <span class="tooltip-icon" data-tooltip="부양가족 명의의 신용카드/체크카드 사용액입니다. 기본공제를 받는 배우자에게 자동으로 합산되어 한도 내 소득공제됩니다.">?</span></label>
+                    <input type="text" inputmode="numeric" class="form-input money-input opt-dep-card" value="${dep.card}" placeholder="연간 합계(원)">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>가족 의료비 <span class="tooltip-icon" data-tooltip="해당 가족을 위해 지출한 연간 의료비입니다. 의료비 세액공제는 총급여의 3% 초과 지출액부터 15% 공제 혜택이 적용됩니다.">?</span></label>
+                    <input type="text" inputmode="numeric" class="form-input money-input opt-dep-medical" value="${dep.medical}" placeholder="연간 합계(원)">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>가족 교육비 <span class="tooltip-icon" data-tooltip="가족의 학원비, 학교 등록금 등 교육 비용입니다. 취학전아동/초중고생 1인당 연 300만원, 대학생 연 900만원 한도로 15% 공제됩니다.">?</span></label>
+                    <input type="text" inputmode="numeric" class="form-input money-input opt-dep-edu" value="${dep.edu}" placeholder="연간 합계(원)">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>학자금 대출 상환 <span class="tooltip-icon" data-tooltip="본인 또는 부양가족 명의의 학자금 대출 상환 원리금입니다. 연 한도 없이 15% 세액공제를 받습니다.">?</span></label>
+                    <input type="text" inputmode="numeric" class="form-input money-input opt-dep-student-loan" value="${dep.studentLoan}" placeholder="연간 합계(원)">
+                  </div>
+                </div>
+                <div style="display:flex; gap:15px; margin-top:5px; font-size:0.8rem;">
+                  <label><input type="checkbox" class="opt-dep-senior" ${dep.senior ? 'checked' : ''}> 경로우대(70세+)</label>
+                  <label><input type="checkbox" class="opt-dep-disabled" ${dep.disabled ? 'checked' : ''}> 장애인 공제</label>
+                  <label><input type="checkbox" class="opt-dep-birth" ${dep.birth ? 'checked' : ''}> 출산/입양</label>
+                </div>
+              </div>
+            `;
+            container.appendChild(card);
+            card.querySelector('.btn-remove-person').addEventListener('click', () => {
+              card.remove();
+              saveStateToLocalStorage();
+            });
+            card.querySelectorAll('.money-input').forEach(input => {
+              input.addEventListener('input', formatInputOnEvent);
+            });
+          });
+        }
+      }
+
+      // Reformat restored money input values
+      document.querySelectorAll('.money-input').forEach(input => {
+        input.value = formatNumberWithCommas(input.value);
+      });
+    } catch (e) {
+      console.error("Error loading state from localStorage", e);
+    }
+  }
+
+  // Korean Currency Helper
+  function convertToKoreanWon(value) {
+    const num = Math.floor(parseFloat(String(value).replace(/,/g, '')) || 0);
+    if (num === 0) return '0원';
+    
+    let result = '';
+    const eok = Math.floor(num / 100000000);
+    const man = Math.floor((num % 100000000) / 10000);
+    const won = num % 10000;
+    
+    if (eok > 0) {
+      result += `${eok}억 `;
+    }
+    if (man > 0) {
+      result += `${man.toLocaleString('ko-KR')}만 `;
+    }
+    if (won > 0 && eok === 0 && man === 0) {
+      result += `${won.toLocaleString('ko-KR')}`;
+    }
+    
+    return result.trim() + ' 원';
+  }
+
+  function setupKoreanUnitHelpers() {
+    const targetIds = [
+      'inc-h-salary', 'inc-w-salary', 'inc-h-card', 'inc-w-card',
+      'vat-sales', 'vat-purchases', 'capital-purchase', 'capital-sell',
+      'stock-gain', 'opt-gs-purchase', 'opt-gs-current'
+    ];
+    
+    targetIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      
+      const helper = document.createElement('div');
+      helper.className = 'won-helper';
+      helper.style.fontSize = '0.8rem';
+      helper.style.color = 'var(--accent-secondary)';
+      helper.style.marginTop = '4px';
+      helper.style.fontWeight = 'bold';
+      el.parentNode.insertBefore(helper, el.nextSibling);
+      
+      const updateHelper = () => {
+        helper.textContent = convertToKoreanWon(el.value);
+      };
+      
+      el.addEventListener('input', updateHelper);
+      updateHelper();
+    });
+  }
+
   // Bind input listeners to money inputs
   document.querySelectorAll('.money-input').forEach(input => {
     input.addEventListener('input', formatInputOnEvent);
@@ -136,34 +317,52 @@ document.addEventListener('DOMContentLoaded', () => {
   // 5. 부양가족 동적 추가/삭제
   const optCoupleYePeople = document.getElementById('inc-couple-ye-people');
   const btnAddCoupleDep = document.getElementById('btn-add-couple-dep');
-  let coupleDepCount = 1;
 
   btnAddCoupleDep.addEventListener('click', () => {
-    if (coupleDepCount >= 5) {
+    const currentCount = optCoupleYePeople.querySelectorAll('.person-card').length;
+    if (currentCount >= 5) {
       alert("부양가족은 최대 5명까지 설정할 수 있습니다.");
       return;
     }
-    coupleDepCount++;
+    const nextId = currentCount + 1;
     const card = document.createElement('div');
     card.className = 'person-card';
-    card.dataset.id = coupleDepCount;
+    card.dataset.id = nextId;
     card.innerHTML = `
       <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span class="person-name">부양가족 ${coupleDepCount}</span>
+          <span class="person-name">부양가족 ${nextId}</span>
           <button class="btn-remove-person">✖</button>
         </div>
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
-          <input type="text" class="form-input opt-dep-name" value="가족 ${coupleDepCount}" placeholder="이름">
-          <select class="form-input opt-dep-relation">
-            <option value="child">자녀 (8세 이상)</option>
-            <option value="parent">부모 (기본공제)</option>
-            <option value="other">기타</option>
-          </select>
-          <input type="text" inputmode="numeric" class="form-input money-input opt-dep-card" value="0" placeholder="카드사용액">
-          <input type="text" inputmode="numeric" class="form-input money-input opt-dep-medical" value="0" placeholder="의료비">
-          <input type="text" inputmode="numeric" class="form-input money-input opt-dep-edu" value="0" placeholder="교육비">
-          <input type="text" inputmode="numeric" class="form-input money-input opt-dep-student-loan" value="0" placeholder="학자금상환">
+          <div class="form-group" style="margin-bottom:0;">
+            <label>가족 이름</label>
+            <input type="text" class="form-input opt-dep-name" value="가족 ${nextId}" placeholder="예: 홍길동">
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>관계 설정</label>
+            <select class="form-input opt-dep-relation">
+              <option value="child">자녀 (8세 이상)</option>
+              <option value="parent">부모 (기본공제)</option>
+              <option value="other">기타</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>가족 카드사용액 <span class="tooltip-icon" data-tooltip="부양가족 명의의 신용카드/체크카드 사용액입니다. 기본공제를 받는 배우자에게 자동으로 합산되어 한도 내 소득공제됩니다.">?</span></label>
+            <input type="text" inputmode="numeric" class="form-input money-input opt-dep-card" value="0" placeholder="연간 합계(원)">
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>가족 의료비 <span class="tooltip-icon" data-tooltip="해당 가족을 위해 지출한 연간 의료비입니다. 의료비 세액공제는 총급여의 3% 초과 지출액부터 15% 공제 혜택이 적용됩니다.">?</span></label>
+            <input type="text" inputmode="numeric" class="form-input money-input opt-dep-medical" value="0" placeholder="연간 합계(원)">
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>가족 교육비 <span class="tooltip-icon" data-tooltip="가족의 학원비, 학교 등록금 등 교육 비용입니다. 취학전아동/초중고생 1인당 연 300만원, 대학생 연 900만원 한도로 15% 공제됩니다.">?</span></label>
+            <input type="text" inputmode="numeric" class="form-input money-input opt-dep-edu" value="0" placeholder="연간 합계(원)">
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>학자금 대출 상환 <span class="tooltip-icon" data-tooltip="본인 또는 부양가족 명의의 학자금 대출 상환 원리금입니다. 연 한도 없이 15% 세액공제를 받습니다.">?</span></label>
+            <input type="text" inputmode="numeric" class="form-input money-input opt-dep-student-loan" value="0" placeholder="연간 합계(원)">
+          </div>
         </div>
         <div style="display:flex; gap:15px; margin-top:5px; font-size:0.8rem;">
           <label><input type="checkbox" class="opt-dep-senior"> 경로우대(70세+)</label>
@@ -180,8 +379,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     card.querySelector('.btn-remove-person').addEventListener('click', () => {
       card.remove();
-      coupleDepCount--;
+      saveStateToLocalStorage();
     });
+
+    saveStateToLocalStorage();
   });
 
   /* ==========================================
@@ -466,36 +667,57 @@ document.addEventListener('DOMContentLoaded', () => {
     const type = document.getElementById('opt-gs-type').value;
     const originalPurchasePrice = parseVal('opt-gs-purchase');
     const currentPrice = parseVal('opt-gs-current');
+    const years = parseInt(document.getElementById('opt-gs-years').value) || 0;
 
-    const result = TaxOptimizer.optimizeGiftAndSell({ type, originalPurchasePrice, currentPrice });
+    const result = TaxOptimizer.optimizeGiftAndSell({ type, originalPurchasePrice, currentPrice, years });
     
     const resultCard = document.getElementById('opt-gs-result-card');
     const resultDetails = document.getElementById('opt-gs-result-details');
     resultCard.style.display = 'block';
 
     let warningDetail = '';
-    if (type === 'stock') {
-      warningDetail = '<br><span style="color:var(--accent-warning); font-weight:bold;">⚠️ 개정 세법에 따라 배우자 증여 후 1년 이내 양도 시 증여자의 취득가액 기준으로 이월과세(취득가액 이월)가 적용될 수 있으므로, 최소 1년 이상의 보유 타임라인 확보가 권장됩니다.</span>';
+    if (result.isCarryoverTaxApplied) {
+      if (type === 'stock') {
+        warningDetail = '<br><span style="color:var(--accent-warning); font-weight:bold;">🚨 [경고] 배우자 증여 후 1년 미만 매도로 인해 이월과세(취득가액 이월)가 적용됩니다. 이에 따라 취득가액이 최초 본인의 취득 가격으로 계산되므로 절세 효과가 발생하지 않습니다. 최소 1년 이상 보유 후 매도하십시오.</span>';
+      } else {
+        warningDetail = '<br><span style="color:var(--accent-warning); font-weight:bold;">🚨 [경고] 부동산 증여 후 10년 미만 매도로 인해 이월과세가 적용됩니다. 이에 따라 취득가액이 최초 본인의 취득 가격으로 계산되므로 절세 효과가 발생하지 않습니다. 최소 10년 이상 보유 후 매도하십시오.</span>';
+      }
     } else {
-      warningDetail = '<br><span style="color:var(--accent-warning); font-weight:bold;">⚠️ 부동산은 증여 후 10년 이내 양도 시 이월과세가 적용되므로 최소 10년 이상 보유 후 매도가 권장됩니다.</span>';
+      if (type === 'stock') {
+        warningDetail = '<br><span style="color:var(--accent-secondary); font-weight:bold;">✅ 보유 기간 1년 이상으로 이월과세 미적용 요건을 충족합니다. 배우자 증여 6억 한도로 세액 절감이 극대화됩니다.</span>';
+      } else {
+        warningDetail = '<br><span style="color:var(--accent-secondary); font-weight:bold;">✅ 보유 기간 10년 이상으로 이월과세 미적용 요건을 충족합니다. 배우자 증여 6억 한도로 세액 절감이 극대화됩니다.</span>';
+      }
     }
 
     resultDetails.innerHTML = `
       <p style="margin-bottom:8px;">최초 양도차익: ${result.originalGain.toLocaleString()} 원</p>
       <p style="margin-bottom:8px;">이전 전 예상 양도세: ${result.originalTax.toLocaleString()} 원</p>
       <p style="margin-bottom:8px; font-weight:bold; color:var(--accent-secondary);">배우자 증여 후 예상 세금: ${result.afterGiftTax.toLocaleString()} 원</p>
-      <p style="font-weight:bold; font-size:1.05rem; margin-top:12px; color:var(--accent-secondary);">
+      <p style="font-weight:bold; font-size:1.05rem; margin-top:12px; color:${result.savings > 0 ? 'var(--accent-secondary)' : 'var(--accent-warning)'};">
         🎯 총 예상 절세 금액: 약 +${result.savings.toLocaleString()} 원
       </p>
       <p style="font-size:0.75rem; opacity:0.7; margin-top:8px; line-height:1.3;">
-        * 증여재산가액 한도 6억 원을 적용한 취득가액 갱신 시뮬레이션입니다. 개정 세법에 따라 배우자 증여 후 1년 이내 양도 시 증여자의 취득가액 기준으로 이월과세가 적용될 수 있으므로 주의하시기 바랍니다. ${warningDetail}
+        * 증여재산가액 한도 6억 원을 적용한 취득가액 갱신 시뮬레이션입니다. ${warningDetail}
       </p>
     `;
   });
 
+  // Setup Korean unit helpers
+  setupKoreanUnitHelpers();
+
+  // Load state from local storage (if any)
+  loadStateFromLocalStorage();
+
+  // Bind auto-save listeners on all inputs/selects
+  document.addEventListener('input', saveStateToLocalStorage);
+  document.addEventListener('change', saveStateToLocalStorage);
+
   // 초기 실행
   btnCalcIncomeIntegrated.click();
   btnCalcVat.click();
+  btnCalcCapital.click();
+  btnCalcOptGs.click();
 });
 
 function renderAdvice(containerId, adviceList, actionCallback) {

@@ -181,20 +181,16 @@ const TaxOptimizer = {
   },
 
   // 2. 해외주식/부동산 배우자 증여 후 매도 시뮬레이터
-  optimizeGiftAndSell({ type, originalPurchasePrice, currentPrice, giftLimit = 600000000 }) {
-    const giftAmount = Math.min(currentPrice, giftLimit);
+  optimizeGiftAndSell({ type, originalPurchasePrice, currentPrice, years = 0, giftLimit = 600000000 }) {
     const originalGain = Math.max(0, currentPrice - originalPurchasePrice);
     
     let originalTax = 0;
     let afterGiftTax = 0;
 
+    // Calculate original tax first
     if (type === 'stock') {
       const originalTaxable = Math.max(0, originalGain - 2500000);
       originalTax = Math.floor(originalTaxable * 0.22);
-      
-      const afterGain = Math.max(0, currentPrice - giftAmount);
-      const afterTaxable = Math.max(0, afterGain - 2500000);
-      afterGiftTax = Math.floor(afterTaxable * 0.22);
     } else {
       const origCalc = TaxCalculator.calculateCapitalGains({
         type: 'real_estate',
@@ -204,15 +200,35 @@ const TaxOptimizer = {
         houseCount: 2
       });
       originalTax = origCalc.totalTax;
+    }
 
-      const afterCalc = TaxCalculator.calculateCapitalGains({
-        type: 'real_estate',
-        purchasePrice: giftAmount,
-        sellPrice: currentPrice,
-        holdingPeriodMonths: 120,
-        houseCount: 2
-      });
-      afterGiftTax = afterCalc.totalTax;
+    // Determine if carryover tax applies
+    let isCarryoverTaxApplied = false;
+    if (type === 'stock' && years < 1) {
+      isCarryoverTaxApplied = true;
+    } else if (type === 'real_estate' && years < 10) {
+      isCarryoverTaxApplied = true;
+    }
+
+    const giftAmount = isCarryoverTaxApplied ? 0 : Math.min(currentPrice, giftLimit);
+
+    if (isCarryoverTaxApplied) {
+      afterGiftTax = originalTax;
+    } else {
+      if (type === 'stock') {
+        const afterGain = Math.max(0, currentPrice - giftAmount);
+        const afterTaxable = Math.max(0, afterGain - 2500000);
+        afterGiftTax = Math.floor(afterTaxable * 0.22);
+      } else {
+        const afterCalc = TaxCalculator.calculateCapitalGains({
+          type: 'real_estate',
+          purchasePrice: giftAmount,
+          sellPrice: currentPrice,
+          holdingPeriodMonths: 120,
+          houseCount: 2
+        });
+        afterGiftTax = afterCalc.totalTax;
+      }
     }
 
     return {
@@ -220,7 +236,8 @@ const TaxOptimizer = {
       originalTax,
       afterGiftTax,
       savings: Math.max(0, originalTax - afterGiftTax),
-      giftAmount
+      giftAmount,
+      isCarryoverTaxApplied
     };
   },
 
