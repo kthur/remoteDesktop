@@ -623,14 +623,21 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // ④ AI 절세 추천 연동
-    const advice = TaxAdvisor.getIncomeTaxAdvice({
+    // ④ AI 절세 추천 연동 (종합소득세 + 연말정산 절세 팁 결합)
+    const incomeAdvice = TaxAdvisor.getIncomeTaxAdvice({
       totalIncome: hSalary, expense: hType === 'business' ? hSalary * 0.3 : 0, incomeType: hType,
       yellowUmbrella: hYellow, pensionSavings: hPension, financialGeneral: hFinancialGen, 
       financialOverseas: hFinancialOverseas, isaIncome: hIsaIncome, isaType: hIsaType, bondSeparated: hBondSeparated, ventureInvestment
     }, hResult);
 
-    renderAdvice('income-advice-list', advice, (id, val) => {
+    const yearEndAdvice = TaxAdvisor.getYearEndAdvice({
+      totalSalary: hSalary, pensionSavings: hPension, irpSavings: 0, 
+      monthlyRent: 0, studentLoanRepay: 0, localDonation: 0, ventureInvestment
+    }, { finalTax: hResult.totalTax });
+
+    const combinedAdvice = [...incomeAdvice, ...yearEndAdvice];
+
+    renderAdvice('income-advice-list', combinedAdvice, (id, val) => {
       if (id === 'income_yellow_umbrella') {
         setAndFormatVal('inc-h-yellow', val);
       } else if (id === 'income_pension') {

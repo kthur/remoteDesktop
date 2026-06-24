@@ -251,6 +251,38 @@
       <div class="result-card" id="inc-result-card">
         <h2 class="card-title">🏆 종합 절세 통합 리포트</h2>
         
+        <!-- 맞벌이 연말정산 최적 몰아주기 배정안 -->
+        <div style="background:rgba(0,212,170,0.1); padding:1rem; border-radius:8px; border-left:4px solid var(--accent-secondary); margin-bottom:1.5rem;" id="res-couple-ye-container">
+          <h4 style="font-weight:700; margin-bottom:5px;">🎯 맞벌이 부부 부양가족 배정 최적안</h4>
+          <p id="res-couple-ye-desc" style="font-size:0.85rem; line-height:1.4;"></p>
+          
+          <!-- Visual Comparison Bar Chart -->
+          <div id="visual-tax-comparison" style="margin-top: 15px; background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px;">
+            <h5 style="margin: 0 0 10px 0; font-size: 0.85rem; font-weight: bold; color: #fff;">📊 세액 절감 시각화 (Worst Case vs 최적화)</h5>
+            <div style="margin-bottom: 12px;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px; color: #aaa;">
+                <span>단독 몰아주기 (Worst Case)</span>
+                <span id="comp-worst-val" style="font-weight: bold; color: #ff6b6b;">0 원</span>
+              </div>
+              <div style="background: rgba(255, 255, 255, 0.1); height: 10px; border-radius: 5px; overflow: hidden; position: relative;">
+                <div id="comp-worst-bar" style="background: #ff6b6b; width: 100%; height: 100%; transition: width 0.5s ease-in-out;"></div>
+              </div>
+            </div>
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px; color: #aaa;">
+                <span>TAX NAVI 최적화 배정</span>
+                <span id="comp-opt-val" style="font-weight: bold; color: #2ec4b6;">0 원</span>
+              </div>
+              <div style="background: rgba(255, 255, 255, 0.1); height: 10px; border-radius: 5px; overflow: hidden; position: relative;">
+                <div id="comp-opt-bar" style="background: #2ec4b6; width: 0%; height: 100%; transition: width 0.5s ease-in-out;"></div>
+              </div>
+            </div>
+            <div style="margin-top: 10px; text-align: right; font-size: 0.8rem; font-weight: bold; color: #2ec4b6;">
+              💰 절감액: <span id="comp-savings-val">0 원</span>
+            </div>
+          </div>
+        </div>
+        
         <!-- 개별 결정세액 리포트 -->
         <div class="grid-2col" style="display:grid; gap:15px; margin-bottom:1.5rem;">
           <div style="background:rgba(108,99,255,0.05); padding:12px; border-radius:8px;">
@@ -290,38 +322,6 @@
             <div>ISA 분리세(9.9%): <span id="res-w-isa-tax">0 원</span></div>
             <div>채권 분리세(30%): <span id="res-w-bond-tax">0 원</span></div>
             <div>종합과세합산 금융소득: <span id="res-w-financial-comp">0 원</span></div>
-          </div>
-        </div>
-
-        <!-- 맞벌이 연말정산 최적 몰아주기 배정안 -->
-        <div style="background:rgba(0,212,170,0.1); padding:1rem; border-radius:8px; border-left:4px solid var(--accent-secondary); margin-bottom:1.5rem;" id="res-couple-ye-container">
-          <h4 style="font-weight:700; margin-bottom:5px;">🎯 맞벌이 부부 부양가족 배정 최적안</h4>
-          <p id="res-couple-ye-desc" style="font-size:0.85rem; line-height:1.4;"></p>
-          
-          <!-- Visual Comparison Bar Chart -->
-          <div id="visual-tax-comparison" style="margin-top: 15px; background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px;">
-            <h5 style="margin: 0 0 10px 0; font-size: 0.85rem; font-weight: bold; color: #fff;">📊 세액 절감 시각화 (Worst Case vs 최적화)</h5>
-            <div style="margin-bottom: 12px;">
-              <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px; color: #aaa;">
-                <span>단독 몰아주기 (Worst Case)</span>
-                <span id="comp-worst-val" style="font-weight: bold; color: #ff6b6b;">0 원</span>
-              </div>
-              <div style="background: rgba(255, 255, 255, 0.1); height: 10px; border-radius: 5px; overflow: hidden; position: relative;">
-                <div id="comp-worst-bar" style="background: #ff6b6b; width: 100%; height: 100%; transition: width 0.5s ease-in-out;"></div>
-              </div>
-            </div>
-            <div>
-              <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px; color: #aaa;">
-                <span>TAX NAVI 최적화 배정</span>
-                <span id="comp-opt-val" style="font-weight: bold; color: #2ec4b6;">0 원</span>
-              </div>
-              <div style="background: rgba(255, 255, 255, 0.1); height: 10px; border-radius: 5px; overflow: hidden; position: relative;">
-                <div id="comp-opt-bar" style="background: #2ec4b6; width: 0%; height: 100%; transition: width 0.5s ease-in-out;"></div>
-              </div>
-            </div>
-            <div style="margin-top: 10px; text-align: right; font-size: 0.8rem; font-weight: bold; color: #2ec4b6;">
-              💰 절감액: <span id="comp-savings-val">0 원</span>
-            </div>
           </div>
         </div>
 
