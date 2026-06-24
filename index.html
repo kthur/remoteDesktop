@@ -578,36 +578,9 @@
   </footer>
 
   <!-- Scripts -->
+  <script src="pdf.min.js"></script>
   <script>
-    // PDF.js 로더 — 다중 CDN fallback
-    (function loadPdfJs() {
-      var urls = [
-        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.js',
-        'https://unpkg.com/pdfjs-dist@4.0.379/build/pdf.min.js',
-        'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.js'
-      ];
-      var workerUrls = [
-        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js',
-        'https://unpkg.com/pdfjs-dist@4.0.379/build/pdf.worker.min.js',
-        'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.js'
-      ];
-      function tryLoad(index) {
-        if (index >= urls.length) {
-          console.warn('[PDF] 모든 CDN 로드 실패 — PDF 기능 사용 불가');
-          return;
-        }
-        var s = document.createElement('script');
-        s.src = urls[index];
-        s.onload = function () {
-          if (typeof pdfjsLib !== 'undefined') {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrls[index] || workerUrls[0];
-          }
-        };
-        s.onerror = function () { tryLoad(index + 1); };
-        document.body.appendChild(s);
-      }
-      tryLoad(0);
-    })();
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.js';
   </script>
   <script src="tax-calculator.js"></script>
   <script src="optimizer.js"></script>

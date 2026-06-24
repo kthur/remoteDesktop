@@ -348,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
     pdfStatus.style.color = '';
     try {
       if (!window.pdfjsLib) {
-        pdfStatus.innerHTML = '❌ PDF 라이브러리를 불러올 수 없습니다. <a href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.js" target="_blank" style="color:var(--accent-info)">라이브러리를 수동 다운로드</a> 후 <code>pdf.min.js</code> 파일을 프로젝트 폴더에 넣어 주세요.<br><span style="font-size:0.72rem; opacity:0.7;">(cdnjs · unpkg · jsdelivr 3곳 시도 실패 — 방화벽/프록시 환경일 수 있습니다)</span>';
+        pdfStatus.innerHTML = '❌ PDF 라이브러리(pdf.min.js)를 찾을 수 없습니다. 프로젝트 폴더에 <code>pdf.min.js</code>와 <code>pdf.worker.min.js</code>가 있는지 확인해 주세요.';
         pdfStatus.style.color = 'var(--accent-warning)';
         return;
       }
