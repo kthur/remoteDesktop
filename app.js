@@ -320,6 +320,29 @@ document.addEventListener('DOMContentLoaded', () => {
       const textContent = await page.getTextContent();
       fullText += textContent.items.map(item => item.str).join(' ') + '\n';
     }
+    return { text: fullText, pdf };
+  }
+
+  async function ocrPDFPages(pdf, onProgress) {
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 2.0 });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      if (onProgress) onProgress(i, pdf.numPages);
+      const result = await Tesseract.recognize(canvas, 'kor+eng', {
+        logger: m => {
+          if (m.status === 'recognizing text' && onProgress) onProgress(i, pdf.numPages, m.progress);
+        }
+      });
+      fullText += result.data.text + '\n';
+    }
     return fullText;
   }
 
@@ -370,7 +393,32 @@ document.addEventListener('DOMContentLoaded', () => {
         pdfStatus.style.color = 'var(--accent-warning)';
         return;
       }
-      const extractedText = await extractTextFromPDF(file);
+      const extracted = await extractTextFromPDF(file);
+      let extractedText = extracted.text;
+      const cleanText = extractedText.replace(/\s+/g, ' ').trim();
+      // 텍스트가 100자 미만이면 스캔(이미지) PDF → OCR fallback
+      if (cleanText.length < 100) {
+        if (typeof Tesseract !== 'undefined') {
+          pdfStatus.innerHTML = '🔍 텍스트 레이어가 부족하여 OCR을 시작합니다...<br><span style="font-size:0.72rem;">첫 실행 시 한국어+영어 언어 데이터(~4MB) 다운로드가 필요합니다</span>';
+          try {
+            const ocrText = await ocrPDFPages(extracted.pdf, (page, total, progress) => {
+              const pct = progress !== undefined ? Math.round(progress * 100) : Math.round(page / total * 100);
+              pdfStatus.innerHTML = `🔍 OCR 페이지 ${page}/${total} 인식 중... ${pct}%<br><span style="font-size:0.72rem;"><span style="display:block; width:${pct}%; height:4px; background:var(--accent-secondary); border-radius:2px; transition:width 0.3s;"></span></span>`;
+            });
+            extractedText = ocrText;
+            pdfStatus.innerHTML = '✅ OCR 인식 완료! 데이터 분석 중...';
+          } catch (ocrErr) {
+            console.error(ocrErr);
+            pdfStatus.innerHTML = '❌ OCR 인식에 실패했습니다. 텍스트 레이어가 있는 PDF를 사용해 주세요.';
+            pdfStatus.style.color = 'var(--accent-warning)';
+            return;
+          }
+        } else {
+          pdfStatus.innerHTML = '⚠️ OCR 라이브러리(Tesseract.js)가 로드되지 않았습니다.<br><span style="font-size:0.72rem;">인터넷 연결을 확인하거나 텍스트 레이어가 있는 PDF를 사용해 주세요.</span>';
+          pdfStatus.style.color = 'var(--accent-warning)';
+          return;
+        }
+      }
       const parsedData = parseTaxData(extractedText);
       const filledCount = Object.values(parsedData).filter(v => v > 0).length;
       if (filledCount > 0) {
@@ -1011,17 +1059,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // 추천 메시지
     if (result.remainingToThreshold > 0) {
       html += '<div style="padding:8px;background:rgba(56,189,248,0.12);border-radius:6px;">' +
-        '📌 문턱까지 <strong>' + result.remainingToThreshold.toLocaleString() + '원</strong> 부족!<br>' +
-        '당분간 <strong>체크카드</strong>를 사용해 문턱을 넘은 뒤, 초과분은 <strong>체크카드(30%)</strong>에 집중하세요.<br>' +
-        '<span style="font-size:0.75rem;opacity:0.7;">신용카드는 문턱(25%)에 도달하는 용도로만 사용하고, 이후 체크카드로 30% 공제율을 받는 것이 최적입니다.</span></div>';
+        '📌 현재 총급여의 25%인 <strong>' + result.threshold.toLocaleString() + '원</strong>까지,<br>' +
+        '앞으로 <strong>' + result.remainingToThreshold.toLocaleString() + '원</strong>만 <strong>신용카드</strong>(포인트 혜택)로 더 쓰세요.<br>' +
+        '문턱을 넘은 후에는 <strong>체크카드/현금영수증</strong>으로 전환해야 30% 공제율을 받을 수 있습니다.<br>' +
+        '<span style="font-size:0.75rem;opacity:0.7;">문턱 이하 구간은 카드 종류와 무관하게 세액공제 혜택이 없으므로, 신용카드 포인트를 받는 것이 유리합니다.</span></div>';
     } else if (!result.isLimitReached) {
       html += '<div style="padding:8px;background:rgba(0,212,170,0.12);border-radius:6px;border-left:3px solid var(--accent-secondary);">' +
-        '✅ 문턱 도달! 앞으로 <strong>체크카드/현금</strong>으로 <strong>' + result.additionalCashNeeded.toLocaleString() + '원</strong>을 더 사용하면<br>' +
-        '최대 한도 ' + result.limit.toLocaleString() + '원까지 공제 가능합니다.<br>' +
-        '<span style="font-size:0.75rem;opacity:0.7;">초과분은 체크카드(30% 공제)가 유리합니다.</span></div>';
+        '✅ 문턱(25%) 도달! 앞으로 <strong>체크카드/현금</strong>으로 <strong>' + result.additionalCashNeeded.toLocaleString() + '원</strong>을 더 사용하면<br>' +
+        '최대 한도 ' + result.limit.toLocaleString() + '원까지 30% 공제 가능합니다.<br>' +
+        '<span style="font-size:0.75rem;opacity:0.7;">신용카드는 15% 공제율이므로, 초과분은 체크카드(30%)가 2배 효과적입니다.</span></div>';
     } else {
       html += '<div style="padding:8px;background:rgba(255,217,61,0.1);border-radius:6px;">' +
-        '✅ 공제 한도(<strong>' + result.limit.toLocaleString() + '원</strong>)에 도달했습니다. 더 이상 추가 공제는 없습니다.</div>';
+        '✅ 공제 한도(<strong>' + result.limit.toLocaleString() + '원</strong>)에 이미 도달했습니다.<br>' +
+        '<span style="font-size:0.75rem;opacity:0.7;">더 이상 추가 카드 사용으로 인한 세액공제는 없습니다. 목적에 따라 자유롭게 사용하세요.</span></div>';
     }
     document.getElementById('card-ratio-content').innerHTML = html;
   });
