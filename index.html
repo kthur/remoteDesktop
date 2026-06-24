@@ -444,6 +444,92 @@
           </div>
         </div>
       </div>
+
+      <!-- 🧮 N잡러/프리랜서 경비율 비교기 -->
+      <div class="input-card" style="grid-column: 1 / -1; margin-top: 1.5rem;">
+        <h2 class="card-title">🧮 N잡러·프리랜서 경비율 비교 (장부 vs 추계)</h2>
+        <div class="grid-2col" style="display:grid; gap:1.5rem;">
+          <div>
+            <div class="form-group">
+              <label>업종 선택</label>
+              <select id="expense-biz-code" class="form-input">
+                <option value="940500">서비스업 (크몽/숨고 등)</option>
+                <option value="940909">정보통신업 (프로그래머/IT)</option>
+                <option value="941200">유튜브/1인 미디어</option>
+                <option value="940100">제조업</option>
+                <option value="940200">도소매업</option>
+                <option value="940300">음식점업</option>
+                <option value="940800">의료업</option>
+                <option value="941000">교육서비스업</option>
+                <option value="941100">예술/스포츠업</option>
+                <option value="940600">건설업</option>
+                <option value="940700">운수업</option>
+                <option value="940400">부동산업</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>연간 프리랜서 수입금액</label>
+              <input type="text" inputmode="numeric" id="expense-revenue" class="form-input money-input" value="30,000,000">
+            </div>
+            <div class="form-group">
+              <label>적용 방식</label>
+              <select id="expense-declared-type" class="form-input">
+                <option value="simple">단순경비율 (추계신고)</option>
+                <option value="standard">기준경비율 (장부 작성)</option>
+              </select>
+            </div>
+            <button class="btn-primary" id="btn-calc-expense-ratio">🎯 경비율 비교 분석</button>
+          </div>
+          <div style="background:rgba(255,255,255,0.02); padding:1.5rem; border-radius:12px; display:none;" id="expense-ratio-result">
+            <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 경비율 비교 결과</h4>
+            <div id="expense-ratio-content" style="font-size:0.82rem; line-height:1.6;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 🏥 건강보험료 시뮬레이터 -->
+      <div class="input-card" style="grid-column: 1 / -1; margin-top: 1.5rem;">
+        <h2 class="card-title">🏥 건강보험료 시뮬레이터</h2>
+        <div class="grid-2col" style="display:grid; gap:1.5rem;">
+          <div>
+            <div class="form-group">
+              <label>가입 유형</label>
+              <select id="hi-type" class="form-input">
+                <option value="employee">직장가입자 (회사원)</option>
+                <option value="regional">지역가입자</option>
+              </select>
+            </div>
+            <div id="hi-employee-fields">
+              <div class="form-group">
+                <label>연간 근로소득 (총급여)</label>
+                <input type="text" inputmode="numeric" id="hi-earned-income" class="form-input money-input" value="70,000,000">
+              </div>
+              <div class="form-group">
+                <label>이자·배당·사업 등 기타소득 (연)</label>
+                <input type="text" inputmode="numeric" id="hi-other-income" class="form-input money-input" value="25,000,000">
+              </div>
+            </div>
+            <div id="hi-regional-fields" style="display:none;">
+              <div class="form-group">
+                <label>연간 소득금액</label>
+                <input type="text" inputmode="numeric" id="hi-regional-income" class="form-input money-input" value="30,000,000">
+              </div>
+              <div class="form-group">
+                <label>재산 과표</label>
+                <input type="text" inputmode="numeric" id="hi-regional-property" class="form-input money-input" value="100,000,000">
+              </div>
+            </div>
+            <div style="font-size:0.78rem; opacity:0.7; margin-bottom:10px;">
+              <label><input type="checkbox" id="hi-dependent-check"> 피부양자 자격 확인</label>
+            </div>
+            <button class="btn-primary" id="btn-calc-health-insurance">🎯 보험료 &amp; 피부양자 분석</button>
+          </div>
+          <div style="background:rgba(255,255,255,0.02); padding:1.5rem; border-radius:12px; display:none;" id="hi-result">
+            <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 건강보험료 산출 내역</h4>
+            <div id="hi-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ==================== 2. 양도소득세 대분류 탭 ==================== -->
@@ -489,6 +575,11 @@
             <label for="stock-gain">총 실현 손익 (양도차익)</label>
             <input type="text" inputmode="numeric" id="stock-gain" class="form-input money-input" value="10,000,000">
           </div>
+          <div class="form-group" id="group-exchange-rate">
+            <label for="stock-exchange-rate">적용 환율 (원화 기준, 1달러당)</label>
+            <input type="text" inputmode="numeric" id="stock-exchange-rate" class="form-input money-input" value="1,350">
+            <div style="font-size:0.72rem; opacity:0.6; margin-top:4px;">매수/매도일 평균환율을 입력하세요. 한국은행 ECOS 기준환율 참고.</div>
+          </div>
         </div>
 
         <button class="btn-primary" id="btn-calc-capital">🎯 양도소득세 계산</button>
@@ -508,11 +599,41 @@
         </div>
       </div>
 
-      <!-- 🎁 10년 주기 가족 증여 타임라인 -->
+      <!-- 🏠 부동산 보유세 (재산세 + 종합부동산세) -->
       <div class="input-card" style="grid-column: 1 / -1; margin-top: 1.5rem;">
-        <h2 class="card-title">📅 10년 주기 가족 증여 타임라인</h2>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+        <h2 class="card-title">🏠 부동산 보유세 (재산세 + 종합부동산세)</h2>
+        <div class="grid-2col" style="display:grid; gap:1.5rem;">
           <div>
+            <div class="form-group">
+              <label>공시가격 (주택 공시가격)</label>
+              <input type="text" inputmode="numeric" id="prop-public-price" class="form-input money-input" value="500,000,000">
+            </div>
+            <div class="form-group">
+              <label>시가 (선택, 공시가격과 다른 경우)</label>
+              <input type="text" inputmode="numeric" id="prop-market-price" class="form-input money-input" value="0">
+            </div>
+            <div class="form-group">
+              <label>보유 주택 수</label>
+              <input type="number" id="prop-house-count" class="form-input" value="1" min="1" max="99">
+            </div>
+            <div style="font-size:0.78rem; opacity:0.7; margin-bottom:10px;">
+              <label><input type="checkbox" id="prop-one-house"> 1주택자 (12억 공제) <span class="tooltip-icon" data-tooltip="1주택자는 종합부동산세 공제 한도가 12억 원이며 공정시장가액비율 60%가 적용됩니다.">?</span></label>
+            </div>
+            <button class="btn-primary" id="btn-calc-property-tax">🎯 보유세 계산</button>
+          </div>
+          <div style="background:rgba(255,255,255,0.02); padding:1.5rem; border-radius:12px; display:none;" id="prop-result">
+            <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 보유세 산출 내역</h4>
+            <div id="prop-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 🎁 10년 주기 증여 플랜 + 증여세 계산 -->
+      <div class="input-card" style="grid-column: 1 / -1; margin-top: 1.5rem;">
+        <h2 class="card-title">📅 10년 주기 증여 플랜 &amp; 증여세 계산</h2>
+        <div class="grid-2col" style="display:grid; gap:1.5rem;">
+          <div>
+            <h4 style="font-size:0.85rem; font-weight:700; margin-bottom:8px;">🎯 증여 타임라인</h4>
             <div class="form-group">
               <label>자녀 이름</label>
               <input type="text" id="gift-child-name" class="form-input" value="첫째" placeholder="예: 첫째">
@@ -522,10 +643,42 @@
               <input type="number" id="gift-child-age" class="form-input" value="5" min="0">
             </div>
             <button class="btn-primary" id="btn-calc-gift-timeline" style="margin-top:0.5rem;">🎯 증여 타임라인 분석</button>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.08); margin:1rem 0;">
+            <h4 style="font-size:0.85rem; font-weight:700; margin-bottom:8px;">💰 증여세 실계산</h4>
+            <div class="form-group">
+              <label>증여 대상</label>
+              <select id="gift-recipient" class="form-input">
+                <option value="adult_child">성인 자녀 (5,000만 면제)</option>
+                <option value="minor">미성년 자녀 (2,000만 면제)</option>
+                <option value="spouse">배우자 (6억 면제)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>이번 증여 금액</label>
+              <input type="text" inputmode="numeric" id="gift-amount" class="form-input money-input" value="50,000,000">
+            </div>
+            <div class="form-group">
+              <label>최근 10년 내 같은 사람에게 증여한 금액</label>
+              <input type="text" inputmode="numeric" id="gift-past" class="form-input money-input" value="0">
+            </div>
+            <div class="form-group">
+              <label>자산 유형</label>
+              <select id="gift-asset-type" class="form-input">
+                <option value="cash">현금 증여</option>
+                <option value="etf">미국 ETF 증여 (해외주식)</option>
+              </select>
+            </div>
+            <button class="btn-primary" id="btn-calc-gift-tax" style="margin-top:0.5rem;">🎯 증여세 계산</button>
           </div>
-          <div style="background:rgba(0,212,170,0.05); padding:1rem; border-radius:8px; display:none;" id="gift-timeline-result">
-            <h4 style="font-weight:700; font-size:0.85rem; margin-bottom:8px;">📅 비과세 증여 마스터플랜</h4>
-            <div id="gift-timeline-content" style="font-size:0.82rem; line-height:1.6;"></div>
+          <div>
+            <div style="background:rgba(0,212,170,0.05); padding:1rem; border-radius:8px; display:none; margin-bottom:1rem;" id="gift-timeline-result">
+              <h4 style="font-weight:700; font-size:0.85rem; margin-bottom:8px;">📅 비과세 증여 마스터플랜</h4>
+              <div id="gift-timeline-content" style="font-size:0.82rem; line-height:1.6;"></div>
+            </div>
+            <div style="background:rgba(108,99,255,0.05); padding:1rem; border-radius:8px; display:none;" id="gift-tax-result">
+              <h4 style="font-weight:700; font-size:0.85rem; margin-bottom:8px;">🧾 증여세 명세서</h4>
+              <div id="gift-tax-content" style="font-size:0.82rem; line-height:1.6;"></div>
+            </div>
           </div>
         </div>
       </div>

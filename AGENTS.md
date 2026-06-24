@@ -26,6 +26,10 @@ Vanilla JS single-page tax calculator. No framework, no build step, no test suit
 - Data flow: input → `parseVal()` → `TaxCalculator.*` → `TaxOptimizer.*` → `TaxAdvisor.*` → DOM update
 - State saves to `localStorage` key `tax_calculator_state` (debounced 500ms)
 - Advice cards rendered as slide carousel by `renderAdvice()`
+- PWA: `manifest.json` (standalone), `service-worker.js` (cache-first), registered on page load
+- Privacy: "100% 브라우저 내 처리 · 데이터 전송 없음" badge in header
+- External data store: `window.TaxStore` provides `getData()`, `set(id, val)`, `subscribe(fn)` for API injection
+- PDF upload: `pdf.min.js` (v3.11.174 UMD, local) via dropzone, text extraction → regex parsing → field auto-fill
 
 ## Tax law specifics implemented
 
@@ -34,6 +38,12 @@ Vanilla JS single-page tax calculator. No framework, no build step, no test suit
 - Couple year-end optimization: tests all dependent assignment combinations
 - 1-house non-taxable: requires holding period ≥24 months
 - Gift/sell simulation: 이월과세 applies if sold within 10 years of gift
+- Gift tax (증여세): 10~50% progressive, 10-year aggregation, spouse ₩6B / adult child ₩50M / minor ₩20M exemption
+- Property tax (재산세): 0.1~0.4% progressive on 60% public price
+- Comprehensive real estate tax (종부세): 0.6~3.0% progressive, 1-house ₩1.2B / multi-house ₩900M deduction
+- Health insurance (건강보험료): 7.15% rate + 12.95% long-term care, 소득월액보험료 for non-wage income >₩20M
+- Dependent status (피부양자): income limit ₩50M (wage) / ₩34M (non-wage), property threshold
+- Business expense ratios: 12 industry codes with simple/standard rates for N잡러 comparison
 
 ## Common pitfalls
 

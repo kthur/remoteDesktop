@@ -258,7 +258,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const targetIds = [
       'inc-h-salary', 'inc-w-salary', 'inc-h-card', 'inc-w-card',
       'vat-sales', 'vat-purchases', 'capital-purchase', 'capital-sell',
-      'stock-gain', 'opt-gs-purchase', 'opt-gs-current'
+      'stock-gain', 'opt-gs-purchase', 'opt-gs-current',
+      'expense-revenue', 'hi-earned-income', 'hi-other-income',
+      'prop-public-price', 'prop-market-price', 'gift-amount', 'gift-past',
+      'stock-exchange-rate'
     ];
     
     targetIds.forEach(id => {
@@ -893,6 +896,130 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('gift-timeline-result').style.display = 'block';
   });
 
+  // 🧾 증여세 실계산
+  document.getElementById('btn-calc-gift-tax').addEventListener('click', () => {
+    const giftAmount = parseVal('gift-amount');
+    const recipient = document.getElementById('gift-recipient').value;
+    const giftPast10Years = parseVal('gift-past');
+    const assetType = document.getElementById('gift-asset-type').value;
+    const result = TaxCalculator.calculateGiftTax({ giftAmount, recipient, giftPast10Years });
+    document.getElementById('gift-tax-result').style.display = 'block';
+    let html = `
+      <div>증여 금액: <strong>${giftAmount.toLocaleString()} 원</strong></div>
+      <div>과거 10년 증여: ${giftPast10Years.toLocaleString()} 원</div>
+      <div>10년 누계: <strong>${result.cumulative.toLocaleString()} 원</strong></div>
+      <div>면제 한도: ${result.exemption.toLocaleString()} 원</div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div>과세표준: <strong>${result.taxableGift.toLocaleString()} 원</strong></div>
+      <div>세율: <strong>${result.rate}%</strong></div>
+      <div style="font-size:0.9rem;font-weight:bold;margin-top:6px;color:var(--accent-primary);">증여세: ${result.tax.toLocaleString()} 원</div>
+      <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-warning);">지방교육세: ${result.localTax.toLocaleString()} 원</div>
+      <div style="font-size:1rem;font-weight:bold;margin-top:6px;color:var(--accent-secondary);">💵 총 납부세액: ${result.totalTax.toLocaleString()} 원</div>
+    `;
+    if (result.totalTax === 0) {
+      html += `<div style="margin-top:8px;padding:6px;background:rgba(0,212,170,0.1);border-radius:6px;font-weight:bold;">✅ 비과세 증여 가능!</div>`;
+    }
+    if (assetType === 'etf' && recipient === 'adult_child') {
+      html += `<div style="margin-top:8px;padding:6px;background:rgba(56,189,248,0.08);border-radius:6px;font-size:0.78rem;">
+        💡 미국 ETF 증여 시: 수증자가 증여받은 ETF를 매도할 때 <strong>해외주식 양도소득세(22%)</strong>가 발생할 수 있습니다.
+        증여 당시 평가액을 취득가액으로 인정받아 양도차익을 줄일 수 있어 현금 증여 대비 절세 효과가 있습니다.
+      </div>`;
+    }
+    document.getElementById('gift-tax-content').innerHTML = html;
+  });
+
+  // 🧮 N잡러 경비율 비교
+  document.getElementById('btn-calc-expense-ratio').addEventListener('click', () => {
+    const bizCode = document.getElementById('expense-biz-code').value;
+    const revenue = parseVal('expense-revenue');
+    const declaredType = document.getElementById('expense-declared-type').value;
+    const result = TaxCalculator.compareExpenseRatios(bizCode, revenue, declaredType);
+    document.getElementById('expense-ratio-result').style.display = 'block';
+    var rec = result.recommended === 'simple' ? '단순경비율 (추계신고)' : '기준경비율 (장부 작성)';
+    var recColor = result.recommended === declaredType ? 'var(--accent-secondary)' : 'var(--accent-warning)';
+    document.getElementById('expense-ratio-content').innerHTML = `
+      <div>업종: <strong>${result.bizName}</strong></div>
+      <div style="margin-top:6px;"><strong>단순경비율</strong>: ${(result.simpleRate * 100).toFixed(1)}% → 경비 ${result.simpleExpense.toLocaleString()}원</div>
+      <div><strong>기준경비율</strong>: ${(result.standardRate * 100).toFixed(1)}% → 경비 ${result.standardExpense.toLocaleString()}원</div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div style="font-weight:bold;color:${recColor};">🏆 추천: <strong>${rec}</strong></div>
+      <div style="font-size:0.78rem;opacity:0.7;margin-top:4px;">
+        ${result.isSimpleBetter ? '단순경비율 적용 시 경비가 더 많이 인정됩니다. 별도 장부 미작성 가능.' : '기준경비율(장부 작성) 시 추가 경비 인정으로 절세 효과가 있습니다.'}
+        (세액 차이는 과세표준 구간에 따라 달라집니다)
+      </div>
+    `;
+  });
+
+  // 🏥 건강보험료 시뮬레이터
+  document.getElementById('hi-type').addEventListener('change', function () {
+    const isEmployee = this.value === 'employee';
+    document.getElementById('hi-employee-fields').style.display = isEmployee ? 'block' : 'none';
+    document.getElementById('hi-regional-fields').style.display = isEmployee ? 'none' : 'block';
+  });
+  document.getElementById('btn-calc-health-insurance').addEventListener('click', () => {
+    const isEmployee = document.getElementById('hi-type').value === 'employee';
+    let opts = { isEmployee };
+    if (isEmployee) {
+      opts.earnedIncome = parseVal('hi-earned-income');
+      opts.otherIncome = parseVal('hi-other-income');
+    } else {
+      opts.regionalIncome = parseVal('hi-regional-income');
+      opts.regionalPropertyValue = parseVal('hi-regional-property');
+    }
+    const hi = TaxCalculator.calculateHealthInsurance(opts);
+    document.getElementById('hi-result').style.display = 'block';
+    let html = '';
+    if (hi.type === 'employee') {
+      html = `
+        <div>월평균 근로소득: ${hi.earnedMonthly.toLocaleString()} 원</div>
+        <div>직장 건강보험료 (월): <strong>${hi.workedPremium.toLocaleString()} 원</strong></div>
+        <div>장기요양보험료 (월): <strong>${hi.longTermCare.toLocaleString()} 원</strong></div>
+        ${hi.incomeMonthlyPremium > 0 ? `<div style="color:var(--accent-warning);">⚠️ 소득월액보험료 (월): <strong>${hi.incomeMonthlyPremium.toLocaleString()} 원</strong> (기타소득 2,000만 초과)</div>` : '<div>소득월액보험료: 없음 (기타소득 2,000만 이하)</div>'}
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+        <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-secondary);">월 보험료 합계: ${hi.monthlyPremium.toLocaleString()} 원</div>
+        <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-primary);">연 보험료 합계: <strong>${hi.annualPremium.toLocaleString()} 원</strong></div>
+      `;
+    } else {
+      html = `
+        <div>소득점수: ${hi.details.incomeScore.toLocaleString()}</div>
+        <div>재산점수: ${hi.details.propertyScore.toLocaleString()}</div>
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+        <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-secondary);">월 보험료 합계: ${hi.monthlyPremium.toLocaleString()} 원</div>
+        <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-primary);">연 보험료 합계: <strong>${hi.annualPremium.toLocaleString()} 원</strong></div>
+      `;
+    }
+    const checkDependent = document.getElementById('hi-dependent-check').checked;
+    if (checkDependent && isEmployee) {
+      const depResult = TaxCalculator.checkDependentStatus({ otherIncome: opts.otherIncome, isWageOnly: true, isPropertyOwner: false });
+      html += `<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;"><div style="font-weight:bold;">🔍 피부양자 자격: ${depResult.isEligible ? '✅ 유지' : '❌ 상실'}</div><div style="font-size:0.78rem;opacity:0.7;">${depResult.reason}</div>`;
+    }
+    document.getElementById('hi-result-content').innerHTML = html;
+  });
+
+  // 🏠 부동산 보유세
+  document.getElementById('prop-house-count').addEventListener('input', function () {
+    document.getElementById('prop-one-house').checked = parseInt(this.value) === 1;
+  });
+  document.getElementById('btn-calc-property-tax').addEventListener('click', () => {
+    const publicPrice = parseVal('prop-public-price');
+    const marketPrice = parseVal('prop-market-price') || publicPrice;
+    const houseCount = parseInt(document.getElementById('prop-house-count').value) || 1;
+    const isOneHouse = document.getElementById('prop-one-house').checked;
+    const result = TaxCalculator.calculatePropertyTax({ publicPrice, marketPrice, houseCount, isOneHouse });
+    document.getElementById('prop-result').style.display = 'block';
+    document.getElementById('prop-result-content').innerHTML = `
+      <div>공시가격: ${publicPrice.toLocaleString()} 원</div>
+      <div>과세표준 (공시×60%): ${result.taxableProperty.toLocaleString()} 원</div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div style="color:var(--accent-info);">🏠 재산세: <strong>${result.propertyTax.toLocaleString()} 원</strong></div>
+      <div style="color:var(--accent-warning);">🏢 종합부동산세: <strong>${result.comprehensiveTax.toLocaleString()} 원</strong></div>
+      <div style="font-size:0.78rem;opacity:0.7;">종부세 공제: ${isOneHouse ? '12억 (1주택자)' : '9억 (다주택자)'} · 과표 ${result.compTaxable.toLocaleString()}원</div>
+      <div style="color:var(--accent-warning);font-size:0.78rem;">농어촌특별세: ${result.specialTax.toLocaleString()} 원</div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div style="font-size:1rem;font-weight:bold;color:var(--accent-secondary);">💰 연간 보유세 합계: <strong>${result.totalTax.toLocaleString()} 원</strong></div>
+    `;
+  });
+
   // 2. 부가가치세 계산
   const btnCalcVat = document.getElementById('btn-calc-vat');
   btnCalcVat.addEventListener('click', () => {
@@ -1034,9 +1161,22 @@ document.addEventListener('DOMContentLoaded', () => {
   loadStateFromLocalStorage();
 
   // Bind auto-save listeners on all inputs/selects (디바운스 500ms로 중복 저장 방지)
-  const debouncedSave = debounce(() => { if (!isLoadingState) saveStateToLocalStorage(); }, 500);
+  const debouncedSave = debounce(function () { if (!isLoadingState) saveStateToLocalStorage(); }, 500);
   document.addEventListener('input', debouncedSave);
   document.addEventListener('change', debouncedSave);
+
+  // 새 섹션 input 초기화 (money-input 포맷 적용)
+  var newMoneyFields = [
+    'expense-revenue','hi-earned-income','hi-other-income','hi-regional-income','hi-regional-property',
+    'prop-public-price','prop-market-price','gift-amount','gift-past','stock-exchange-rate'
+  ];
+  newMoneyFields.forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', formatInputOnEvent);
+      if (el.value) el.value = formatNumberWithCommas(el.value);
+    }
+  });
 
   // ==========================================
   // ⚡ 실시간 계산 - 입력값 변경 시 자동 재계산 (디바운스 400ms)
@@ -1073,7 +1213,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 양도소득세 실시간
   [
     'capital-type','capital-purchase','capital-sell','capital-period','capital-houses',
-    'stock-type','stock-gain'
+    'stock-type','stock-gain','stock-exchange-rate'
   ].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('input', debouncedCapital); el.addEventListener('change', debouncedCapital); }

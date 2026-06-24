@@ -507,3 +507,137 @@ const TaxCalculator = {
     };
   }
 };
+
+// ----- new feature functions added by TAX NAVI expansion -----
+
+TaxCalculator.calculateGiftTax = function(opts) {
+  var giftAmount = opts.giftAmount || 0;
+  var recipient = opts.recipient || "adult_child";
+  var giftPast10Years = opts.giftPast10Years || 0;
+  var exemption;
+  switch (recipient) {
+    case "spouse": exemption = 600000000; break;
+    case "minor":  exemption = 20000000;  break;
+    case "child": case "adult_child": exemption = 50000000; break;
+    default: exemption = 50000000;
+  }
+  var cumulative = giftAmount + giftPast10Years;
+  var taxableGift = Math.max(0, cumulative - exemption);
+  var brackets = [
+    { limit: 100000000,  rate: 0.10, ded: 0 },
+    { limit: 500000000,  rate: 0.20, ded: 10000000 },
+    { limit: 1000000000, rate: 0.30, ded: 60000000 },
+    { limit: 3000000000, rate: 0.40, ded: 160000000 },
+    { limit: Infinity,   rate: 0.50, ded: 460000000 }
+  ];
+  var bracket = brackets[brackets.length - 1];
+  for (var i = 0; i < brackets.length; i++) {
+    if (taxableGift <= brackets[i].limit) { bracket = brackets[i]; break; }
+  }
+  var tax = Math.floor(taxableGift * bracket.rate - bracket.ded);
+  if (tax < 0) tax = 0;
+  var localTax = Math.floor(tax * 0.1);
+  return { taxableGift: taxableGift, tax: tax, localTax: localTax, totalTax: tax + localTax, rate: bracket.rate * 100, exemption: exemption, cumulative: cumulative };
+};
+
+TaxCalculator.calculatePropertyTax = function(opts) {
+  var publicPrice = opts.publicPrice || 0;
+  var marketPrice = opts.marketPrice || publicPrice;
+  var houseCount = opts.houseCount || 1;
+  var isOneHouse = opts.isOneHouse !== undefined ? opts.isOneHouse : (houseCount === 1);
+  var propertyBrackets = [
+    { limit: 60000000,   rate: 0.001, ded: 0 },
+    { limit: 150000000,  rate: 0.0015, ded: 30000 },
+    { limit: 300000000,  rate: 0.0025, ded: 180000 },
+    { limit: Infinity,   rate: 0.004,  ded: 630000 }
+  ];
+  var taxableProperty = Math.floor(publicPrice * 0.6);
+  var pBracket = propertyBrackets[propertyBrackets.length - 1];
+  for (var pi = 0; pi < propertyBrackets.length; pi++) {
+    if (taxableProperty <= propertyBrackets[pi].limit) { pBracket = propertyBrackets[pi]; break; }
+  }
+  var propertyTax = Math.floor(taxableProperty * pBracket.rate - pBracket.ded);
+  if (propertyTax < 0) propertyTax = 0;
+  var compDeduction = isOneHouse ? 1200000000 : 900000000;
+  var compTaxable = Math.max(0, publicPrice - compDeduction);
+  var compFairRate = isOneHouse ? 0.6 : 1.0;
+  compTaxable = Math.floor(compTaxable * compFairRate);
+  var compBrackets = [
+    { limit: 3000000000,  rate: 0.006, ded: 0 },
+    { limit: 5000000000,  rate: 0.012, ded: 18000000 },
+    { limit: 94000000000, rate: 0.018, ded: 48000000 },
+    { limit: Infinity,    rate: 0.030, ded: 1176000000 }
+  ];
+  var cBracket = compBrackets[compBrackets.length - 1];
+  for (var ci = 0; ci < compBrackets.length; ci++) {
+    if (compTaxable <= compBrackets[ci].limit) { cBracket = compBrackets[ci]; break; }
+  }
+  var comprehensiveTax = Math.floor(compTaxable * cBracket.rate - cBracket.ded);
+  if (comprehensiveTax < 0) comprehensiveTax = 0;
+  var specialTax = Math.floor(comprehensiveTax * 0.2);
+  return { propertyTax: propertyTax, comprehensiveTax: comprehensiveTax, specialTax: specialTax, totalTax: propertyTax + comprehensiveTax + specialTax, taxableProperty: taxableProperty, compTaxable: compTaxable };
+};
+
+var EXPENSE_RATIO_TABLE = {
+  "940909": { name: "정보통신업 (프로그래머/IT)", simpleRate: 0.641, standardRate: 0.182 },
+  "940100": { name: "제조업", simpleRate: 0.704, standardRate: 0.224 },
+  "940200": { name: "도소매업", simpleRate: 0.643, standardRate: 0.222 },
+  "940300": { name: "음식점업", simpleRate: 0.756, standardRate: 0.195 },
+  "940400": { name: "부동산업", simpleRate: 0.535, standardRate: 0.270 },
+  "940500": { name: "서비스업 (크몽/숨고 등)", simpleRate: 0.676, standardRate: 0.213 },
+  "940600": { name: "건설업", simpleRate: 0.794, standardRate: 0.269 },
+  "940700": { name: "운수업", simpleRate: 0.805, standardRate: 0.301 },
+  "940800": { name: "의료업", simpleRate: 0.557, standardRate: 0.123 },
+  "941000": { name: "교육서비스업", simpleRate: 0.727, standardRate: 0.256 },
+  "941100": { name: "예술/스포츠업", simpleRate: 0.633, standardRate: 0.188 },
+  "941200": { name: "유튜브/1인 미디어", simpleRate: 0.598, standardRate: 0.154 }
+};
+
+TaxCalculator.getExpenseRatioInfo = function(bizCode) { return EXPENSE_RATIO_TABLE[bizCode] || EXPENSE_RATIO_TABLE["940500"]; };
+
+TaxCalculator.compareExpenseRatios = function(bizCode, revenue, declaredType) {
+  var info = TaxCalculator.getExpenseRatioInfo(bizCode);
+  var simpleExpense = Math.floor(revenue * info.simpleRate);
+  var standardExpense = Math.floor(revenue * info.standardRate);
+  var saving = standardExpense - simpleExpense;
+  var recommended = simpleExpense >= standardExpense ? "simple" : "standard";
+  return { bizName: info.name, simpleExpense: simpleExpense, simpleRate: info.simpleRate, standardExpense: standardExpense, standardRate: info.standardRate, saving: saving, recommended: recommended, isSimpleBetter: simpleExpense >= standardExpense };
+};
+
+TaxCalculator.getBusinessCodeList = function() {
+  var list = [];
+  for (var code in EXPENSE_RATIO_TABLE) { if (EXPENSE_RATIO_TABLE.hasOwnProperty(code)) { list.push({ code: code, name: EXPENSE_RATIO_TABLE[code].name }); } }
+  return list;
+};
+
+TaxCalculator.calculateHealthInsurance = function(opts) {
+  var DEFAULT_RATE = 0.0715;
+  var LONGTERM_RATE = 0.1295;
+  if (opts.isEmployee === false) {
+    var income = opts.regionalIncome || 0;
+    var property = opts.regionalPropertyValue || 0;
+    var incomeScore = Math.floor(income * 0.035);
+    var propertyScore = Math.floor(property * 0.004);
+    var monthly = Math.floor((incomeScore + propertyScore) * DEFAULT_RATE);
+    return { type: "regional", monthlyPremium: monthly, annualPremium: monthly * 12, details: { incomeScore: incomeScore, propertyScore: propertyScore } };
+  }
+  var earnedMonthly = Math.floor((opts.earnedIncome || 0) / 12);
+  var workedPremium = Math.floor(earnedMonthly * DEFAULT_RATE);
+  var longTermCare = Math.floor(workedPremium * LONGTERM_RATE);
+  var otherIncome = opts.otherIncome || 0;
+  var incomeMonthlyPremium = 0;
+  if (otherIncome > 20000000) {
+    var incomeBase = Math.floor((otherIncome - 20000000) * 0.0715);
+    incomeMonthlyPremium = Math.floor(incomeBase / 12);
+  }
+  var totalMonthly = workedPremium + longTermCare + incomeMonthlyPremium;
+  return { type: "employee", monthlyPremium: totalMonthly, annualPremium: totalMonthly * 12, workedPremium: workedPremium, longTermCare: longTermCare, incomeMonthlyPremium: incomeMonthlyPremium, earnedMonthly: earnedMonthly };
+};
+
+TaxCalculator.checkDependentStatus = function(opts) {
+  var otherIncome = opts.otherIncome || 0;
+  var incomeLimit = opts.isWageOnly ? 50000000 : 34000000;
+  if (otherIncome > incomeLimit) { return { isEligible: false, reason: "소득초과: 종합소득 " + otherIncome.toLocaleString() + "원으로 피부양자 자격 상실 (기준 " + incomeLimit.toLocaleString() + "원)" }; }
+  if (opts.isPropertyOwner) { return { isEligible: false, reason: "재산보유: 재산세 과세대상 재산 보유로 피부양자 자격 상실 가능" }; }
+  return { isEligible: true, reason: "✅ 피부양자 자격 유지" };
+};
