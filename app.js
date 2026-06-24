@@ -325,13 +325,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function parseTaxData(text) {
     const clean = text.replace(/\s+/g, ' ');
+    // 국세청 PDF 서식 대응 — 패턴을 관대하게
     const patterns = [
-      { key: 'totalSalary',   regex: /(?:총급여액|총급여)\s*[:\s]*\[?([\d,]+)\]?/,     id: 'inc-h-salary' },
-      { key: 'creditCard',    regex: /(?:신용카드\s*사용액|신용카드)\s*[:\s]*\[?([\d,]+)\]?/, id: 'inc-h-card' },
-      { key: 'pension',       regex: /(?:연금저축|연금계좌)\s*[:\s]*\[?([\d,]+)\]?/,      id: 'inc-h-pension' },
-      { key: 'medical',       regex: /(?:의료비\s*지출액|의료비)\s*[:\s]*\[?([\d,]+)\]?/,   id: null },
-      { key: 'insurance',     regex: /(?:보장성보험료|보험료)\s*[:\s]*\[?([\d,]+)\]?/,      id: null },
-      { key: 'education',     regex: /(?:교육비)\s*[:\s]*\[?([\d,]+)\]?/,                  id: null },
+      // 총급여: "총급여액 70,000,000" / "총급여 70,000,000" / "총급여액\n70,000,000" 
+      { key: 'totalSalary',   regex: /총급여(?:액)?\s*[:\s]*(?:￦|원)?\s*\[?\s*([\d,]+)\s*\]?/, id: 'inc-h-salary' },
+      // 신용카드: "신용카드사용액" 붙여쓰기 대응
+      { key: 'creditCard',    regex: /신용카드\s*사용액\s*[:\s]*(?:￦|원)?\s*\[?\s*([\d,]+)\s*\]?/, id: 'inc-h-card' },
+      // 체크카드/현금
+      { key: 'cashReceipt',   regex: /(?:체크카드|현금영수증|직불카드)\s*(?:사용액)?\s*[:\s]*(?:￦|원)?\s*\[?\s*([\d,]+)\s*\]?/, id: null },
+      // 연금저축
+      { key: 'pension',       regex: /연금(?:저축|계좌)\s*(?:납입액)?\s*[:\s]*(?:￦|원)?\s*\[?\s*([\d,]+)\s*\]?/, id: 'inc-h-pension' },
+      // 의료비
+      { key: 'medical',       regex: /의료비\s*(?:지출액)?\s*[:\s]*(?:￦|원)?\s*\[?\s*([\d,]+)\s*\]?/, id: null },
+      // 보험료
+      { key: 'insurance',     regex: /(?:보장성\s*보험료|보험료)\s*[:\s]*(?:￦|원)?\s*\[?\s*([\d,]+)\s*\]?/, id: null },
+      // 교육비
+      { key: 'education',     regex: /교육비\s*(?:공제)?\s*[:\s]*(?:￦|원)?\s*\[?\s*([\d,]+)\s*\]?/, id: null },
+      // 주택자금
+      { key: 'housing',       regex: /주택자금\s*(?:공제)?\s*[:\s]*(?:￦|원)?\s*\[?\s*([\d,]+)\s*\]?/, id: null },
+      // 기부금
+      { key: 'donation',      regex: /기부금\s*[:\s]*(?:￦|원)?\s*\[?\s*([\d,]+)\s*\]?/, id: null },
     ];
     const result = {};
     for (const { key, regex, id } of patterns) {
@@ -367,7 +380,10 @@ document.addEventListener('DOMContentLoaded', () => {
         pdfStatus.innerHTML = `✅ PDF 분석 완료! <strong>${filledCount}개 항목</strong>이 자동 입력되었습니다. (총급여 ${parsedData.totalSalary.toLocaleString()}원, 카드 ${parsedData.creditCard.toLocaleString()}원 등)`;
         pdfStatus.style.color = 'var(--accent-secondary)';
       } else {
-        pdfStatus.innerHTML = '⚠️ 텍스트를 추출했으나 일치하는 항목이 없습니다. 암호(생년월일)가 걸린 PDF는 홈택스에서 암호 없이 재다운로드하세요.';
+        const preview = extractedText.replace(/\s+/g, ' ').substring(0, 200);
+        pdfStatus.innerHTML = `⚠️ 텍스트를 추출했으나 일치하는 항목이 없습니다.<br>
+          <span style="font-size:0.72rem;opacity:0.7;">추출된 텍스트 미리보기: "${preview}..."</span><br>
+          <span style="font-size:0.72rem;opacity:0.7;">PDF가 국세청 연말정산 간소화 PDF 또는 종합소득세 신고서인지 확인하세요. 암호(생년월일)가 걸려있으면 홈택스에서 재다운로드 후 시도해 주세요.</span>`;
         pdfStatus.style.color = 'var(--accent-warning)';
       }
     } catch (err) {
