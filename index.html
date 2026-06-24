@@ -248,7 +248,7 @@
       </div>
 
       <!-- Right Area: 통합 절세 리포트 출력 -->
-      <div class="result-card" id="inc-result-card" style="display:none;">
+      <div class="result-card" id="inc-result-card">
         <h2 class="card-title">🏆 종합 절세 통합 리포트</h2>
         
         <!-- 개별 결정세액 리포트 -->
@@ -327,7 +327,9 @@
 
         <!-- AI 절세 개선 추천 카드 리스트 -->
         <h3 class="card-title" style="font-size:1.1rem; margin-bottom:10px;">💡 맞춤형 절세 추가 가이드</h3>
-        <div class="advice-card-list" id="income-advice-list" style="display:grid; grid-template-columns:1fr; gap:10px;"></div>
+        <div class="advice-card-list-wrap">
+          <div class="advice-card-list" id="income-advice-list" style="display:grid; gap:10px;"></div>
+        </div>
       </div>
       
       <!-- 부가가치세 계산기 -->
@@ -378,7 +380,9 @@
             <div class="result-item"><span>매입 및 의제매입 공제</span><span id="vat-res-purchases">0 원</span></div>
             <div class="result-item"><span>카드 발행 세액공제</span><span id="vat-res-card-credit">0 원</span></div>
             <div class="result-item highlight"><span>최종 납부할 부가세</span><span id="vat-res-total" class="accent">0 원</span></div>
-            <div class="advice-card-list" id="vat-advice-list" style="margin-top:1.5rem; display:grid; grid-template-columns:1fr; gap:10px;"></div>
+            <div class="advice-card-list-wrap" style="margin-top:1.5rem;">
+              <div class="advice-card-list" id="vat-advice-list" style="display:grid; gap:10px;"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -441,7 +445,9 @@
         <div class="result-item highlight"><span>총 세액 (지방세 포함)</span><span id="cap-res-total" class="warning">0 원</span></div>
         <div style="font-size:0.8rem; margin-top:10px; color:var(--accent-warning);" id="cap-res-warning"></div>
         
-        <div class="advice-card-list" id="capital-advice-list" style="margin-top:1.5rem; display:grid; grid-template-columns:1fr; gap:10px;"></div>
+        <div class="advice-card-list-wrap" style="margin-top:1.5rem;">
+          <div class="advice-card-list" id="capital-advice-list" style="display:grid; gap:10px;"></div>
+        </div>
       </div>
 
       <!-- 양도소득 명의 이전 절세 시뮬레이터 -->

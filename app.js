@@ -2,6 +2,17 @@
  * 메인 애플리케이션 UI 제어, 이벤트 바인딩 및 차트 렌더링 (배우자 1,2 금융소득 개별 연산 적용)
  */
 
+/**
+ * 디바운스 헬퍼 - 실시간 계산에 사용 (입력 후 delay ms 뒤에 fn 실행)
+ */
+function debounce(fn, delay = 400) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const parseVal = (idOrEl) => {
     const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
@@ -654,8 +665,6 @@ document.addEventListener('DOMContentLoaded', () => {
       // btnCalcIncomeIntegrated.click();
     });
 
-    // 결과 뷰 항상 활성화 (best가 없어도 개별 세금 리포트는 표시)
-    document.getElementById('inc-result-card').style.display = 'block';
   });
 
   // 2. 부가가치세 계산
@@ -792,6 +801,53 @@ document.addEventListener('DOMContentLoaded', () => {
   // Guard with isLoadingState flag to prevent save-during-load loops
   document.addEventListener('input', () => { if (!isLoadingState) saveStateToLocalStorage(); });
   document.addEventListener('change', () => { if (!isLoadingState) saveStateToLocalStorage(); });
+
+  // ==========================================
+  // ⚡ 실시간 계산 - 입력값 변경 시 자동 재계산 (디바운스 400ms)
+  // ==========================================
+  const debouncedIncome   = debounce(() => { if (!isLoadingState) btnCalcIncomeIntegrated.click(); });
+  const debouncedVat      = debounce(() => { if (!isLoadingState) btnCalcVat.click(); });
+  const debouncedCapital  = debounce(() => { if (!isLoadingState) btnCalcCapital.click(); });
+  const debouncedGiftSell = debounce(() => { if (!isLoadingState) btnCalcOptGs.click(); });
+
+  // 종합소득세 실시간
+  [
+    'inc-h-salary','inc-h-type','inc-h-card','inc-h-yellow','inc-h-pension',
+    'inc-h-financial-gen','inc-h-financial-overseas','inc-h-isa','inc-h-isa-type','inc-h-bond',
+    'inc-w-salary','inc-w-type','inc-w-card','inc-w-yellow','inc-w-pension',
+    'inc-w-financial-gen','inc-w-financial-overseas','inc-w-isa','inc-w-isa-type','inc-w-bond',
+    'inc-venture','inc-housing-sub','inc-housing-loan'
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.addEventListener('input', debouncedIncome); el.addEventListener('change', debouncedIncome); }
+  });
+  // 부양가족 카드 실시간 (동적 추가 포함)
+  optCoupleYePeople.addEventListener('input', debouncedIncome);
+  optCoupleYePeople.addEventListener('change', debouncedIncome);
+
+  // 부가가치세 실시간
+  [
+    'vat-type','vat-sales','vat-purchases','vat-business-type',
+    'vat-use-agri','vat-agri-amt','vat-use-cardsales','vat-cardsales-amt'
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.addEventListener('input', debouncedVat); el.addEventListener('change', debouncedVat); }
+  });
+
+  // 양도소득세 실시간
+  [
+    'capital-type','capital-purchase','capital-sell','capital-period','capital-houses',
+    'stock-type','stock-gain'
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.addEventListener('input', debouncedCapital); el.addEventListener('change', debouncedCapital); }
+  });
+
+  // 자산이전 시뮬레이터 실시간
+  ['opt-gs-type','opt-gs-purchase','opt-gs-current','opt-gs-years'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.addEventListener('input', debouncedGiftSell); el.addEventListener('change', debouncedGiftSell); }
+  });
 
   // 초기 실행 - use setTimeout to ensure DOM is fully settled after localStorage restore
   setTimeout(() => {

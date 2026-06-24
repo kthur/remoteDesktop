@@ -672,9 +672,77 @@ table {
     grid-template-columns: 1fr !important;
   }
 
-  /* Advice cards: single column on mobile */
+  /* ============================================================
+     📱 모바일 레이아웃: 결과 카드를 입력 카드 위로 끌어올리기
+     ============================================================ */
+  #tab-income.calculator-panel.active {
+    display: flex;
+    flex-direction: column;
+  }
+  /* 결과 카드: 최상단 (order 1) */
+  #tab-income.calculator-panel.active > #inc-result-card {
+    order: 1;
+  }
+  /* 입력 카드: 그 아래 (order 2) */
+  #tab-income.calculator-panel.active > .input-card:first-child {
+    order: 2;
+  }
+  /* VAT 카드: 맨 아래 (order 3) */
+  #tab-income.calculator-panel.active > .input-card:not(:first-child) {
+    order: 3;
+  }
+
+  /* ============================================================
+     📱 스와이프 어드바이스 카드 캐러셀
+     ============================================================ */
   .advice-card-list {
-    grid-template-columns: 1fr;
+    display: flex !important;
+    flex-direction: row !important;
+    grid-template-columns: unset !important;
+    overflow-x: auto;
+    overflow-y: visible;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 12px;
+    padding-bottom: 12px;
+    scrollbar-width: none;
+    /* 오른쪽 끝 여백으로 "더 있음" 암시 */
+    padding-right: 1.5rem;
+  }
+  .advice-card-list::-webkit-scrollbar {
+    display: none;
+  }
+  /* 스와이프 힌트: 오른쪽 끝 페이드 오버레이 */
+  .advice-card-list-wrap {
+    position: relative;
+    overflow: hidden;
+  }
+  .advice-card-list-wrap::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 12px;
+    width: 48px;
+    background: linear-gradient(to right, transparent, var(--card-bg-dark));
+    pointer-events: none;
+  }
+  body.light-mode .advice-card-list-wrap::after {
+    background: linear-gradient(to right, transparent, var(--card-bg-light));
+  }
+
+  /* 각 어드바이스 카드: 스냅 아이템 */
+  .advice-card-list > .advice-card {
+    min-width: 82vw;
+    max-width: 82vw;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+
+  /* 어드바이스 빈 상태 메시지 */
+  .advice-card-list > div:not(.advice-card) {
+    min-width: 100%;
+    flex-shrink: 0;
   }
 
   /* Result items: allow wrap on small screens */
