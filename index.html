@@ -6,6 +6,11 @@
   <title>🇰🇷 대한민국 종합 절세 계산기 &amp; 시뮬레이터</title>
   <meta name="description" content="2025년 기준 종합소득세, 양도소득세, 부가가치세, 연말정산 계산 및 다인원 분배/증여세 절세 최적화 시뮬레이터를 제공합니다.">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="TAX NAVI">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="apple-touch-icon" href="favicon.svg">
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,10 +32,16 @@
           <p>종합소득세 &amp; 양도소득세 통합 절세 시뮬레이터</p>
         </div>
       </div>
-      <button class="theme-switch-btn" id="themeToggleBtn">
-        <span class="theme-icon">🌙</span>
-        <span class="theme-text">다크 모드</span>
-      </button>
+      <div class="header-actions">
+        <div class="privacy-badge" id="privacyBadge">
+          <span class="privacy-lock">🔒</span>
+          <span class="privacy-text">100% 브라우저 내 처리 · 데이터 전송 없음</span>
+        </div>
+        <button class="theme-switch-btn" id="themeToggleBtn">
+          <span class="theme-icon">🌙</span>
+          <span class="theme-text">다크 모드</span>
+        </button>
+      </div>
     </header>
 
     <!-- Navigation Tabs -->
@@ -574,6 +585,14 @@
   <script src="tax-calculator.js"></script>
   <script src="optimizer.js"></script>
   <script src="advisor.js"></script>
+  <script src="store.js"></script>
   <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').then(() => {
+        console.log('[SW] registered');
+      }).catch(() => {});
+    }
+  </script>
 </body>
 </html>

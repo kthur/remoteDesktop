@@ -1,0 +1,21 @@
+{
+  "name": "TAX NAVI — 대한민국 종합 절세 계산기",
+  "short_name": "TAX NAVI",
+  "description": "종합소득세, 양도소득세, 부가가치세, 연말정산 계산 및 맞벌이 부부 절세 최적화 시뮬레이터",
+  "start_url": "/tax_calculator/",
+  "scope": "/tax_calculator/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#6c63ff",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity"],
+  "lang": "ko-KR"
+}
