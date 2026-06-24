@@ -64,6 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
     el.value = formatNumberWithCommas(val);
   };
 
+  // Flag to prevent save-during-load loop
+  let isLoadingState = false;
+
   // Local Storage Save & Load logic
   function saveStateToLocalStorage() {
     const state = {
@@ -107,6 +110,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const state = JSON.parse(savedStr);
       if (!state) return;
 
+      // Set flag to prevent save-during-load loop
+      isLoadingState = true;
+
       // Restore static elements
       if (state.statics) {
         for (const id in state.statics) {
@@ -114,9 +120,26 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!el) continue;
           if (el.type === 'checkbox' || el.type === 'radio') {
             el.checked = state.statics[id];
-            el.dispatchEvent(new Event('change'));
+            // Directly apply UI changes without dispatching events to avoid save loop
+            if (id === 'vat-use-agri') {
+              groupAgriAmt.style.display = el.checked ? 'block' : 'none';
+            } else if (id === 'vat-use-cardsales') {
+              groupCardSalesAmt.style.display = el.checked ? 'block' : 'none';
+            }
           } else {
             el.value = state.statics[id];
+            // Directly apply UI state for selects
+            if (id === 'vat-type') {
+              groupBusinessType.style.display = el.value === 'simplified' ? 'block' : 'none';
+            } else if (id === 'capital-type') {
+              if (el.value === 'real_estate') {
+                formRealEstate.style.display = 'block';
+                formStock.style.display = 'none';
+              } else {
+                formRealEstate.style.display = 'none';
+                formStock.style.display = 'block';
+              }
+            }
           }
         }
       }
@@ -191,6 +214,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     } catch (e) {
       console.error("Error loading state from localStorage", e);
+    } finally {
+      // Always clear the loading flag
+      isLoadingState = false;
     }
   }
 
@@ -628,7 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // btnCalcIncomeIntegrated.click();
     });
 
-    // 결과 뷰 활성화
+    // 결과 뷰 항상 활성화 (best가 없어도 개별 세금 리포트는 표시)
     document.getElementById('inc-result-card').style.display = 'block';
   });
 
@@ -763,14 +789,17 @@ document.addEventListener('DOMContentLoaded', () => {
   loadStateFromLocalStorage();
 
   // Bind auto-save listeners on all inputs/selects
-  document.addEventListener('input', saveStateToLocalStorage);
-  document.addEventListener('change', saveStateToLocalStorage);
+  // Guard with isLoadingState flag to prevent save-during-load loops
+  document.addEventListener('input', () => { if (!isLoadingState) saveStateToLocalStorage(); });
+  document.addEventListener('change', () => { if (!isLoadingState) saveStateToLocalStorage(); });
 
-  // 초기 실행
-  btnCalcIncomeIntegrated.click();
-  btnCalcVat.click();
-  btnCalcCapital.click();
-  btnCalcOptGs.click();
+  // 초기 실행 - use setTimeout to ensure DOM is fully settled after localStorage restore
+  setTimeout(() => {
+    btnCalcIncomeIntegrated.click();
+    btnCalcVat.click();
+    btnCalcCapital.click();
+    btnCalcOptGs.click();
+  }, 0);
 });
 
 function renderAdvice(containerId, adviceList, actionCallback) {
