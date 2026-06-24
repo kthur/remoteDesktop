@@ -34,13 +34,13 @@
     </header>
 
     <!-- Navigation Tabs -->
-    <nav class="tab-navigation">
-      <button class="tab-btn active" data-tab="income">종합소득세</button>
-      <button class="tab-btn" data-tab="capital">양도소득세</button>
+    <nav class="tab-navigation" role="tablist" aria-label="세금 계산기 탭">
+      <button class="tab-btn active" data-tab="income" role="tab" aria-selected="true" aria-controls="tab-income">종합소득세</button>
+      <button class="tab-btn" data-tab="capital" role="tab" aria-selected="false" aria-controls="tab-capital">양도소득세</button>
     </nav>
 
     <!-- ==================== 1. 종합소득세 대분류 탭 ==================== -->
-    <section class="calculator-panel active" id="tab-income">
+    <section class="calculator-panel active" id="tab-income" role="tabpanel" aria-label="종합소득세">
       <!-- Left Area: 통합 입력 폼 -->
       <div class="input-card">
         <h2 class="card-title">💵 종합소득세 &amp; 연말정산 통합 입력</h2>
@@ -389,7 +389,7 @@
     </section>
 
     <!-- ==================== 2. 양도소득세 대분류 탭 ==================== -->
-    <section class="calculator-panel" id="tab-capital">
+    <section class="calculator-panel" id="tab-capital" role="tabpanel" aria-label="양도소득세">
       <div class="input-card">
         <h2 class="card-title">🏠 부동산 &amp; 주식 양도소득세</h2>
         <div class="form-group">
@@ -486,6 +486,7 @@
           </div>
         </div>
       </div>
+    </section>
   </div>
 
   <!-- Disclaimer Footer -->

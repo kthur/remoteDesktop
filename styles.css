@@ -540,6 +540,17 @@ body.light-mode .opt-tab-btn {
   background: rgba(0, 0, 0, 0.03);
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
+
+/* 비교 차트 light-mode 대응 */
+body.light-mode #visual-tax-comparison {
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+body.light-mode #visual-tax-comparison h5 {
+  color: #0f172a !important;
+}
+body.light-mode #visual-tax-comparison div > div > span:first-child {
+  color: #475569 !important;
+}
 .opt-tab-btn.active {
   background: var(--accent-secondary);
   color: #0f172a;

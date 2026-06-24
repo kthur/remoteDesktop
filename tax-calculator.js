@@ -120,8 +120,8 @@ const TaxCalculator = {
     const isaOverLimitAmount = Math.max(0, isaIncome - isaLimit);
     const isaSeparatedTax = Math.floor(isaOverLimitAmount * 0.09); // 9.9% 분리과세 (지방세 0.9% 제외 원세 9%)
 
-    // 장기채권 30% 분리과세 세액
-    const bondSeparatedTax = Math.floor(bondSeparated * 0.30);
+    // 장기채권 30% 분리과세 세액 (지방세 10% 제외한 원천세 27.27%, 지방세는 localTax에서 합산)
+    const bondSeparatedTax = Math.floor(bondSeparated * (30 / 110));
 
     // 종합과세 대상 금융소득 판별
     // 일반 국내 이자/배당 + 해외 이자/배당 합산액 기준
@@ -204,7 +204,7 @@ const TaxCalculator = {
       const gain = Math.max(0, sellPrice - finalPurchasePrice);
       if (gain <= 0) return { gain: 0, tax: 0, localTax: 0, totalTax: 0, warningMsg };
 
-      if (houseCount === 1 && sellPrice <= 1200000000) {
+      if (houseCount === 1 && sellPrice <= 1200000000 && holdingPeriodMonths >= 24) {
         return { gain, tax: 0, localTax: 0, totalTax: 0, isNonTaxable: true, warningMsg };
       }
 

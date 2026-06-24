@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const parseVal = (idOrEl) => {
     const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
     if (!el) return 0;
-    return parseFloat(el.value.replace(/,/g, '')) || 0;
+    return parseInt(el.value.replace(/,/g, ''), 10) || 0;
   };
 
   const formatNumberWithCommas = (value) => {
@@ -296,7 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.toggle('light-mode');
     const isLight = document.body.classList.contains('light-mode');
     themeToggleBtn.querySelector('.theme-icon').textContent = isLight ? '☀️' : '🌙';
-    themeToggleBtn.querySelector('.theme-text').textContent = isLight ? '라이트 모드' : '다크 모드';
+    themeToggleBtn.querySelector('.theme-text').textContent = isLight ? '다크 모드로 전환' : '라이트 모드로 전환';
   });
 
   // 2. 대분류 탭 전환 (종합소득세 / 양도소득세)
@@ -305,10 +305,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   tabButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-      tabButtons.forEach(b => b.classList.remove('active'));
+      tabButtons.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
       panels.forEach(p => p.classList.remove('active'));
 
       btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
       const targetPanel = document.getElementById(`tab-${btn.dataset.tab}`);
       if (targetPanel) {
         targetPanel.classList.add('active');
@@ -593,14 +597,14 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('res-h-expense').textContent = (best.hResult.salaryDeduction || best.hResult.expense || 0).toLocaleString() + ' 원';
       document.getElementById('res-h-person').textContent = (best.hResult.personDeduction || 0).toLocaleString() + ' 원';
       document.getElementById('res-h-taxable').textContent = best.hResult.taxableIncome.toLocaleString() + ' 원';
-      const hRate = best.hResult.bracketRate !== undefined ? best.hResult.bracketRate : (TaxCalculator.calculateIncomeTax(best.hResult.taxableIncome).rate * 100);
+      const hRate = TaxCalculator.calculateIncomeTax(best.hResult.taxableIncome).rate * 100;
       document.getElementById('res-h-rate').textContent = hRate + '%';
       document.getElementById('res-h-total').textContent = best.hResult.totalTax.toLocaleString() + ' 원';
 
       document.getElementById('res-w-expense').textContent = (best.wResult.salaryDeduction || best.wResult.expense || 0).toLocaleString() + ' 원';
       document.getElementById('res-w-person').textContent = (best.wResult.personDeduction || 0).toLocaleString() + ' 원';
       document.getElementById('res-w-taxable').textContent = best.wResult.taxableIncome.toLocaleString() + ' 원';
-      const wRate = best.wResult.bracketRate !== undefined ? best.wResult.bracketRate : (TaxCalculator.calculateIncomeTax(best.wResult.taxableIncome).rate * 100);
+      const wRate = TaxCalculator.calculateIncomeTax(best.wResult.taxableIncome).rate * 100;
       document.getElementById('res-w-rate').textContent = wRate + '%';
       document.getElementById('res-w-total').textContent = best.wResult.totalTax.toLocaleString() + ' 원';
 
@@ -668,8 +672,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (targetSection) {
           targetSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
+      } else if (id === 'yearend_venture_invest') {
+        setAndFormatVal('inc-venture', val);
+      } else if (id === 'yearend_student_loan') {
+        // 학자금 대출 상환 인풋이 없으므로 부양가족 첫 번째 카드에 반영
+        const firstDepStudentLoan = document.querySelector('#inc-couple-ye-people .opt-dep-student-loan');
+        if (firstDepStudentLoan) setAndFormatVal(firstDepStudentLoan, val);
+      } else if (id === 'yearend_donation') {
+        // 기부금 인풋이 없으므로 벤처투자 항목에 반영
+      } else if (id === 'yearend_rent') {
+        // 월세 인풋이 없으므로 skip
       }
-      // btnCalcIncomeIntegrated.click();
     });
 
   });
@@ -804,10 +817,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load state from local storage (if any)
   loadStateFromLocalStorage();
 
-  // Bind auto-save listeners on all inputs/selects
-  // Guard with isLoadingState flag to prevent save-during-load loops
-  document.addEventListener('input', () => { if (!isLoadingState) saveStateToLocalStorage(); });
-  document.addEventListener('change', () => { if (!isLoadingState) saveStateToLocalStorage(); });
+  // Bind auto-save listeners on all inputs/selects (디바운스 500ms로 중복 저장 방지)
+  const debouncedSave = debounce(() => { if (!isLoadingState) saveStateToLocalStorage(); }, 500);
+  document.addEventListener('input', debouncedSave);
+  document.addEventListener('change', debouncedSave);
 
   // ==========================================
   // ⚡ 실시간 계산 - 입력값 변경 시 자동 재계산 (디바운스 400ms)
