@@ -695,6 +695,116 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    // ⑤ 💳 소비 네비게이션 — 남은 기간 카드 사용 추천
+    const hThreshold = Math.floor(hSalary * 0.25);
+    const wThreshold = Math.floor(wSalary * 0.25);
+    const hCardLimit = hSalary > 120000000 ? 2000000 : hSalary > 70000000 ? 2500000 : 3000000;
+    const wCardLimit = wSalary > 120000000 ? 2000000 : wSalary > 70000000 ? 2500000 : 3000000;
+    const hCardRemaining = Math.max(0, hCardLimit - Math.max(0, hCard - hThreshold));
+    const wCardRemaining = Math.max(0, wCardLimit - Math.max(0, wCard - wThreshold));
+    let navHtml = '';
+    if (hCard >= hThreshold + hCardLimit) {
+      navHtml += '<span style="color:var(--accent-secondary);">✅ 남편</span> 카드공제 한도 도달. ';
+    } else {
+      navHtml += `<span style="color:var(--accent-info);">📌 남편</span> 카드 ${Math.max(0, hThreshold + hCardLimit - hCard).toLocaleString()}원 추가 사용 시 최대 <strong>${hCardRemaining.toLocaleString()}원</strong> 공제 가능. `;
+    }
+    if (wCard >= wThreshold + wCardLimit) {
+      navHtml += '<span style="color:var(--accent-secondary);">✅ 아내</span> 카드공제 한도 도달.';
+    } else {
+      navHtml += `<span style="color:var(--accent-info);">📌 아내</span> 카드 ${Math.max(0, wThreshold + wCardLimit - wCard).toLocaleString()}원 추가 사용 시 최대 <strong>${wCardRemaining.toLocaleString()}원</strong> 공제 가능.`;
+    }
+    if (hCard < hThreshold && wCard < wThreshold) {
+      navHtml += '<br>💡 <strong>둘 다 문턱 미달.</strong> 소득이 높은 배우자(남편) 카드를 우선 사용하세요.';
+    } else if (hCard >= hThreshold + hCardLimit && wCard < wThreshold + wCardLimit) {
+      navHtml += '<br>💡 남편 한도 소진 → <strong>아내 카드</strong>를 추가 사용하세요.';
+    } else if (wCard >= wThreshold + wCardLimit && hCard < hThreshold + hCardLimit) {
+      navHtml += '<br>💡 아내 한도 소진 → <strong>남편 카드</strong>를 추가 사용하세요.';
+    }
+    document.getElementById('res-card-nav-content').innerHTML = navHtml;
+    document.getElementById('res-card-navigation').style.display = 'block';
+
+    // ⑥ 🏥 의료비 몰아주기 시각화
+    const totalMedical = dependents.reduce((s, d) => s + d.medical, 0);
+    if (totalMedical > 0) {
+      const hMedThreshold = Math.floor(hSalary * 0.03);
+      const wMedThreshold = Math.floor(wSalary * 0.03);
+      const hMedTax = Math.max(0, Math.floor((totalMedical - hMedThreshold) * 0.15));
+      const wMedTax = Math.max(0, Math.floor((totalMedical - wMedThreshold) * 0.15));
+      const maxMed = Math.max(hMedTax, wMedTax, 1);
+      document.getElementById('med-bar-h').style.width = (hMedTax / maxMed * 100) + '%';
+      document.getElementById('med-bar-w').style.width = (wMedTax / maxMed * 100) + '%';
+      document.getElementById('med-tax-h').textContent = hMedTax.toLocaleString() + ' 원';
+      document.getElementById('med-tax-w').textContent = wMedTax.toLocaleString() + ' 원';
+      if (hMedTax > wMedTax) {
+        document.getElementById('res-medical-desc').innerHTML = `🏆 <strong>남편 청구</strong>가 유리 (약 ${(hMedTax - wMedTax).toLocaleString()}원 차이) — 급여가 낮은 쪽이 문턱(3%)을 넘기 쉬워 공제 효과가 큽니다.`;
+      } else if (wMedTax > hMedTax) {
+        document.getElementById('res-medical-desc').innerHTML = `🏆 <strong>아내 청구</strong>가 유리 (약 ${(wMedTax - hMedTax).toLocaleString()}원 차이) — 급여가 낮은 쪽이 문턱(3%)을 넘기 쉬워 공제 효과가 큽니다.`;
+      } else {
+        document.getElementById('res-medical-desc').textContent = '⚖️ 의료비 공제 차이가 없습니다.';
+      }
+      document.getElementById('res-medical-comparison').style.display = 'block';
+    }
+
+    // ⑦ 📋 가족 통합 리포트 요약
+    const hDeduction = hResult.salaryDeduction || hResult.expense || 0;
+    const wDeduction = wResult.salaryDeduction || wResult.expense || 0;
+    const familySummary = `
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; text-align:center; margin:8px 0;">
+        <div style="background:rgba(255,255,255,0.05); padding:8px; border-radius:6px;">
+          <div style="font-size:0.7rem; opacity:0.7;">부부 합산 총급여</div>
+          <div style="font-weight:bold; font-size:1rem;">${(hSalary + wSalary).toLocaleString()} 원</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05); padding:8px; border-radius:6px;">
+          <div style="font-size:0.7rem; opacity:0.7;">최적화 합산 세액</div>
+          <div style="font-weight:bold; font-size:1rem; color:var(--accent-secondary);">${(best ? best.totalTax : hResult.totalTax + wResult.totalTax).toLocaleString()} 원</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05); padding:8px; border-radius:6px;">
+          <div style="font-size:0.7rem; opacity:0.7;">예상 절감액</div>
+          <div style="font-weight:bold; font-size:1rem; color:var(--accent-gold);">${(best ? optResult.savings : 0).toLocaleString()} 원</div>
+        </div>
+      </div>
+      <div style="font-size:0.78rem; opacity:0.7; line-height:1.5;">부양가족 ${dependents.length}명 · 남편 세율 ${hResult.bracketRate}% · 아내 세율 ${wResult.bracketRate}%<br>
+      소득공제 합계: ${(hDeduction + wDeduction).toLocaleString()}원 · 결정세액 합계: ${((best ? best.hResult.totalTax + best.wResult.totalTax : hResult.totalTax + wResult.totalTax)).toLocaleString()}원</div>
+    `;
+    document.getElementById('res-family-summary-content').innerHTML = familySummary;
+    document.getElementById('res-family-summary').style.display = 'block';
+  });
+
+  // 📤 리포트 복사하기
+  document.getElementById('btn-share-report').addEventListener('click', () => {
+    const summaryText = document.getElementById('res-family-summary-content').innerText;
+    const navText = document.getElementById('res-card-nav-content').innerText;
+    const totalText = `[TAX NAVI 가족 절세 리포트]\n\n${summaryText}\n\n[소비 네비게이션]\n${navText}\n\n👉 https://kthur.github.io/tax_calculator/`;
+    navigator.clipboard.writeText(totalText).then(() => {
+      const btn = document.getElementById('btn-share-report');
+      btn.textContent = '✅ 복사 완료!';
+      setTimeout(() => { btn.textContent = '📤 리포트 복사하기'; }, 2000);
+    }).catch(() => { alert('클립보드 복사에 실패했습니다. 직접 복사해 주세요.'); });
+  });
+
+  // 📅 10년 주기 증여 타임라인
+  document.getElementById('btn-calc-gift-timeline').addEventListener('click', () => {
+    const childName = document.getElementById('gift-child-name').value || '자녀';
+    const childAge = parseInt(document.getElementById('gift-child-age').value) || 0;
+    const timeline = [];
+    let age = childAge;
+    const limits = [
+      { maxAge: 19, limit: 20000000, label: '미성년자 증여한도' },
+      { maxAge: Infinity, limit: 50000000, label: '성인 증여한도' }
+    ];
+    while (age < 60) {
+      const bracket = limits.find(l => age < l.maxAge) || limits[1];
+      timeline.push({ age, limit: bracket.limit, label: bracket.label });
+      age += 10;
+    }
+    let html = `<strong>${childName}</strong> 님 비과세 증여 플랜 (10년 주기 리셋)<br><br>`;
+    timeline.forEach((item, i) => {
+      html += `<span style="display:inline-block; width:20px; height:20px; border-radius:50%; background:var(--accent-secondary); text-align:center; line-height:20px; font-size:0.7rem; color:#0f172a; margin-right:6px;">${i + 1}</span>`;
+      html += `<strong>만 ${item.age}세</strong> → ${item.limit.toLocaleString()}원 ${item.label} <br>`;
+    });
+    html += `<br>💰 <strong>총 비과세 증여 가능액: ${timeline.reduce((s, t) => s + t.limit, 0).toLocaleString()}원</strong>`;
+    document.getElementById('gift-timeline-content').innerHTML = html;
+    document.getElementById('gift-timeline-result').style.display = 'block';
   });
 
   // 2. 부가가치세 계산

@@ -45,3 +45,12 @@ Vanilla JS single-page tax calculator. No framework, no build step, no test suit
 - ISA 서민형(`sub`) requires salary ≤₩50M (wage) or total income ≤₩38M — validation blocks calculation if violated
 - 해외주식 증여 시뮬레이션 결과에 부당행위계산부인 경고가 포함됨 (`gs-stock-warning` 토글)
 - Bond separate tax: `bondSeparatedTax = bondSeparated * (30/110)`, local tax (10%) is added separately at the end
+
+## Features added after reviewfix
+
+| Feature | Location | Description |
+|---|---|---|
+| 소비 네비게이션 | `index.html:286-292` / `app.js:698-719` | 카드공제 한도/문턱 기반으로 잔여 기간 사용처 추천 |
+| 의료비 몰아주기 시각화 | `index.html:295-312` / `app.js:721-739` | 남편 vs 아내 청구 시 공제액 막대그래프 비교 |
+| 증여 타임라인 | `index.html:493-510` / `app.js:753-772` | 10년 주기 비과세 증여 마스터플랜 생성 |
+| 통합 리포트 공유 | `index.html:315-323` / `app.js:741-751` | 가족 합산 요약 리포트 클립보드 복사 |

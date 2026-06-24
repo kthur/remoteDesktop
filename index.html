@@ -282,7 +282,42 @@
             </div>
           </div>
         </div>
-        
+
+        <!-- 💳 소비 네비게이션 -->
+        <div id="res-card-navigation" style="display:none; margin-bottom:1.5rem; background:rgba(56,189,248,0.08); padding:1rem; border-radius:8px; border-left:4px solid var(--accent-info);">
+          <h4 style="font-weight:700; margin-bottom:8px; font-size:0.9rem;">💳 연말 소비 네비게이션</h4>
+          <div id="res-card-nav-content" style="font-size:0.82rem; line-height:1.5;"></div>
+        </div>
+
+        <!-- 🏥 의료비 몰아주기 시각화 -->
+        <div id="res-medical-comparison" style="display:none; margin-bottom:1.5rem; background:rgba(255,107,107,0.06); padding:1rem; border-radius:8px; border-left:4px solid var(--accent-warning);">
+          <h4 style="font-weight:700; margin-bottom:8px; font-size:0.9rem;">🏥 의료비 몰아주기 비교</h4>
+          <div id="res-medical-chart" style="display:flex; gap:15px; align-items:flex-end; margin-top:8px;">
+            <div style="flex:1; text-align:center;">
+              <div style="font-size:0.75rem; margin-bottom:4px; color:var(--accent-primary);">남편 청구</div>
+              <div style="background:rgba(255,255,255,0.08); height:8px; border-radius:4px; overflow:hidden;">
+                <div id="med-bar-h" style="background:var(--accent-primary); width:50%; height:100%; transition:width 0.5s;"></div>
+              </div>
+              <div id="med-tax-h" style="font-size:0.78rem; font-weight:bold; margin-top:4px;">0 원</div>
+            </div>
+            <div style="flex:1; text-align:center;">
+              <div style="font-size:0.75rem; margin-bottom:4px; color:var(--accent-secondary);">아내 청구</div>
+              <div style="background:rgba(255,255,255,0.08); height:8px; border-radius:4px; overflow:hidden;">
+                <div id="med-bar-w" style="background:var(--accent-secondary); width:50%; height:100%; transition:width 0.5s;"></div>
+              </div>
+              <div id="med-tax-w" style="font-size:0.78rem; font-weight:bold; margin-top:4px;">0 원</div>
+            </div>
+          </div>
+          <div id="res-medical-desc" style="font-size:0.78rem; margin-top:8px; opacity:0.8;"></div>
+        </div>
+
+        <!-- 📋 가족 통합 리포트 요약 -->
+        <div id="res-family-summary" style="display:none; margin-bottom:1.5rem; background:rgba(255,217,61,0.06); padding:1rem; border-radius:8px; border-left:4px solid var(--accent-gold);">
+          <h4 style="font-weight:700; margin-bottom:6px; font-size:0.9rem;">📋 우리 가족 절세 통합 리포트</h4>
+          <div id="res-family-summary-content" style="font-size:0.82rem; line-height:1.6;"></div>
+          <button id="btn-share-report" style="margin-top:10px; padding:8px 14px; background:var(--accent-gold); color:#0f172a; border:none; border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer;">📤 리포트 복사하기</button>
+        </div>
+
         <!-- 개별 결정세액 리포트 -->
         <div class="grid-2col" style="display:grid; gap:15px; margin-bottom:1.5rem;">
           <div style="background:rgba(108,99,255,0.05); padding:12px; border-radius:8px;">
@@ -447,6 +482,28 @@
         
         <div class="advice-card-list-wrap" style="margin-top:1.5rem;">
           <div class="advice-card-list" id="capital-advice-list" style="display:grid; gap:10px;"></div>
+        </div>
+      </div>
+
+      <!-- 🎁 10년 주기 가족 증여 타임라인 -->
+      <div class="input-card" style="grid-column: 1 / -1; margin-top: 1.5rem;">
+        <h2 class="card-title">📅 10년 주기 가족 증여 타임라인</h2>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+          <div>
+            <div class="form-group">
+              <label>자녀 이름</label>
+              <input type="text" id="gift-child-name" class="form-input" value="첫째" placeholder="예: 첫째">
+            </div>
+            <div class="form-group">
+              <label>자녀 현재 나이 (만)</label>
+              <input type="number" id="gift-child-age" class="form-input" value="5" min="0">
+            </div>
+            <button class="btn-primary" id="btn-calc-gift-timeline" style="margin-top:0.5rem;">🎯 증여 타임라인 분석</button>
+          </div>
+          <div style="background:rgba(0,212,170,0.05); padding:1rem; border-radius:8px; display:none;" id="gift-timeline-result">
+            <h4 style="font-weight:700; font-size:0.85rem; margin-bottom:8px;">📅 비과세 증여 마스터플랜</h4>
+            <div id="gift-timeline-content" style="font-size:0.82rem; line-height:1.6;"></div>
+          </div>
         </div>
       </div>
 
