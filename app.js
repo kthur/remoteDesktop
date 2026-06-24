@@ -306,58 +306,74 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.files.length > 0) processPDF(e.target.files[0]);
   });
 
+  async function extractTextFromPDF(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      fullText += textContent.items.map(item => item.str).join(' ') + '\n';
+    }
+    return fullText;
+  }
+
+  function parseTaxData(text) {
+    const clean = text.replace(/\s+/g, ' ');
+    const patterns = [
+      { key: 'totalSalary',   regex: /(?:총급여액|총급여)\s*[:\s]*\[?([\d,]+)\]?/,     id: 'inc-h-salary' },
+      { key: 'creditCard',    regex: /(?:신용카드\s*사용액|신용카드)\s*[:\s]*\[?([\d,]+)\]?/, id: 'inc-h-card' },
+      { key: 'pension',       regex: /(?:연금저축|연금계좌)\s*[:\s]*\[?([\d,]+)\]?/,      id: 'inc-h-pension' },
+      { key: 'medical',       regex: /(?:의료비\s*지출액|의료비)\s*[:\s]*\[?([\d,]+)\]?/,   id: null },
+      { key: 'insurance',     regex: /(?:보장성보험료|보험료)\s*[:\s]*\[?([\d,]+)\]?/,      id: null },
+      { key: 'education',     regex: /(?:교육비)\s*[:\s]*\[?([\d,]+)\]?/,                  id: null },
+    ];
+    const result = {};
+    for (const { key, regex, id } of patterns) {
+      const match = clean.match(regex);
+      const val = match ? parseInt(match[1].replace(/,/g, ''), 10) : 0;
+      result[key] = val;
+      if (id && val > 0) {
+        const el = document.getElementById(id);
+        if (el) { el.value = String(val); el.style.background = 'rgba(0,212,170,0.15)'; }
+      }
+    }
+    return result;
+  }
+
   async function processPDF(file) {
     if (file.type !== 'application/pdf') { alert('PDF 파일만 업로드 가능합니다.'); return; }
     pdfStatus.style.display = 'block';
-    pdfStatus.innerHTML = '⏳ PDF 분석 중...';
+    pdfStatus.innerHTML = '⏳ PDF 텍스트 추출 중...';
+    pdfStatus.style.color = '';
     try {
-      const buffer = await file.arrayBuffer();
-      const typedarray = new Uint8Array(buffer);
-      const pdfjsLib = window.pdfjsLib;
-      if (!pdfjsLib) { pdfStatus.innerHTML = '❌ PDF 라이브러리를 불러올 수 없습니다. 인터넷 연결을 확인하세요.'; return; }
-      const pdf = await pdfjsLib.getDocument(typedarray).promise;
-      let extractedText = '';
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const tc = await page.getTextContent();
-        extractedText += tc.items.map(item => item.str).join(' ') + '\n';
+      if (!window.pdfjsLib) {
+        pdfStatus.innerHTML = '❌ PDF 라이브러리를 불러올 수 없습니다. 인터넷 연결을 확인하세요.';
+        pdfStatus.style.color = 'var(--accent-warning)';
+        return;
       }
-      const filled = parseAndFillFields(extractedText);
-      if (filled > 0) {
-        pdfStatus.innerHTML = `✅ PDF 분석 완료! <strong>${filled}개 항목</strong>이 자동 입력되었습니다. 값을 확인해 주세요.`;
+      const extractedText = await extractTextFromPDF(file);
+      const parsedData = parseTaxData(extractedText);
+      const filledCount = Object.values(parsedData).filter(v => v > 0).length;
+      if (filledCount > 0) {
+        document.querySelectorAll('.money-input').forEach(el => {
+          if (el.value) el.value = formatNumberWithCommas(el.value);
+        });
+        pdfStatus.innerHTML = `✅ PDF 분석 완료! <strong>${filledCount}개 항목</strong>이 자동 입력되었습니다. (총급여 ${parsedData.totalSalary.toLocaleString()}원, 카드 ${parsedData.creditCard.toLocaleString()}원 등)`;
         pdfStatus.style.color = 'var(--accent-secondary)';
-        document.querySelectorAll('.money-input').forEach(el => { if (el.value) el.value = formatNumberWithCommas(el.value); });
       } else {
-        pdfStatus.innerHTML = '⚠️ 텍스트를 추출했으나 인식된 세금 항목이 없습니다. 암호가 없는 PDF인지 확인해 주세요.';
+        pdfStatus.innerHTML = '⚠️ 텍스트를 추출했으나 일치하는 항목이 없습니다. 암호(생년월일)가 걸린 PDF는 홈택스에서 암호 없이 재다운로드하세요.';
         pdfStatus.style.color = 'var(--accent-warning)';
       }
     } catch (err) {
       console.error(err);
-      pdfStatus.innerHTML = '❌ PDF를 읽을 수 없습니다. 암호(생년월일)가 걸려있다면 홈택스에서 암호 없이 재다운로드하세요.';
+      if (err.name === 'PasswordException') {
+        pdfStatus.innerHTML = '🔒 암호가 걸린 PDF입니다. 홈택스에서 "암호 설정" 체크를 해제하고 다시 다운로드해 주세요.';
+      } else {
+        pdfStatus.innerHTML = '❌ PDF를 읽을 수 없습니다. 파일이 손상되지 않았는지 확인해 주세요.';
+      }
       pdfStatus.style.color = 'var(--accent-warning)';
     }
-  }
-
-  function parseAndFillFields(text) {
-    const clean = text.replace(/\s+/g, ' ');
-    let count = 0;
-    const mappings = [
-      [/총급여액\s*:?\s*\[?([\d,]+)\]?/, 'inc-h-salary'],
-      [/종합소득금액\s*:?\s*\[?([\d,]+)\]?/, 'inc-h-salary'],
-      [/신용카드\s*사용액\s*:?\s*\[?([\d,]+)\]?/, 'inc-h-card'],
-      [/연금저축\s*(?:납입액|계약)\s*:?\s*\[?([\d,]+)\]?/, 'inc-h-pension'],
-      [/(?:보장성\s*보험료|보험료)\s*:?\s*\[?([\d,]+)\]?/, null],
-      [/의료비\s*:?\s*\[?([\d,]+)\]?/, null],
-      [/교육비\s*:?\s*\[?([\d,]+)\]?/, null]
-    ];
-    for (const [regex, id] of mappings) {
-      const match = clean.match(regex);
-      if (match && id) {
-        const el = document.getElementById(id);
-        if (el) { el.value = match[1].replace(/,/g, ''); el.style.background = 'rgba(0,212,170,0.15)'; count++; }
-      }
-    }
-    return count;
   }
 
   // 1. 테마 토글
