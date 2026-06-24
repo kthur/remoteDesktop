@@ -585,7 +585,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('comp-opt-bar').style.width = '0%';
       }
     }
-  });
 
     // ④ AI 절세 추천 연동
     const advice = TaxAdvisor.getIncomeTaxAdvice({
@@ -626,7 +625,7 @@ document.addEventListener('DOMContentLoaded', () => {
           targetSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       }
-      btnCalcIncomeIntegrated.click();
+      // btnCalcIncomeIntegrated.click();
     });
 
     // 결과 뷰 활성화
@@ -671,7 +670,7 @@ document.addEventListener('DOMContentLoaded', () => {
         checkUseCardSales.dispatchEvent(new Event('change'));
         setAndFormatVal('vat-cardsales-amt', 20000000);
       }
-      btnCalcVat.click();
+      // btnCalcVat.click();
     });
   });
 
@@ -710,7 +709,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAdvice('capital-advice-list', advice, (id, val) => {
       if (id === 'real_estate_hold' || id === 'real_estate_special') {
         document.getElementById('capital-period').value = val;
-        btnCalcCapital.click();
+        // btnCalcCapital.click();
       }
     });
   });
