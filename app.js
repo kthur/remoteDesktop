@@ -829,9 +829,12 @@ document.addEventListener('DOMContentLoaded', () => {
       bIsaIncome: parseVal("inc-b-isa"),
       bIsaType: document.getElementById("inc-b-isa-type").value,
       bBondSeparated: parseVal("inc-b-bond"),
-      ventureInvestment: parseVal("inc-venture"),
-      housingSubscription: parseVal("inc-housing-sub"),
-      housingLoanRepay: parseVal("inc-housing-loan")
+      aVentureInvestment: parseVal("inc-a-venture"),
+      aHousingSubscription: parseVal("inc-a-housing-sub"),
+      aHousingLoanRepay: parseVal("inc-a-housing-loan"),
+      bVentureInvestment: parseVal("inc-b-venture"),
+      bHousingSubscription: parseVal("inc-b-housing-sub"),
+      bHousingLoanRepay: parseVal("inc-b-housing-loan")
     };
   }
 
@@ -842,7 +845,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const allNonNeg = [d.aCard, d.bCard, d.aYellow, d.bYellow, d.aPension, d.bPension,
       d.aFinancialGen, d.aFinancialOverseas, d.aIsaIncome, d.aBondSeparated,
       d.bFinancialGen, d.bFinancialOverseas, d.bIsaIncome, d.bBondSeparated,
-      d.ventureInvestment, d.housingSubscription, d.housingLoanRepay];
+      d.aVentureInvestment, d.aHousingSubscription, d.aHousingLoanRepay,
+      d.bVentureInvestment, d.bHousingSubscription, d.bHousingLoanRepay];
     if (allNonNeg.some(v => v < 0)) { alert("모든 입력금액은 0원 이상이어야 합니다."); return false; }
     return true;
   }
@@ -888,7 +892,7 @@ document.addEventListener('DOMContentLoaded', () => {
       isaIncome: isA ? d.aIsaIncome : d.bIsaIncome,
       isaType: isA ? d.aIsaType : d.bIsaType,
       bondSeparated: isA ? d.aBondSeparated : d.bBondSeparated,
-      ventureInvestment: isA ? d.ventureInvestment : 0
+      ventureInvestment: isA ? d.aVentureInvestment : d.bVentureInvestment
     };
   }
 
@@ -910,10 +914,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function runOptimizerAndRender(d, dependents) {
     const personAOptData = {
       salary: d.aSalary, card: d.aCard, cash: 0, pension: d.aPension, irp: d.aIrp, SME: false,
-      housingSubscription: d.housingSubscription, housingLoanRepay: d.housingLoanRepay, ventureInvestment: d.ventureInvestment
+      housingSubscription: d.aHousingSubscription, housingLoanRepay: d.aHousingLoanRepay, ventureInvestment: d.aVentureInvestment
     };
     const personBOptData = {
-      salary: d.bSalary, card: d.bCard, cash: 0, pension: d.bPension, irp: d.bIrp, SME: false
+      salary: d.bSalary, card: d.bCard, cash: 0, pension: d.bPension, irp: d.bIrp, SME: false,
+      housingSubscription: d.bHousingSubscription, housingLoanRepay: d.bHousingLoanRepay, ventureInvestment: d.bVentureInvestment
     };
     const optResult = TaxOptimizer.optimizeCoupleYearEnd({ personA: personAOptData, personB: personBOptData, dependents });
     const best = optResult.best;
@@ -947,16 +952,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const incomeAdvice = TaxAdvisor.getIncomeTaxAdvice({
       totalIncome: d.aSalary, expense: d.aType === "business" ? d.aSalary * 0.3 : 0, incomeType: d.aType,
       yellowUmbrella: d.aYellow, pensionSavings: d.aPension, financialGeneral: d.aFinancialGen,
-      financialOverseas: d.aFinancialOverseas, isaIncome: d.aIsaIncome, isaType: d.aIsaType, bondSeparated: d.aBondSeparated, ventureInvestment: d.ventureInvestment
+      financialOverseas: d.aFinancialOverseas, isaIncome: d.aIsaIncome, isaType: d.aIsaType, bondSeparated: d.aBondSeparated, ventureInvestment: d.aVentureInvestment
     }, aResult);
     const yearEndAdvice = TaxAdvisor.getYearEndAdvice({
       totalSalary: d.aSalary, pensionSavings: d.aPension, irpSavings: 0,
-      monthlyRent: 0, studentLoanRepay: 0, localDonation: 0, ventureInvestment: d.ventureInvestment
+      monthlyRent: 0, studentLoanRepay: 0, localDonation: 0, ventureInvestment: d.aVentureInvestment
     }, { finalTax: aResult.totalTax });
     renderAdvice("income-advice-list", [...incomeAdvice, ...yearEndAdvice], (id, val) => {
       if (id === "income_yellow_umbrella") { setAndFormatVal("inc-a-yellow", val); }
       else if (id === "income_pension") { setAndFormatVal("inc-a-pension", val); }
-      else if (id === "income_venture_investment") { setAndFormatVal("inc-venture", val); }
+      else if (id === "income_venture_investment") { setAndFormatVal("inc-a-venture", val); }
       else if (id === "income_isa_switch") { setAndFormatVal("inc-a-isa", val); setAndFormatVal("inc-a-financial-gen", Math.max(0, d.aFinancialGen - val)); }
       else if (id === "income_financial_split") {
         const capitalTabBtn = document.querySelector('.tab-btn[data-tab="capital"]');
@@ -967,7 +972,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setAndFormatVal("opt-gs-purchase", val * 15);
         const targetSection = document.getElementById("opt-gs-type");
         if (targetSection) targetSection.scrollIntoView({ behavior: "smooth", block: "center" });
-      } else if (id === "yearend_venture_invest") { setAndFormatVal("inc-venture", val); }
+      } else if (id === "yearend_venture_invest") { setAndFormatVal("inc-a-venture", val); }
       else if (id === "yearend_student_loan") {
         const el = document.querySelector("#inc-couple-ye-people .opt-dep-student-loan");
         if (el) setAndFormatVal(el, val);
@@ -1488,7 +1493,8 @@ document.addEventListener('DOMContentLoaded', () => {
     'inc-a-financial-gen','inc-a-financial-overseas','inc-a-isa','inc-a-isa-type','inc-a-bond',
     'inc-b-salary','inc-b-type','inc-b-card','inc-b-yellow','inc-b-pension','inc-b-irp',
     'inc-b-financial-gen','inc-b-financial-overseas','inc-b-isa','inc-b-isa-type','inc-b-bond',
-    'inc-venture','inc-housing-sub','inc-housing-loan'
+    'inc-a-venture','inc-a-housing-sub','inc-a-housing-loan',
+    'inc-b-venture','inc-b-housing-sub','inc-b-housing-loan'
   ].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('input', debouncedIncome); el.addEventListener('change', debouncedIncome); }
