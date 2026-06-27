@@ -151,7 +151,7 @@
             </div>
 
             <!-- 배우자 A 금융소득 상세 설정 분리 -->
-            <div style="background: rgba(108,99,255,0.03); padding: 8px; border-radius: 6px; margin-top: 10px;">
+            <div style="background: var(--color-accent-sub-a); padding: 8px; border-radius: 6px; margin-top: 10px;">
               <h5 style="font-size:0.75rem; color:var(--accent-primary); margin-bottom:6px; font-weight:bold;">💰 배우자 A 금융소득</h5>
               <div class="form-group">
                 <label style="font-size:0.7rem;">국내 일반 이자/배당 <span class="tooltip-icon" data-tooltip="국내 금융기관의 이자소득과 배당소득 합계입니다. 2,000만 원 초과 시 금융소득종합과세 대상이 됩니다.">?</span></label>
@@ -181,7 +181,7 @@
             </div>
 
             <!-- 배우자 A 공제성 투자 & 주택자금 -->
-            <div style="background: rgba(108,99,255,0.03); padding: 8px; border-radius: 6px; margin-top: 10px;">
+            <div style="background: var(--color-accent-sub-a); padding: 8px; border-radius: 6px; margin-top: 10px;">
               <h5 style="font-size:0.75rem; color:var(--accent-primary); margin-bottom:6px; font-weight:bold;">🚀 배우자 A 공제성 투자 &amp; 주택자금</h5>
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px;">
                 <div class="form-group">
@@ -240,7 +240,7 @@
             </div>
 
             <!-- 배우자 B 금융소득 상세 설정 분리 -->
-            <div style="background: rgba(0,212,170,0.03); padding: 8px; border-radius: 6px; margin-top: 10px;">
+            <div style="background: var(--color-accent-sub-b); padding: 8px; border-radius: 6px; margin-top: 10px;">
               <h5 style="font-size:0.75rem; color:var(--accent-secondary); margin-bottom:6px; font-weight:bold;">💰 배우자 B 금융소득</h5>
               <div class="form-group">
                 <label style="font-size:0.7rem;">국내 일반 이자/배당 <span class="tooltip-icon" data-tooltip="국내 금융기관의 이자소득과 배당소득 합계입니다. 2,000만 원 초과 시 금융소득종합과세 대상이 됩니다.">?</span></label>
@@ -270,7 +270,7 @@
             </div>
 
             <!-- 배우자 B 공제성 투자 & 주택자금 -->
-            <div style="background: rgba(0,212,170,0.03); padding: 8px; border-radius: 6px; margin-top: 10px;">
+            <div style="background: var(--color-accent-sub-b); padding: 8px; border-radius: 6px; margin-top: 10px;">
               <h5 style="font-size:0.75rem; color:var(--accent-secondary); margin-bottom:6px; font-weight:bold;">🚀 배우자 B 공제성 투자 &amp; 주택자금</h5>
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px;">
                 <div class="form-group">
@@ -812,7 +812,7 @@
             </div>
             <button class="btn-primary" id="btn-calc-health-insurance">🎯 보험료 &amp; 피부양자 분석</button>
           </div>
-          <div style="background:rgba(255,255,255,0.02); padding:1.5rem; border-radius:12px; display:none;" id="hi-result">
+          <div style="background:var(--color-surface-group); border: 1px solid var(--color-surface-group-border); padding:1.5rem; border-radius:12px; display:none;" id="hi-result" class="fade-in-up">
             <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 건강보험료 산출 내역</h4>
             <div id="hi-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
           </div>
@@ -916,7 +916,7 @@
             </div>
             <button class="btn-primary" id="btn-calc-property-tax">🎯 보유세 계산</button>
           </div>
-          <div style="background:rgba(255,255,255,0.02); padding:1.5rem; border-radius:12px; display:none;" id="prop-result">
+          <div style="background:var(--color-surface-group); border: 1px solid var(--color-surface-group-border); padding:1.5rem; border-radius:12px; display:none;" id="prop-result" class="fade-in-up">
             <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 보유세 산출 내역</h4>
             <div id="prop-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
           </div>
@@ -956,7 +956,7 @@
             </div>
             <button class="btn-primary" id="btn-calc-deemed-rent" style="margin-top:0.5rem;">🎯 간주임대료 계산</button>
           </div>
-          <div style="background:rgba(255,107,107,0.05); padding:1.5rem; border-radius:12px; display:none;" id="deemed-result">
+          <div style="background:var(--color-accent-sub-warning-box); border: 1px solid var(--color-surface-group-border); padding:1.5rem; border-radius:12px; display:none;" id="deemed-result" class="fade-in-up">
             <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 간주임대료 산출 내역</h4>
             <div id="deemed-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
           </div>
@@ -1003,7 +1003,7 @@
             </div>
             <button class="btn-primary" id="btn-calc-inheritance" style="margin-top:0.5rem;">🎯 상속세 계산</button>
           </div>
-          <div style="background:rgba(108,99,255,0.05); padding:1.5rem; border-radius:12px; display:none;" id="inherit-result">
+          <div style="background:var(--color-accent-sub-a-box); border: 1px solid var(--color-surface-group-border); padding:1.5rem; border-radius:12px; display:none;" id="inherit-result" class="fade-in-up">
             <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 상속세 산출 내역 (개정안 반영)</h4>
             <div id="inherit-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
           </div>
@@ -1037,7 +1037,7 @@
             </div>
             <button class="btn-primary" id="btn-calc-marriage-gift" style="margin-top:0.5rem;">🎯 증여세 계산</button>
           </div>
-          <div style="background:rgba(255,217,61,0.05); padding:1.5rem; border-radius:12px; display:none;" id="mg-result">
+          <div style="background:var(--color-accent-sub-gold-box); border: 1px solid var(--color-surface-group-border); padding:1.5rem; border-radius:12px; display:none;" id="mg-result" class="fade-in-up">
             <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">🧾 혼인·출산 증여세 명세서</h4>
             <div id="mg-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
           </div>
@@ -1087,11 +1087,11 @@
             <button class="btn-primary" id="btn-calc-gift-tax" style="margin-top:0.5rem;">🎯 증여세 계산</button>
           </div>
           <div>
-            <div style="background:rgba(0,212,170,0.05); padding:1rem; border-radius:8px; display:none; margin-bottom:1rem;" id="gift-timeline-result">
+            <div style="background:var(--color-accent-sub-b-box); border: 1px solid var(--color-surface-group-border); padding:1rem; border-radius:8px; display:none; margin-bottom:1rem;" id="gift-timeline-result" class="fade-in-up">
               <h4 style="font-weight:700; font-size:0.85rem; margin-bottom:8px;">📅 비과세 증여 마스터플랜</h4>
               <div id="gift-timeline-content" style="font-size:0.82rem; line-height:1.6;"></div>
             </div>
-            <div style="background:rgba(108,99,255,0.05); padding:1rem; border-radius:8px; display:none;" id="gift-tax-result">
+            <div style="background:var(--color-accent-sub-a-box); border: 1px solid var(--color-surface-group-border); padding:1rem; border-radius:8px; display:none;" id="gift-tax-result" class="fade-in-up">
               <h4 style="font-weight:700; font-size:0.85rem; margin-bottom:8px;">🧾 증여세 명세서</h4>
               <div id="gift-tax-content" style="font-size:0.82rem; line-height:1.6;"></div>
             </div>
@@ -1110,7 +1110,7 @@
                 <option value="stock">해외주식 (배우자 증여 후 매도)</option>
                 <option value="real_estate">부동산 (배우자 증여 후 이월과세 양도)</option>
               </select>
-              <div id="gs-stock-warning" style="display:none; margin-top:6px; padding:6px 8px; background:rgba(255,107,107,0.1); border-radius:6px; font-size:0.72rem; line-height:1.4; color:var(--accent-warning);">
+              <div id="gs-stock-warning" style="display:none; margin-top:6px; padding:6px 8px; background:var(--color-accent-sub-warning-box); border: 1px solid var(--color-surface-group-border); border-radius:6px; font-size:0.72rem; line-height:1.4; color:var(--accent-warning);">
                 ⚠️ 주식 증여 후 <strong>1년 이내 매도</strong>하고 양도소득이 실질적으로 증여자에게 귀속되는 경우 <strong>부당행위계산부인</strong>이 적용될 수 있습니다. 증여 후 자금이 증여자 계좌로 환류되지 않도록 주의하세요.
               </div>
             </div>
@@ -1132,7 +1132,7 @@
             </div>
             <button class="btn-primary" id="btn-calc-opt-gs">🎯 절세 효과 시뮬레이션</button>
           </div>
-          <div style="background:rgba(255,255,255,0.02); padding:1.5rem; border-radius:12px; display:none;" id="opt-gs-result-card">
+          <div style="background:var(--color-surface-group); border: 1px solid var(--color-surface-group-border); padding:1.5rem; border-radius:12px; display:none;" id="opt-gs-result-card" class="fade-in-up">
             <h4 style="font-weight:700; color:var(--accent-secondary); margin-bottom:10px;">🎁 증여 후 양도차익 소멸 시뮬레이션</h4>
             <div id="opt-gs-result-details"></div>
           </div>

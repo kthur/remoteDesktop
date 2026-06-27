@@ -485,6 +485,37 @@ document.addEventListener('DOMContentLoaded', () => {
       const el = document.getElementById(id);
       if (!el) return;
 
+      // 모바일 숫자 키패드 지원 및 간편 클리어 버튼 래퍼 구성
+      el.setAttribute('inputmode', 'decimal');
+      const wrapper = document.createElement('div');
+      wrapper.className = 'input-clear-wrapper';
+      el.parentNode.insertBefore(wrapper, el);
+      wrapper.appendChild(el);
+
+      const clearBtn = document.createElement('button');
+      clearBtn.type = 'button';
+      clearBtn.className = 'input-clear-btn';
+      clearBtn.textContent = '✖';
+      wrapper.appendChild(clearBtn);
+
+      const toggleClearBtnVisibility = () => {
+        const val = el.value.trim();
+        if (val !== '' && val !== '0') {
+          clearBtn.classList.add('visible');
+        } else {
+          clearBtn.classList.remove('visible');
+        }
+      };
+
+      clearBtn.addEventListener('click', () => {
+        el.value = '0';
+        clearBtn.classList.remove('visible');
+        updateHelper();
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+
+      el.addEventListener('input', toggleClearBtnVisibility);
+
       // 원래 won-helper (한글 읽기)
       const helper = document.createElement('div');
       helper.className = 'won-helper';
@@ -492,13 +523,14 @@ document.addEventListener('DOMContentLoaded', () => {
       helper.style.color = 'var(--accent-secondary)';
       helper.style.marginTop = '4px';
       helper.style.fontWeight = 'bold';
-      el.parentNode.insertBefore(helper, el.nextSibling);
+      wrapper.parentNode.insertBefore(helper, wrapper.nextSibling);
       
       const updateHelper = () => {
         helper.textContent = convertToKoreanWon(el.value);
       };
       el.addEventListener('input', updateHelper);
       updateHelper();
+      toggleClearBtnVisibility();
 
       // 🆕 P2: 단위 토글 버튼
       var unitGroup = document.createElement('div');
@@ -529,12 +561,12 @@ document.addEventListener('DOMContentLoaded', () => {
         unitGroup.appendChild(btn);
       });
 
-      el.parentNode.insertBefore(unitGroup, helper.nextSibling);
+      wrapper.parentNode.insertBefore(unitGroup, helper.nextSibling);
 
       // 🆕 P2: 포커스 시 한글 읽기 툴팁
       var koreanReading = document.createElement('div');
       koreanReading.className = 'korean-reading';
-      el.parentNode.insertBefore(koreanReading, unitGroup.nextSibling);
+      wrapper.parentNode.insertBefore(koreanReading, unitGroup.nextSibling);
       
       el.addEventListener('focus', function() {
         var rawVal = parseInt(el.value.replace(/,/g, ''), 10) || 0;
