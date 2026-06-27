@@ -807,6 +807,72 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // 2-2. 모바일 전용 배우자 내부 탭 스위칭 로직
+  const spouseTabButtons = document.querySelectorAll('.spouse-tab-btn');
+  const spouseContainers = document.querySelectorAll('.spouse-container-box');
+
+  spouseTabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      spouseTabButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const targetSpouse = btn.dataset.spouse;
+      spouseContainers.forEach(container => {
+        if (container.id === 'spouse-' + targetSpouse + '-container') {
+          container.classList.add('active');
+        } else {
+          container.classList.remove('active');
+        }
+      });
+    });
+  });
+
+  // 2-3. 모바일 Bottom Sheet 결과창 노출 및 요약 리포트 복사 동기화
+  const floatingBarBtn = document.getElementById('floating-bar-btn');
+  const bottomSheetDim = document.getElementById('mobile-result-bottom-sheet-dim');
+  const bottomSheet = document.getElementById('mobile-result-bottom-sheet');
+  const bottomSheetCloseBtn = document.getElementById('bottom-sheet-close-btn');
+  const bottomSheetBody = document.getElementById('bottom-sheet-body');
+  const originResultCard = document.getElementById('inc-result-card');
+
+  if (floatingBarBtn && bottomSheet && bottomSheetDim && bottomSheetCloseBtn && bottomSheetBody && originResultCard) {
+    const openBottomSheet = () => {
+      // 결과 리포트 콘텐츠 복제 및 동기화 (이벤트 핸들러 유실 방지를 위해 cloneNode(true) 대신 innerHTML 복사 후 공유 버튼만 재매핑)
+      bottomSheetBody.innerHTML = originResultCard.innerHTML;
+      
+      // 복사된 헤더 영역 제거 (Bottom Sheet 자체 헤더가 있으므로)
+      const copiedHeader = bottomSheetBody.querySelector('.card-title');
+      if (copiedHeader) copiedHeader.remove();
+
+      // 복사된 리포트 내 공유 버튼 이벤트 재매핑
+      const copyBtn = bottomSheetBody.querySelector('#btn-share-report');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+          const originCopyBtn = originResultCard.querySelector('#btn-share-report');
+          if (originCopyBtn) originCopyBtn.click();
+        });
+      }
+
+      bottomSheetDim.style.display = 'block';
+      bottomSheet.style.display = 'block';
+      setTimeout(() => {
+        bottomSheet.classList.add('active');
+      }, 10);
+    };
+
+    const closeBottomSheet = () => {
+      bottomSheet.classList.remove('active');
+      setTimeout(() => {
+        bottomSheet.style.display = 'none';
+        bottomSheetDim.style.display = 'none';
+      }, 300);
+    };
+
+    floatingBarBtn.addEventListener('click', openBottomSheet);
+    bottomSheetCloseBtn.addEventListener('click', closeBottomSheet);
+    bottomSheetDim.addEventListener('click', closeBottomSheet);
+  }
+
   const capitalTypeSelect = document.getElementById('capital-type');
   const formRealEstate = document.getElementById('form-real-estate');
   const formStock = document.getElementById('form-stock');

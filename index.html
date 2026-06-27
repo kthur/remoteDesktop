@@ -105,10 +105,16 @@
         </div>
         
         <!-- 부부 소득 및 개별 금융소득 입력 영역 -->
+        <!-- 🆕 모바일 전용 배우자 내부 탭 스위치 -->
+        <div id="spouse-mobile-tabs" class="spouse-mobile-tabs" style="display:none; gap:6px; margin-bottom:1rem; padding:4px; background:rgba(0,0,0,0.15); border-radius:8px;">
+          <button type="button" class="spouse-tab-btn active" data-spouse="a" style="flex:1; padding:8px 12px; border:none; background:transparent; color:var(--text-secondary-dark); font-weight:700; font-size:0.8rem; border-radius:6px; cursor:pointer; text-align:center; transition:var(--transition-smooth);">배우자 A</button>
+          <button type="button" class="spouse-tab-btn" data-spouse="b" style="flex:1; padding:8px 12px; border:none; background:transparent; color:var(--text-secondary-dark); font-weight:700; font-size:0.8rem; border-radius:6px; cursor:pointer; text-align:center; transition:var(--transition-smooth);">배우자 B</button>
+        </div>
+
         <div class="grid-2col" style="display:grid; gap:15px; margin-bottom:1.5rem;">
           
           <!-- 배우자 A 입력 영역 -->
-          <div style="background:rgba(255,255,255,0.02); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+          <div id="spouse-a-container" class="spouse-container-box active" style="background:rgba(255,255,255,0.02); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
             <div class="step-section-header" data-target="spouse-a-body" style="cursor:pointer; user-select:none;">
               <h4 style="font-size:0.9rem; color:var(--accent-primary); margin-bottom:0; font-weight:700; display:flex; align-items:center; justify-content:space-between;">
                 <span>📌 1단계: 배우자 A 기본정보</span>
@@ -197,7 +203,7 @@
           </div><!-- /spouse-a-body -->
 
           <!-- 배우자 B 입력 영역 -->
-          <div style="background:rgba(255,255,255,0.02); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+          <div id="spouse-b-container" class="spouse-container-box" style="background:rgba(255,255,255,0.02); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
             <div class="step-section-header" data-target="spouse-b-body" style="cursor:pointer; user-select:none;">
               <h4 style="font-size:0.9rem; color:var(--accent-secondary); margin-bottom:0; font-weight:700; display:flex; align-items:center; justify-content:space-between;">
                 <span>📌 2단계: 배우자 B 기본정보</span>
@@ -1140,6 +1146,18 @@
       <span class="floating-bar-amount" id="floating-bar-amount">0 원</span>
     </div>
     <button class="floating-bar-btn" id="floating-bar-btn">📊 결과 보기</button>
+  </div>
+
+  <!-- 🆕 P1: 모바일 Bottom Sheet 결과창 -->
+  <div id="mobile-result-bottom-sheet-dim" class="bottom-sheet-dim" style="display:none; position:fixed; inset:0; z-index:1001; background:rgba(0,0,0,0.5); backdrop-filter:blur(3px);"></div>
+  <div id="mobile-result-bottom-sheet" class="bottom-sheet-container" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:1002; background:var(--card-bg-dark); border-top:1px solid var(--card-border-dark); border-radius:18px 18px 0 0; padding:1.5rem; max-height:85vh; overflow-y:auto; transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+    <div class="bottom-sheet-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:0.75rem;">
+      <h3 style="font-size:1.1rem; font-weight:700; margin:0;">🏆 종합 절세 통합 리포트</h3>
+      <button id="bottom-sheet-close-btn" style="background:transparent; border:none; color:var(--text-secondary-dark); font-size:1.2rem; cursor:pointer; font-weight:bold;">✖</button>
+    </div>
+    <div id="bottom-sheet-body" class="bottom-sheet-body" style="font-size:0.9rem; line-height:1.6;">
+      <!-- 결과 카드의 내용을 JS가 복사/동기화하여 주입 -->
+    </div>
   </div>
 
   <!-- 🆕 P0: PDF 파싱 완료 모달 -->
