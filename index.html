@@ -95,15 +95,32 @@
 </div>
 <div class="step-section-body" id="spouse-a-body" style="display:block;">
 <div class="form-group">
-<label>연봉(총급여) 또는 사업소득 <span class="tooltip-icon" data-tooltip="연간 총급여액 또는 사업소득 금액입니다. 근로소득은 총급여, 사업소득은 필요경비 차감 전 금액을 입력하세요.">?</span></label>
+<label>근로소득 (총급여) <span class="tooltip-icon" data-tooltip="연간 총 근로소득(총급여액)입니다.">?</span></label>
 <input class="form-input money-input" id="inc-a-salary" inputmode="numeric" type="text" value="70,000,000"/>
 </div>
+<div class="grid-2col" style="gap:5px;">
+  <div class="form-group">
+    <label style="font-size:0.75rem;">사업소득 총수입(매출) <span class="tooltip-icon" data-tooltip="연간 총 사업 매출액입니다.">?</span></label>
+    <input class="form-input money-input" id="inc-a-business-revenue" inputmode="numeric" style="padding:6px; font-size:0.8rem;" type="text" value="0"/>
+  </div>
+  <div class="form-group">
+    <label style="font-size:0.75rem;">사업소득 필요경비(지출) <span class="tooltip-icon" data-tooltip="사업수행을 위해 지출한 경비입니다.">?</span></label>
+    <input class="form-input money-input" id="inc-a-business-expense" inputmode="numeric" style="padding:6px; font-size:0.8rem;" type="text" value="0"/>
+  </div>
+</div>
+<div class="grid-2col" style="gap:5px;">
+  <div class="form-group">
+    <label style="font-size:0.75rem;">연금소득 (종합과세대상) <span class="tooltip-icon" data-tooltip="공적연금 및 종합과세 대상 사적연금 수령액입니다.">?</span></label>
+    <input class="form-input money-input" id="inc-a-pension-income" inputmode="numeric" style="padding:6px; font-size:0.8rem;" type="text" value="0"/>
+  </div>
+  <div class="form-group">
+    <label style="font-size:0.75rem;">기타소득 총수입 <span class="tooltip-icon" data-tooltip="일시적인 강연료, 상금 등의 총 수입입니다.">?</span></label>
+    <input class="form-input money-input" id="inc-a-other-revenue" inputmode="numeric" style="padding:6px; font-size:0.8rem;" type="text" value="0"/>
+  </div>
+</div>
 <div class="form-group">
-<label>소득 유형</label>
-<select class="form-input" id="inc-a-type">
-<option value="wage">일반 근로소득</option>
-<option value="business">사업소득 (필요경비 적용)</option>
-</select>
+  <label>기타소득 필요경비 <span class="tooltip-icon" data-tooltip="기타소득을 위해 소요된 필요경비입니다.">?</span></label>
+  <input class="form-input money-input" id="inc-a-other-expense" inputmode="numeric" type="text" value="0"/>
 </div>
 <div class="form-group">
 <label>신용카드 사용액 <span class="tooltip-icon" data-tooltip="본인 명의 신용카드/체크카드 연간 사용액입니다. 총급여의 25% 초과분부터 소득공제가 적용됩니다.">?</span></label>
@@ -180,15 +197,32 @@
 </div>
 <div class="step-section-body" id="spouse-b-body" style="display:block;">
 <div class="form-group">
-<label>연봉(총급여) 또는 사업소득 <span class="tooltip-icon" data-tooltip="연간 총급여액 또는 사업소득 금액입니다. 근로소득은 총급여, 사업소득은 필요경비 차감 전 금액을 입력하세요.">?</span></label>
+<label>근로소득 (총급여) <span class="tooltip-icon" data-tooltip="연간 총 근로소득(총급여액)입니다.">?</span></label>
 <input class="form-input money-input" id="inc-b-salary" inputmode="numeric" type="text" value="45,000,000"/>
 </div>
+<div class="grid-2col" style="gap:5px;">
+  <div class="form-group">
+    <label style="font-size:0.75rem;">사업소득 총수입(매출) <span class="tooltip-icon" data-tooltip="연간 총 사업 매출액입니다.">?</span></label>
+    <input class="form-input money-input" id="inc-b-business-revenue" inputmode="numeric" style="padding:6px; font-size:0.8rem;" type="text" value="0"/>
+  </div>
+  <div class="form-group">
+    <label style="font-size:0.75rem;">사업소득 필요경비(지출) <span class="tooltip-icon" data-tooltip="사업수행을 위해 지출한 경비입니다.">?</span></label>
+    <input class="form-input money-input" id="inc-b-business-expense" inputmode="numeric" style="padding:6px; font-size:0.8rem;" type="text" value="0"/>
+  </div>
+</div>
+<div class="grid-2col" style="gap:5px;">
+  <div class="form-group">
+    <label style="font-size:0.75rem;">연금소득 (종합과세대상) <span class="tooltip-icon" data-tooltip="공적연금 및 종합과세 대상 사적연금 수령액입니다.">?</span></label>
+    <input class="form-input money-input" id="inc-b-pension-income" inputmode="numeric" style="padding:6px; font-size:0.8rem;" type="text" value="0"/>
+  </div>
+  <div class="form-group">
+    <label style="font-size:0.75rem;">기타소득 총수입 <span class="tooltip-icon" data-tooltip="일시적인 강연료, 상금 등의 총 수입입니다.">?</span></label>
+    <input class="form-input money-input" id="inc-b-other-revenue" inputmode="numeric" style="padding:6px; font-size:0.8rem;" type="text" value="0"/>
+  </div>
+</div>
 <div class="form-group">
-<label>소득 유형</label>
-<select class="form-input" id="inc-b-type">
-<option value="wage">일반 근로소득</option>
-<option value="business">사업소득 (필요경비 적용)</option>
-</select>
+  <label>기타소득 필요경비 <span class="tooltip-icon" data-tooltip="기타소득을 위해 소요된 필요경비입니다.">?</span></label>
+  <input class="form-input money-input" id="inc-b-other-expense" inputmode="numeric" type="text" value="0"/>
 </div>
 <div class="form-group">
 <label>신용카드 사용액 <span class="tooltip-icon" data-tooltip="본인 명의 신용카드/체크카드 연간 사용액입니다. 총급여의 25% 초과분부터 소득공제가 적용됩니다.">?</span></label>

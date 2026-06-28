@@ -1339,8 +1339,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function validateIncomeInputs(d) {
     clearInlineErrors();
     if (d.aSalary < 0 || d.bSalary < 0) { showInlineError("income-form-error", "소득금액은 0원 이상이어야 합니다."); return false; }
-    if (d.aIsaType === "sub" && d.aSalary > 50000000 && d.aType === "wage") { showInlineError("income-form-error", "배우자 A ISA 서민형 자격 없음 (급여 5,000만 초과)"); return false; }
-    if (d.bIsaType === "sub" && d.bSalary > 50000000 && d.bType === "wage") { showInlineError("income-form-error", "배우자 B ISA 서민형 자격 없음 (급여 5,000만 초과)"); return false; }
+    if (d.aIsaType === "sub" && d.aSalary > 50000000) { showInlineError("income-form-error", "배우자 A ISA 서민형 자격 없음 (급여 5,000만 초과)"); return false; }
+    if (d.bIsaType === "sub" && d.bSalary > 50000000) { showInlineError("income-form-error", "배우자 B ISA 서민형 자격 없음 (급여 5,000만 초과)"); return false; }
     const allNonNeg = [d.aCard, d.bCard, d.aYellow, d.bYellow, d.aPension, d.bPension,
       d.aFinancialGen, d.aFinancialOverseas, d.aIsaIncome, d.aBondSeparated,
       d.bFinancialGen, d.bFinancialOverseas, d.bIsaIncome, d.bBondSeparated,
@@ -1378,11 +1378,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function buildSpouseCalcOpts(d, prefix) {
     const isA = prefix === "a";
-    const s = isA ? d.aSalary : d.bSalary;
-    const t = isA ? d.aType : d.bType;
     return {
-      totalIncome: s, incomeType: t,
-      expense: t === "business" ? Math.floor(s * 0.3) : 0,
+      totalSalary: isA ? d.aSalary : d.bSalary,
+      businessRevenue: isA ? d.aBusinessRevenue : d.bBusinessRevenue,
+      businessExpense: isA ? d.aBusinessExpense : d.bBusinessExpense,
+      pensionIncome: isA ? d.aPensionIncome : d.bPensionIncome,
+      otherRevenue: isA ? d.aOtherRevenue : d.bOtherRevenue,
+      otherExpense: isA ? d.aOtherExpense : d.bOtherExpense,
       yellowUmbrella: isA ? d.aYellow : d.bYellow,
       pensionSavings: isA ? d.aPension : d.bPension,
       irpSavings: isA ? d.aIrp : d.bIrp,
@@ -1412,11 +1414,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function runOptimizerAndRender(d, dependents) {
     const personAOptData = {
-      salary: d.aSalary, card: d.aCard, cash: 0, pension: d.aPension, irp: d.aIrp, SME: false,
+      totalSalary: d.aSalary,
+      businessRevenue: d.aBusinessRevenue,
+      businessExpense: d.aBusinessExpense,
+      pensionIncome: d.aPensionIncome,
+      otherRevenue: d.aOtherRevenue,
+      otherExpense: d.aOtherExpense,
+      financialGeneral: d.aFinancialGen,
+      financialOverseas: d.aFinancialOverseas,
+      isaIncome: d.aIsaIncome,
+      isaType: d.aIsaType,
+      bondSeparated: d.aBondSeparated,
+      card: d.aCard, cash: 0, pensionSavings: d.aPension, irpSavings: d.aIrp, yellowUmbrella: d.aYellow, SME: false,
       housingSubscription: d.aHousingSubscription, housingLoanRepay: d.aHousingLoanRepay, ventureInvestment: d.aVentureInvestment
     };
     const personBOptData = {
-      salary: d.bSalary, card: d.bCard, cash: 0, pension: d.bPension, irp: d.bIrp, SME: false,
+      totalSalary: d.bSalary,
+      businessRevenue: d.bBusinessRevenue,
+      businessExpense: d.bBusinessExpense,
+      pensionIncome: d.bPensionIncome,
+      otherRevenue: d.bOtherRevenue,
+      otherExpense: d.bOtherExpense,
+      financialGeneral: d.bFinancialGen,
+      financialOverseas: d.bFinancialOverseas,
+      isaIncome: d.bIsaIncome,
+      isaType: d.bIsaType,
+      bondSeparated: d.bBondSeparated,
+      card: d.bCard, cash: 0, pensionSavings: d.bPension, irpSavings: d.bIrp, yellowUmbrella: d.bYellow, SME: false,
       housingSubscription: d.bHousingSubscription, housingLoanRepay: d.bHousingLoanRepay, ventureInvestment: d.bVentureInvestment
     };
     const optResult = TaxOptimizer.optimizeCoupleYearEnd({ personA: personAOptData, personB: personBOptData, dependents });
@@ -1449,7 +1473,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderAdviceSection(d, aResult) {
     const incomeAdvice = TaxAdvisor.getIncomeTaxAdvice({
-      totalIncome: d.aSalary, expense: d.aType === "business" ? d.aSalary * 0.3 : 0, incomeType: d.aType,
+      totalIncome: d.aSalary, expense: d.aBusinessExpense, incomeType: "integrated",
       yellowUmbrella: d.aYellow, pensionSavings: d.aPension, financialGeneral: d.aFinancialGen,
       financialOverseas: d.aFinancialOverseas, isaIncome: d.aIsaIncome, isaType: d.aIsaType, bondSeparated: d.aBondSeparated, ventureInvestment: d.aVentureInvestment
     }, aResult);
@@ -2020,10 +2044,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 종합소득세 실시간
   [
-    'inc-a-salary','inc-a-type','inc-a-card','inc-a-yellow','inc-a-pension','inc-a-irp',
+    'inc-a-salary','inc-a-card','inc-a-yellow','inc-a-pension','inc-a-irp',
     'inc-a-financial-gen','inc-a-financial-overseas','inc-a-isa','inc-a-isa-type','inc-a-bond',
-    'inc-b-salary','inc-b-type','inc-b-card','inc-b-yellow','inc-b-pension','inc-b-irp',
+    'inc-a-business-revenue','inc-a-business-expense','inc-a-pension-income','inc-a-other-revenue','inc-a-other-expense',
+    'inc-b-salary','inc-b-card','inc-b-yellow','inc-b-pension','inc-b-irp',
     'inc-b-financial-gen','inc-b-financial-overseas','inc-b-isa','inc-b-isa-type','inc-b-bond',
+    'inc-b-business-revenue','inc-b-business-expense','inc-b-pension-income','inc-b-other-revenue','inc-b-other-expense',
     'inc-a-venture','inc-a-housing-sub','inc-a-housing-loan',
     'inc-b-venture','inc-b-housing-sub','inc-b-housing-loan'
   ].forEach(id => {

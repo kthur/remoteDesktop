@@ -96,96 +96,327 @@ const TaxCalculator = {
   },
 
   // 종합소득세 전체 계산 (금융소득 세부 유형 및 벤처투자 소득공제 연동)
-  calculateComprehensiveIncome({ 
-    totalIncome, 
-    incomeType, 
-    expense, 
-    yellowUmbrella = 0, 
-    pensionSavings = 0, 
+
+  // 0. 통합 과세 계산기 (6대 소득 합산 및 세법 바운더리 방어 적용)
+  calculateIntegratedTax({
+    totalSalary = 0,               // 근로소득 총급여
+    businessRevenue = 0,           // 사업소득 총수입
+    businessExpense = 0,           // 사업소득 필요경비
+    financialGeneral = 0,          // 이자/배당 일반
+    financialOverseas = 0,         // 이자/배당 해외 무조건합산
+    isaIncome = 0,                 // ISA 총수익
+    isaType = 'general',           // ISA 유형 ('general' / 'sub')
+    bondSeparated = 0,             // 채권 분리과세
+    pensionIncome = 0,             // 연금소득
+    otherRevenue = 0,              // 기타소득 총수입
+    otherExpense = 0,              // 기타소득 필요경비
+    
+    // 공제 및 세액공제 항목들
+    dependents = 0,
+    cardUsage = 0,
+    cashUsage = 0,
+    pensionSavings = 0,
     irpSavings = 0,
+    medicalExpense = 0,
+    educationExpense = 0,
+    monthlyRent = 0,
+    childrenCount = 0,
+    isMarriedThisYear = false,
+    isSmeEmployee = false,
+    hasSeniorDependent = false, 
+    hasDisabledDependent = false, 
+    isFemaleHead = false, 
+    isSingleParent = false, 
+    hasBirthOrAdoption = false, 
+    birthOrder = 1, 
+    housingSubscription = 0, 
+    housingLoanRepay = 0, 
+    mortgageInterest = 0, 
+    insurancePremium = 0, 
+    studentLoanRepay = 0, 
+    donationAmount = 0, 
+    localDonation = 0, 
     ventureInvestment = 0,
-    // 금융소득 상세 항목
-    financialGeneral = 0, // 일반 이자/배당 (원천징수 15.4% 대상)
-    financialOverseas = 0, // 해외 이자/배당 (무조건 종합과세 대상)
-    isaIncome = 0, // ISA 총 수익
-    isaType = 'general', // ISA 유형 ('general': 500만 비과세, 'sub': 1,000만 비과세)
-    bondSeparated = 0, // 장기채권 30% 분리과세 신청액
-    dependentsCount = 0,
-    hasSeniorDependent = false,
-    hasDisabledDependent = false
+    traditionalMarket = 0,
+    publicTransit = 0,
+    bookPerformance = 0
   }) {
-    let calculatedExpense = expense;
-    let salaryDeduction = 0;
-    if (incomeType === 'wage') {
-      salaryDeduction = this.calculateSalaryDeduction(totalIncome);
-      calculatedExpense = salaryDeduction;
-    }
-    
-    let netIncome = Math.max(0, totalIncome - calculatedExpense);
-    
-    // 노란우산공제
-    const yellowUmbrellaDeduction = incomeType === 'business' 
-      ? this.calculateYellowUmbrellaDeduction(netIncome, yellowUmbrella) 
-      : 0;
+    // 1. 각 소득별 소득금액 산출
+    // (1) 근로소득금액
+    const salaryDeduction = this.calculateSalaryDeduction(totalSalary);
+    let wageIncomeAmount = Math.max(0, totalSalary - salaryDeduction);
+    const grossIncome = wageIncomeAmount; // UI 호환용 변수명
 
-    // 벤처투자 소득공제
-    const baseIncome = Math.max(0, netIncome - yellowUmbrellaDeduction);
-    const ventureDeduction = this.calculateVentureInvestmentDeduction(baseIncome, ventureInvestment);
+    // (2) 사업소득금액 (결손금 보존을 위해 마이너스 가능하도록 설정)
+    let businessIncomeAmount = businessRevenue - businessExpense;
 
-    // 기본공제 및 부양가족 기본공제 (종합소득세 인적공제)
-    const personDeduction = (1 + dependentsCount) * 1500000 
-      + (hasSeniorDependent ? 1000000 : 0) 
-      + (hasDisabledDependent ? 2000000 : 0);
+    // (3) 연금소득금액 계산 함수
+    const calculatePensionDeduction = (pVal) => {
+      if (pVal <= 3500000) return pVal;
+      if (pVal <= 7000000) return 3500000 + (pVal - 3500000) * 0.4;
+      if (pVal <= 14000000) return 4900000 + (pVal - 7000000) * 0.2;
+      return Math.min(9000000, 6300000 + (pVal - 14000000) * 0.1);
+    };
+    let pensionIncomeAmount = Math.max(0, pensionIncome - calculatePensionDeduction(pensionIncome));
 
-    // 과세표준 (금융소득 제외한 일반 종합소득 과표)
-    let taxableIncome = Math.max(0, baseIncome - ventureDeduction - personDeduction);
+    // (4) 기타소득금액
+    let otherIncomeAmount = Math.max(0, otherRevenue - otherExpense);
 
-    // ISA 금융소득 계산 (비과세 한도 차감 및 초과분 9.9% 분리과세)
+    // (5) 금융소득금액
+    const financialBase = financialGeneral + financialOverseas;
+    let financialTax = 0;
+    let financialCompAmount = 0;
+    let isFinancialCompTax = false;
+
+    // ISA 금융소득 계산 (비과세 한도 차감 및 초과분 9% 분리과세)
     const isaLimit = isaType === 'sub' ? 10000000 : 5000000;
     const isaTaxfreeAmount = Math.min(isaIncome, isaLimit);
     const isaOverLimitAmount = Math.max(0, isaIncome - isaLimit);
-    const isaSeparatedTax = Math.floor(isaOverLimitAmount * 0.09); // 9.9% 분리과세 (지방세 0.9% 제외 원세 9%)
+    const isaSeparatedTax = Math.floor(isaOverLimitAmount * 0.09); // 원천세 9%
 
-    // 장기채권 30% 분리과세 세액 (지방세 10% 제외한 원천세 27.27%, 지방세는 localTax에서 합산)
+    // 장기채권 30% 분리과세
     const bondSeparatedTax = Math.floor(bondSeparated * (30 / 110));
 
-    // 종합과세 대상 금융소득 판별
-    // 일반 국내 이자/배당 + 해외 이자/배당 합산액 기준
-    const compFinancialBase = financialGeneral + financialOverseas;
-    let financialTax = 0;
-    let isFinancialCompTax = false;
-    let financialCompAmount = 0;
-
-    // 해외 이자/배당은 금액과 무관하게 무조건 종합과세 대상에 합산
-    if (compFinancialBase <= 20000000) {
-      // 2,000만 원 이하는 일반 금융소득은 14% 원천징수 분리과세로 종결
+    if (financialBase <= 20000000) {
       financialTax = Math.floor(financialGeneral * 0.14);
-      // 해외 금융소득은 1원이라도 종합합산
       if (financialOverseas > 0) {
-        taxableIncome += financialOverseas;
-        financialCompAmount += financialOverseas;
+        financialCompAmount = financialOverseas;
       }
     } else {
-      // 2,000만 원 초과 시 초과분 전체 종합소득세 과세표준에 합산
       isFinancialCompTax = true;
-      financialCompAmount = compFinancialBase - 20000000;
-      taxableIncome += financialCompAmount;
-      // 2,000만 원 한도까지는 14% 분리과세 적용
+      financialCompAmount = financialBase - 20000000;
       financialTax = Math.floor(20000000 * 0.14);
     }
+    let financialIncomeAmount = financialCompAmount;
 
-    const { tax, rate, deduction } = this.calculateIncomeTax(taxableIncome);
+    // 2. 사업소득 결손금(마이너스) 통산 처리
+    if (businessIncomeAmount < 0) {
+      let remainingLoss = -businessIncomeAmount;
+      // 통산 순서: 근로 -> 연금 -> 기타 -> 이자/배당 (종합소득금액에서 결손금 공제)
+      if (remainingLoss > 0 && wageIncomeAmount > 0) {
+        let deduct = Math.min(remainingLoss, wageIncomeAmount);
+        wageIncomeAmount -= deduct;
+        remainingLoss -= deduct;
+      }
+      if (remainingLoss > 0 && pensionIncomeAmount > 0) {
+        let deduct = Math.min(remainingLoss, pensionIncomeAmount);
+        pensionIncomeAmount -= deduct;
+        remainingLoss -= deduct;
+      }
+      if (remainingLoss > 0 && otherIncomeAmount > 0) {
+        let deduct = Math.min(remainingLoss, otherIncomeAmount);
+        otherIncomeAmount -= deduct;
+        remainingLoss -= deduct;
+      }
+      if (remainingLoss > 0 && financialIncomeAmount > 0) {
+        let deduct = Math.min(remainingLoss, financialIncomeAmount);
+        financialIncomeAmount -= deduct;
+        remainingLoss -= deduct;
+      }
+      businessIncomeAmount = 0;
+    }
 
-    // 세액공제: 연금저축/IRP
+    // 종합과세 대상 소득금액 합산
+    const totalComprehensiveIncome = wageIncomeAmount + businessIncomeAmount + pensionIncomeAmount + otherIncomeAmount + financialIncomeAmount;
+    const totalIncome = totalSalary + businessRevenue + pensionIncome + otherRevenue + financialGeneral + financialOverseas; // UI 리포트용 합산 총액
+
+    // 3. 종합소득공제
+    // (1) 인적공제
+    let personDeduction = (1 + dependents) * 1500000;
+    if (hasSeniorDependent) personDeduction += 1000000;
+    if (hasDisabledDependent) personDeduction += 2000000;
+    if (isSingleParent) {
+      personDeduction += 1000000;
+    } else if (isFemaleHead && totalComprehensiveIncome <= 30000000) {
+      personDeduction += 500000; // 부녀자공제 소득한도(3천만) Audit 반영
+    }
+
+    // (2) 노란우산공제 (소기업소상공인 공제) - 사업자 한정
+    let yellowDeduction = 0;
+    if (businessRevenue > 0) {
+      const netBiz = businessRevenue - businessExpense;
+      const yellowLimit = netBiz <= 40000000 ? 5000000 : (netBiz <= 100000000 ? 3000000 : 2000000);
+      yellowDeduction = Math.min(pensionSavings, yellowLimit); // pensionSavings 필드를 노란우산/연금저축에 공통 연동하는 부분 고려
+    }
+    const yellowUmbrellaDeduction = yellowDeduction;
+
+    // (3) 주택자금공제 - 근로자 한정 (총급여 > 0)
+    let housingDeduction = 0;
+    if (totalSalary > 0) {
+      if (totalSalary <= 70000000) {
+        housingDeduction += Math.floor(Math.min(housingSubscription, 3000000) * 0.4);
+      }
+      housingDeduction += Math.min(4000000, Math.floor(housingLoanRepay * 0.4));
+      housingDeduction += Math.min(18000000, mortgageInterest);
+    }
+
+    // (4) 신용카드 소득공제 - 근로자 한정
+    let cardDeduction = 0;
+    const threshold = Math.floor(totalSalary * 0.25);
+    const totalCardUsage = cardUsage + cashUsage;
+    if (totalSalary > 0 && totalCardUsage > threshold) {
+      if (cardUsage >= threshold) {
+        cardDeduction = Math.floor((cardUsage - threshold) * 0.15) + Math.floor(cashUsage * 0.3);
+      } else {
+        cardDeduction = Math.floor((totalCardUsage - threshold) * 0.3);
+      }
+      let cardLimit = totalSalary > 120000000 ? 2000000 : (totalSalary > 70000000 ? 2500000 : 3000000);
+      cardDeduction = Math.min(cardLimit, cardDeduction);
+
+      // 추가 카테고리 공제
+      const tradDeduction = Math.min(Math.floor(traditionalMarket * 0.3), 3000000);
+      const transitDeduction = Math.min(Math.floor(publicTransit * 0.4), 3000000);
+      const bookDeduction = totalSalary <= 70000000 ? Math.min(Math.floor(bookPerformance * 0.3), 3000000) : 0;
+      cardDeduction += tradDeduction + transitDeduction + bookDeduction;
+    }
+
+    // (5) 벤처투자 소득공제
+    const currentIncomeBase = Math.max(0, totalComprehensiveIncome - personDeduction - yellowDeduction - housingDeduction - cardDeduction);
+    const ventureDeduction = this.calculateVentureInvestmentDeduction(currentIncomeBase, ventureInvestment);
+
+    // 과세표준 확정
+    const taxableIncome = Math.max(0, currentIncomeBase - ventureDeduction);
+
+    // 4. 산출세액 계산 및 금융소득 듀얼트랙 (비교산출세액) 적용
+    let baseTaxCalc = this.calculateIncomeTax(taxableIncome);
+    let calculatedTax = baseTaxCalc.tax;
+    let bracketRate = baseTaxCalc.rate * 100;
+    let bracketDeduction = baseTaxCalc.deduction;
+
+    if (isFinancialCompTax) {
+      // 일반 세액 (과세표준에 이자배당 초과 2천 포함 누진세 + 2천만 원 14%)
+      const normalTax = calculatedTax + Math.floor(20000000 * 0.14);
+      
+      // 비교 세액 (이자배당 전체 14% 분리과세 + 이자배당 제외 과세표준 누진세)
+      const nonFinancialTaxable = Math.max(0, taxableIncome - financialCompAmount);
+      const nonFinancialTax = this.calculateIncomeTax(nonFinancialTaxable).tax;
+      const comparativeTax = nonFinancialTax + Math.floor(financialBase * 0.14);
+
+      if (comparativeTax > normalTax) {
+        calculatedTax = comparativeTax;
+        let baseTaxNonFin = this.calculateIncomeTax(nonFinancialTaxable);
+        bracketRate = baseTaxNonFin.rate * 100;
+        bracketDeduction = baseTaxNonFin.deduction;
+      } else {
+        calculatedTax = normalTax;
+      }
+    } else {
+      // 금융소득이 2,000만 원 이하일 경우, 일반 금융소득 원천세액(14%) 가산
+      calculatedTax += Math.floor(financialGeneral * 0.14);
+    }
+
+    // 5. 세액공제 계산
+    let taxCredits = 0;
+
+    // (1) 근로소득세액공제 - 근로자 한정 & 안분 계산 적용
+    let workTaxCredit = 0;
+    if (totalSalary > 0) {
+      let baseWageCredit = calculatedTax <= 500000 ? calculatedTax * 0.55 : 275000 + (calculatedTax - 500000) * 0.30;
+      let cap = 740000;
+      if (totalSalary <= 33000000) cap = 740000;
+      else if (totalSalary <= 70000000) cap = Math.max(660000, 740000 - (totalSalary - 33000000) * 0.008);
+      else cap = Math.max(500000, 660000 - (totalSalary - 70000000) * 0.005);
+      
+      // 안분 비율 (근로소득금액 / 종합소득금액) 적용
+      const splitRatio = totalComprehensiveIncome > 0 ? (wageIncomeAmount / totalComprehensiveIncome) : 0;
+      workTaxCredit = Math.floor(Math.min(baseWageCredit, cap) * splitRatio);
+      taxCredits += workTaxCredit;
+    }
+
+    // (2) 자녀세액공제
+    let childCredit = 0;
+    if (childrenCount > 0) childCredit += 150000;
+    if (childrenCount > 1) childCredit += 150000;
+    if (childrenCount > 2) childCredit += (childrenCount - 2) * 300000;
+    taxCredits += childCredit;
+
+    // (3) 연금계좌세액공제 - 종합소득/근로소득 허들 차별화 이식
     const totalPension = Math.min(9000000, pensionSavings + irpSavings);
-    const pensionRate = (netIncome + financialCompAmount) <= 45000000 ? 0.15 : 0.12;
+    let pensionRate = 0.12;
+    const hasOtherCompIncome = (totalComprehensiveIncome - wageIncomeAmount) > 0;
+    if (hasOtherCompIncome) {
+      pensionRate = totalComprehensiveIncome <= 45000000 ? 0.15 : 0.12;
+    } else {
+      pensionRate = totalSalary <= 55000000 ? 0.15 : 0.12;
+    }
     const pensionCredit = Math.floor(totalPension * pensionRate);
+    taxCredits += pensionCredit;
 
-    // 최종 산출세액 (종합소득세 + 일반금융원천세 + ISA분리과세세액 + 채권분리과세세액)
-    let finalTax = Math.max(0, tax + financialTax + isaSeparatedTax + bondSeparatedTax - pensionCredit);
+    // (4) 특별세액공제 - 근로자 한정 & 안분 한도(Cap) 적용
+    let insuranceCredit = 0;
+    let medicalCredit = 0;
+    let eduCredit = 0;
+    let specialCreditSum = 0;
+    let rentCredit = 0;
+
+    if (totalSalary > 0) {
+      insuranceCredit = Math.min(120000, Math.floor(insurancePremium * 0.12));
+      const medicalThreshold = Math.floor(totalSalary * 0.03);
+      if (medicalExpense > medicalThreshold) {
+        medicalCredit = Math.min(7000000, Math.floor((medicalExpense - medicalThreshold) * 0.15));
+      }
+      eduCredit = Math.min(9000000, educationExpense) * 0.15;
+      
+      // 안분 한도(Cap) = 산출세액 * (근로소득금액 / 종합소득금액)
+      const splitRatio = totalComprehensiveIncome > 0 ? (wageIncomeAmount / totalComprehensiveIncome) : 0;
+      const wageTaxCap = Math.floor(calculatedTax * splitRatio);
+      
+      specialCreditSum = insuranceCredit + medicalCredit + eduCredit;
+      specialCreditSum = Math.min(specialCreditSum, wageTaxCap); // 특별세액공제 캡 씌우기
+
+      // 월세액공제 (근로자 한정)
+      if (totalSalary <= 70000000) {
+        const rentRate = totalSalary <= 55000000 ? 0.17 : 0.15;
+        rentCredit = Math.min(1275000, Math.floor(monthlyRent * rentRate));
+        taxCredits += rentCredit;
+      }
+    }
+
+    // (5) 기부금 및 고향사랑기부금
+    let donationCredit = 0;
+    if (localDonation > 0) {
+      if (localDonation <= 100000) donationCredit += localDonation;
+      else donationCredit += Math.floor(100000 + (localDonation - 100000) * 0.15);
+    }
+    donationCredit += Math.floor(donationAmount * 0.15);
+
+    // (6) 표준세액공제 vs 특별세액공제 비교 (자동 최적화)
+    if (totalSalary > 0) {
+      const standardCredit = 130000;
+      if (specialCreditSum < standardCredit) {
+        specialCreditSum = standardCredit; // 표준세액공제 채택
+        // 특별세액공제 내역 초기화
+        insuranceCredit = 0;
+        medicalCredit = 0;
+        eduCredit = 0;
+      }
+    } else {
+      // 순수 종합소득자 표준세액공제
+      const standardCredit = 70000;
+      if (specialCreditSum < standardCredit) {
+        specialCreditSum = standardCredit;
+      }
+    }
+
+    taxCredits += specialCreditSum + donationCredit;
+
+    if (isMarriedThisYear) {
+      taxCredits += 500000; // 결혼 특별공제
+    }
+
+    // 결정세액 산출
+    let finalTax = Math.max(0, calculatedTax - taxCredits);
+
+    // 중소기업 청년 취업 감면 (근로자 한정)
+    let smeReduction = 0;
+    if (totalSalary > 0 && isSmeEmployee) {
+      smeReduction = Math.min(2000000, Math.floor(finalTax * 0.9));
+      finalTax -= smeReduction;
+    }
+
     const localTax = Math.floor(finalTax * 0.1);
     const totalTax = finalTax + localTax;
-    
+
     const allFinancialIncome = financialGeneral + financialOverseas + isaIncome + bondSeparated;
     const effectiveRate = totalIncome > 0 ? Math.round((totalTax / (totalIncome + allFinancialIncome)) * 10000) / 100 : 0;
 
@@ -199,25 +430,58 @@ const TaxCalculator = {
       bondSeparated,
       isFinancialCompTax,
       financialCompAmount,
-      expense: calculatedExpense,
-      salaryDeduction: incomeType === 'wage' ? calculatedExpense : 0,
+      expense: salaryDeduction + businessExpense + otherExpense,
+      salaryDeduction: totalSalary > 0 ? salaryDeduction : 0,
       personDeduction,
       yellowUmbrellaDeduction,
       ventureDeduction,
       taxableIncome,
-      tax: finalTax,
+      calculatedTax,
+      workTaxCredit,
+      childCredit,
+      birthCredit: hasBirthOrAdoption ? 300000 : 0, // 기본 출생공제 30만 가정
+      pensionCredit,
+      insuranceCredit,
+      medicalCredit,
+      eduCredit,
+      rentCredit,
+      donationCredit,
+      smeReduction,
+      finalTax,
+      tax: finalTax, // 호환용
       localTax,
       totalTax,
       effectiveRate,
-      bracketRate: rate * 100,
-      bracketDeduction: deduction,
-      pensionCredit,
+      bracketRate,
+      bracketDeduction,
       isaSeparatedTax,
-      bondSeparatedTax
+      bondSeparatedTax,
+      cardDeduction,
+      housingDeduction
     };
   },
 
-  // 2. 양도소득세 계산 (장기보유특별공제 및 이월과세)
+  calculateComprehensiveIncome(params) {
+    const p = {
+      totalSalary: params.incomeType === 'wage' ? params.totalIncome : 0,
+      businessRevenue: params.incomeType === 'business' ? params.totalIncome : 0,
+      businessExpense: params.expense || 0,
+      yellowUmbrella: params.yellowUmbrella || 0,
+      pensionSavings: params.pensionSavings || 0,
+      irpSavings: params.irpSavings || 0,
+      ventureInvestment: params.ventureInvestment || 0,
+      financialGeneral: params.financialGeneral || 0,
+      financialOverseas: params.financialOverseas || 0,
+      isaIncome: params.isaIncome || 0,
+      isaType: params.isaType || 'general',
+      bondSeparated: params.bondSeparated || 0,
+      dependents: params.dependentsCount || 0,
+      hasSeniorDependent: params.hasSeniorDependent || false,
+      hasDisabledDependent: params.hasDisabledDependent || false
+    };
+    return this.calculateIntegratedTax(p);
+  },
+
   calculateCapitalGains({ type, purchasePrice, sellPrice, holdingPeriodMonths, houseCount, isAdjustedArea, stockType, stockGain, isGiftTransfer = false, giftPastYears = 0 }) {
     if (type === 'real_estate') {
       let finalPurchasePrice = purchasePrice;
@@ -354,197 +618,9 @@ const TaxCalculator = {
   },
 
   // 4. 연말정산 정밀 계산
-  calculateYearEndTax({
-    totalSalary,
-    dependents,
-    cardUsage,
-    cashUsage,
-    pensionSavings,
-    irpSavings,
-    medicalExpense,
-    educationExpense,
-    monthlyRent,
-    childrenCount = 0,
-    isMarriedThisYear = false,
-    isSmeEmployee = false,
-    hasSeniorDependent = false, 
-    hasDisabledDependent = false, 
-    isFemaleHead = false, 
-    isSingleParent = false, 
-    hasBirthOrAdoption = false, 
-    birthOrder = 1, 
-    housingSubscription = 0, 
-    housingLoanRepay = 0, 
-    mortgageInterest = 0, 
-    insurancePremium = 0, 
-    studentLoanRepay = 0, 
-    donationAmount = 0, 
-    localDonation = 0, 
-    ventureInvestment = 0,
-    traditionalMarket = 0,
-    publicTransit = 0,
-    bookPerformance = 0
-  }) {
-    const salaryDeduction = this.calculateSalaryDeduction(totalSalary);
-
-    const grossIncome = Math.max(0, totalSalary - salaryDeduction);
-
-    let personDeduction = (1 + dependents) * 1500000;
-    if (hasSeniorDependent) personDeduction += 1000000;
-    if (hasDisabledDependent) personDeduction += 2000000;
-    
-    if (isSingleParent) {
-      personDeduction += 1000000;
-    } else if (isFemaleHead && totalSalary <= 41666666) {
-      personDeduction += 500000;
-    }
-
-    let housingDeduction = 0;
-    // 주택청약종합저축: 세대주 및 배우자 납입분 공제 (2025년 개정)
-    if (totalSalary <= 70000000) {
-      // housingSubscription = 본인 + 배우자 합산 납입액 (최대 300만 한도, 40% 공제)
-      var subLimit = 3000000;
-      var subDeductionBase = Math.min(housingSubscription, subLimit);
-      housingDeduction += Math.floor(subDeductionBase * 0.4);
-    }
-    housingDeduction += Math.min(4000000, Math.floor(housingLoanRepay * 0.4));
-    housingDeduction += Math.min(18000000, mortgageInterest);
-
-    // 추가 소비 공제: 전통시장(30%), 대중교통(40%), 도서공연(30%) — 별도 한도
-    const threshold = Math.floor(totalSalary * 0.25);
-    const totalCardUsage = cardUsage + cashUsage;
-    let cardDeduction = 0;
-
-    if (totalCardUsage > threshold) {
-      const excess = totalCardUsage - threshold;
-      if (cardUsage >= threshold) {
-        cardDeduction = Math.floor((cardUsage - threshold) * 0.15) + Math.floor(cashUsage * 0.3);
-      } else {
-        cardDeduction = Math.floor(excess * 0.3);
-      }
-      let limit = 3000000;
-      if (totalSalary > 120000000) limit = 2000000;
-      else if (totalSalary > 70000000) limit = 2500000;
-      cardDeduction = Math.min(limit, cardDeduction);
-    }
-
-    // 추가 공제: 기본 한도와 별도로 추가 한도 적용
-    const addLimitTrad = 3000000;
-    const addLimitTransit = 3000000;
-    const addLimitBook = totalSalary <= 70000000 ? 3000000 : 0;
-    const tradDeduction = Math.min(Math.floor(traditionalMarket * 0.3), addLimitTrad);
-    const transitDeduction = Math.min(Math.floor(publicTransit * 0.4), addLimitTransit);
-    const bookDeduction = addLimitBook > 0 ? Math.min(Math.floor(bookPerformance * 0.3), addLimitBook) : 0;
-
-    const tempDeductions = personDeduction + cardDeduction + tradDeduction + transitDeduction + bookDeduction + housingDeduction;
-    const currentIncome = Math.max(0, grossIncome - tempDeductions);
-    const ventureDeduction = this.calculateVentureInvestmentDeduction(currentIncome, ventureInvestment);
-
-    const totalDeductions = tempDeductions + ventureDeduction;
-    const taxableIncome = Math.max(0, grossIncome - totalDeductions);
-
-    const { tax: calculatedTax } = this.calculateIncomeTax(taxableIncome);
-
-    let taxCredits = 0;
-
-    let workTaxCredit = 0;
-    if (calculatedTax <= 1300000) workTaxCredit = Math.floor(calculatedTax * 0.55);
-    else workTaxCredit = Math.floor(715000 + (calculatedTax - 1300000) * 0.3);
-    let workCreditLimit = totalSalary > 70000000 ? 660000 : 740000;
-    workTaxCredit = Math.min(workCreditLimit, workTaxCredit);
-    taxCredits += workTaxCredit;
-
-    let childCredit = 0;
-    if (childrenCount === 1) childCredit = 250000;
-    else if (childrenCount === 2) childCredit = 550000;
-    else if (childrenCount >= 3) childCredit = 550000 + (childrenCount - 2) * 400000;
-    taxCredits += childCredit;
-
-    let birthCredit = 0;
-    if (hasBirthOrAdoption) {
-      if (birthOrder === 1) birthCredit = 300000;
-      else if (birthOrder === 2) birthCredit = 500000;
-      else birthCredit = 700000;
-    }
-    taxCredits += birthCredit;
-
-    const totalPension = Math.min(9000000, pensionSavings + irpSavings);
-    let pensionCredit = 0;
-    if (totalPension > 0) {
-      const rate = totalSalary <= 55000000 ? 0.15 : 0.12;
-      pensionCredit = Math.floor(totalPension * rate);
-      taxCredits += pensionCredit;
-    }
-
-    let insuranceCredit = Math.min(120000, Math.floor(insurancePremium * 0.12));
-    taxCredits += insuranceCredit;
-
-    let medicalCredit = 0;
-    const medicalThreshold = Math.floor(totalSalary * 0.03);
-    if (medicalExpense > medicalThreshold) {
-      medicalCredit = Math.floor((medicalExpense - medicalThreshold) * 0.15);
-      taxCredits += medicalCredit;
-    }
-
-    const totalEdu = educationExpense + studentLoanRepay;
-    let eduCredit = Math.floor(totalEdu * 0.15);
-    taxCredits += eduCredit;
-
-    let rentCredit = 0;
-    if (monthlyRent > 0 && totalSalary <= 80000000) {
-      const rate = totalSalary <= 55000000 ? 0.17 : 0.15;
-      rentCredit = Math.floor(Math.min(10000000, monthlyRent * 12) * rate);
-      taxCredits += rentCredit;
-    }
-
-    let donationCredit = 0;
-    if (localDonation > 0) {
-      if (localDonation <= 100000) donationCredit += localDonation;
-      else donationCredit += Math.floor(100000 + (localDonation - 100000) * 0.15);
-    }
-    donationCredit += Math.floor(donationAmount * 0.15);
-    taxCredits += donationCredit;
-
-    if (isMarriedThisYear) {
-      taxCredits += 500000;
-    }
-
-    let finalTax = Math.max(0, calculatedTax - taxCredits);
-
-    let smeReduction = 0;
-    if (isSmeEmployee) {
-      smeReduction = Math.min(2000000, Math.floor(finalTax * 0.9));
-      finalTax -= smeReduction;
-    }
-
-    const localTax = Math.floor(finalTax * 0.1);
-
-    return {
-      salaryDeduction,
-      grossIncome,
-      personDeduction,
-      cardDeduction,
-      tradDeduction,
-      transitDeduction,
-      bookDeduction,
-      housingDeduction,
-      ventureDeduction,
-      taxableIncome,
-      calculatedTax,
-      workTaxCredit,
-      childCredit,
-      birthCredit,
-      pensionCredit,
-      insuranceCredit,
-      medicalCredit,
-      eduCredit,
-      rentCredit,
-      donationCredit,
-      smeReduction,
-      finalTax,
-      localTax,
-      totalTax: finalTax + localTax
-    };
+  calculateYearEndTax(params) {
+    return this.calculateIntegratedTax(params);
+  }
   }
 };
 
