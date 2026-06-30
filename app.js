@@ -51,8 +51,47 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
+  // 노란우산공제 활성화 제어 (사업소득 매출액이 0원 초과일 때만 가능)
+  const checkYellowUmbrellaState = () => {
+    const checkSpouseYellow = (prefix) => {
+      const revenueEl = document.getElementById(`inc-${prefix}-business-revenue`);
+      const yellowEl = document.getElementById(`inc-${prefix}-yellow`);
+      if (!revenueEl || !yellowEl) return;
+
+      const revVal = parseInt(revenueEl.value.replace(/,/g, ''), 10) || 0;
+      if (revVal <= 0) {
+        yellowEl.disabled = true;
+        yellowEl.placeholder = "사업소득 매출 입력 시 활성화";
+        yellowEl.value = "";
+        yellowEl.style.background = "rgba(255, 255, 255, 0.02)";
+        yellowEl.style.cursor = "not-allowed";
+      } else {
+        yellowEl.disabled = false;
+        yellowEl.placeholder = "연간 납입액 (최대 500만 원 공제)";
+        yellowEl.style.background = "";
+        yellowEl.style.cursor = "";
+      }
+    };
+
+    ['a', 'b'].forEach(prefix => {
+      checkSpouseYellow(prefix);
+    });
+  };
+
+  const initYellowUmbrellaDisabler = () => {
+    ['a', 'b'].forEach(prefix => {
+      const revenueEl = document.getElementById(`inc-${prefix}-business-revenue`);
+      if (revenueEl) {
+        revenueEl.addEventListener('input', checkYellowUmbrellaState);
+        revenueEl.addEventListener('change', checkYellowUmbrellaState);
+      }
+    });
+    checkYellowUmbrellaState();
+  };
+
   initOnboarding();
   initAdvancedToggles();
+  initYellowUmbrellaDisabler();
 
   const parseVal = (idOrEl) => {
     const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
@@ -412,6 +451,8 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.money-input').forEach(input => {
         input.value = formatNumberWithCommas(input.value);
       });
+      // Sync yellow umbrella input field state
+      checkYellowUmbrellaState();
     } catch (e) {
       console.error("Error loading state from localStorage", e);
     } finally {
