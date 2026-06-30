@@ -1726,3 +1726,55 @@ body.light-mode .unit-toggle-btn {
   }
 }
 
+/* Stepper Navigation Buttons */
+.stepper-nav-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+.stepper-nav-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  color: var(--text-primary-dark);
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.stepper-nav-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.1);
+  border-color: var(--accent-primary);
+}
+.stepper-nav-btn.primary {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: #fff;
+  border-color: transparent;
+}
+.stepper-nav-btn.primary:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+.stepper-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+body.light-mode .stepper-nav-btn {
+  color: var(--text-primary-light);
+  border-color: rgba(0,0,0,0.1);
+  background: rgba(0,0,0,0.03);
+}
+
+/* PDF Dropzone cursor */
+.pdf-dropzone { cursor: pointer; }
+
+/* Enable spouse B checkbox container */
+#enable-spouse-b {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--accent-primary);
+}

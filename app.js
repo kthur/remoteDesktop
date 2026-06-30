@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnManual = document.getElementById('btn-ob-manual');
     const onboardingContainer = document.getElementById('onboarding-container');
     const manualContainer = document.getElementById('manual-input-container');
-    const fileInput = document.getElementById('pdf-upload');
+    const fileInput = document.getElementById('pdf-file-input');
 
     if (btnPdf) {
       btnPdf.addEventListener('click', () => {
@@ -41,18 +41,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleBtns = document.querySelectorAll('.btn-toggle-advanced');
     toggleBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const wrapper = e.target.nextElementSibling;
+        const wrapper = btn.nextElementSibling;
         if (wrapper && wrapper.classList.contains('advanced-fields-wrapper')) {
           const isHidden = wrapper.style.display === 'none';
           wrapper.style.display = isHidden ? 'block' : 'none';
           
           const labelType = btn.dataset.labelType;
           if (labelType === 'income') {
-            e.target.innerHTML = isHidden ? '➖ 사업·금융·기타 소득 접기 ▲' : '➕ 사업·금융·기타 소득 펼치기 ▼';
+            btn.innerHTML = isHidden ? '➖ 사업·금융·기타 소득 접기 ▲' : '➕ 사업·금융·기타 소득 펼치기 ▼';
           } else if (labelType === 'deduction') {
-            e.target.innerHTML = isHidden ? '➖ 추가 공제 항목 접기 ▲' : '➕ 추가 공제 항목 펼치기 ▼';
+            btn.innerHTML = isHidden ? '➖ 추가 공제 항목 접기 ▲' : '➕ 추가 공제 항목 펼치기 ▼';
           } else {
-            e.target.innerHTML = isHidden ? '➖ 접기 ▲' : '➕ 펼치기 ▼';
+            btn.innerHTML = isHidden ? '➖ 접기 ▲' : '➕ 펼치기 ▼';
           }
         }
       });
@@ -219,6 +219,33 @@ document.addEventListener('DOMContentLoaded', () => {
     section.classList.add('active');
   }
 
+  function hideAccordionSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+    section.style.display = 'none';
+    section.classList.remove('active');
+  }
+
+  // 🆕 토스트 메시지 표시
+  function showToast(message, duration) {
+    duration = duration || 2500;
+    let toast = document.getElementById('app-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'app-toast';
+      toast.style.cssText = 'position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px); background:rgba(15,23,42,0.95); color:#fff; padding:10px 20px; border-radius:8px; font-size:0.85rem; font-weight:600; z-index:9999; opacity:0; transition:opacity 0.3s, transform 0.3s; pointer-events:none; white-space:nowrap; box-shadow:0 4px 20px rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1);';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(-50%) translateY(20px)';
+    }, duration);
+  }
+
   function initAccordion() {
     document.querySelectorAll('.accordion-header').forEach(header => {
       header.addEventListener('click', () => {
@@ -369,23 +396,23 @@ document.addEventListener('DOMContentLoaded', () => {
             el.checked = state.statics[id];
             // Directly apply UI changes without dispatching events to avoid save loop
             if (id === 'vat-use-agri') {
-              groupAgriAmt.style.display = el.checked ? 'block' : 'none';
+              const _agriEl = document.getElementById('group-agri-amt');
+              if (_agriEl) _agriEl.style.display = el.checked ? 'block' : 'none';
             } else if (id === 'vat-use-cardsales') {
-              groupCardSalesAmt.style.display = el.checked ? 'block' : 'none';
+              const _cardEl = document.getElementById('group-cardsales-amt');
+              if (_cardEl) _cardEl.style.display = el.checked ? 'block' : 'none';
             }
           } else {
             el.value = state.statics[id];
             // Directly apply UI state for selects
             if (id === 'vat-type') {
-              groupBusinessType.style.display = el.value === 'simplified' ? 'block' : 'none';
+              const _bizTypeEl = document.getElementById('group-business-type');
+              if (_bizTypeEl) _bizTypeEl.style.display = el.value === 'simplified' ? 'block' : 'none';
             } else if (id === 'capital-type') {
-              if (el.value === 'real_estate') {
-                formRealEstate.style.display = 'block';
-                formStock.style.display = 'none';
-              } else {
-                formRealEstate.style.display = 'none';
-                formStock.style.display = 'block';
-              }
+              const _reEl = document.getElementById('form-real-estate');
+              const _stEl = document.getElementById('form-stock');
+              if (_reEl) _reEl.style.display = el.value === 'real_estate' ? 'block' : 'none';
+              if (_stEl) _stEl.style.display = el.value === 'real_estate' ? 'none' : 'block';
             }
           }
         }
@@ -459,8 +486,52 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.money-input').forEach(input => {
         input.value = formatNumberWithCommas(input.value);
       });
+      
+      // Sync Spouse B toggle display
+      if (enableSpouseBCheckbox) {
+        const isEnabled = enableSpouseBCheckbox.checked;
+        const bSegmentBtn = document.querySelector('.profile-segment-wrapper .segment-btn[data-segment="profile-b"]');
+        if (bSegmentBtn) bSegmentBtn.style.display = isEnabled ? 'inline-block' : 'none';
+        const bMobileOption = document.querySelector('#mobile-spouse-select option[value="profile-b"]');
+        if (bMobileOption) bMobileOption.style.display = isEnabled ? 'block' : 'none';
+        const bTaxCard = document.getElementById('res-b-tax-report-card');
+        const bFinCard = document.getElementById('res-b-financial-report-card');
+        if (bTaxCard) bTaxCard.style.display = isEnabled ? 'block' : 'none';
+        if (bFinCard) bFinCard.style.display = isEnabled ? 'block' : 'none';
+      }
+
       // Sync yellow umbrella input field state
       checkYellowUmbrellaState();
+
+      // Sync visibility of conditional fields
+      const isaMatured = document.getElementById('isa-matured');
+      if (isaMatured) {
+        const pGroup = document.getElementById('isa-pension-group');
+        if (pGroup) pGroup.style.display = isaMatured.checked ? 'block' : 'none';
+      }
+      const inheritCoresident = document.getElementById('inherit-coresident');
+      if (inheritCoresident) {
+        const cGroup = document.getElementById('inherit-coresident-group');
+        if (cGroup) cGroup.style.display = inheritCoresident.checked ? 'block' : 'none';
+      }
+      const deemedHouse = document.getElementById('deemed-house-count');
+      if (deemedHouse) {
+        const hpGroup = document.getElementById('deemed-highprice-group');
+        if (hpGroup) hpGroup.style.display = deemedHouse.value >= '2' ? 'block' : 'none';
+      }
+      const hiType = document.getElementById('hi-type');
+      if (hiType) {
+        const isEmployee = hiType.value === 'employee';
+        const empFields = document.getElementById('hi-employee-fields');
+        const regFields = document.getElementById('hi-regional-fields');
+        if (empFields) empFields.style.display = isEmployee ? 'block' : 'none';
+        if (regFields) regFields.style.display = isEmployee ? 'none' : 'block';
+      }
+      const optGsType = document.getElementById('opt-gs-type');
+      if (optGsType) {
+        const warning = document.getElementById('gs-stock-warning');
+        if (warning) warning.style.display = optGsType.value === 'stock' ? 'block' : 'none';
+      }
     } catch (e) {
       console.error("Error loading state from localStorage", e);
     } finally {
@@ -510,7 +581,10 @@ document.addEventListener('DOMContentLoaded', () => {
       'sports-salary', 'sports-fee',
       'hometown-amount',
       'isa-annual', 'isa-salary', 'isa-pension-transfer',
-      'deemed-deposit', 'deemed-small'
+      'deemed-deposit', 'deemed-small',
+      'insurance-premium', 'rent-salary', 'rent-amount',
+      'donation-income', 'donation-statutory', 'donation-designated', 'donation-religious',
+      'hi-regional-income', 'hi-regional-property'
     ];
     
     targetIds.forEach(id => {
@@ -626,16 +700,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileInput = document.getElementById('pdf-file-input');
   const pdfStatus = document.getElementById('pdf-status');
 
-  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
-  dropzone.addEventListener('dragleave', () => { dropzone.classList.remove('dragover'); });
-  dropzone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropzone.classList.remove('dragover');
-    if (e.dataTransfer.files.length > 0) processPDF(e.dataTransfer.files[0]);
-  });
-  fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) processPDF(e.target.files[0]);
-  });
+  if (dropzone) {
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', () => { dropzone.classList.remove('dragover'); });
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) processPDF(e.dataTransfer.files[0]);
+    });
+    if (fileInput) {
+      dropzone.addEventListener('click', () => { fileInput.click(); });
+    }
+  }
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) processPDF(e.target.files[0]);
+    });
+  }
 
   async function extractTextFromPDF(file) {
     const arrayBuffer = await file.arrayBuffer();
@@ -946,7 +1027,9 @@ document.addEventListener('DOMContentLoaded', () => {
     { id: 'card-target', salary: 'card-salary', amount: 'card-usage-amount' },
     { id: 'sports-target', salary: 'sports-salary', amount: 'sports-fee' },
     { id: 'hometown-target', amount: 'hometown-amount' }, // only has amount, no salary
-    { id: 'isa-target', salary: 'isa-salary', amount: 'isa-annual' }
+    { id: 'isa-target', salary: 'isa-salary', amount: 'isa-annual' },
+    { id: 'rent-target', salary: 'rent-salary', amount: 'rent-amount' },
+    { id: 'insurance-target', amount: 'insurance-premium' }
   ];
 
   targetSelectors.forEach(config => {
@@ -1047,7 +1130,115 @@ document.addEventListener('DOMContentLoaded', () => {
   const profileGroups = document.querySelectorAll('.profile-segment-group');
   const mobileSpouseSelect = document.getElementById('mobile-spouse-select');
 
+  // Step Navigation Logic (1: Spouse A, 2: Spouse B, 3: Dependents)
+  let currentStep = 1;
+
+  function goToStep(stepNum) {
+    const isSpouseBEnabled = document.getElementById('enable-spouse-b')?.checked;
+    
+    // Boundary checks & skip Spouse B if disabled
+    if (stepNum < 1) stepNum = 1;
+    if (stepNum === 2 && !isSpouseBEnabled) {
+      // If moving forward to 2, skip to 3. If moving backward to 2, skip to 1.
+      stepNum = (currentStep === 1) ? 3 : 1;
+    }
+    if (stepNum > 3) stepNum = 3;
+    
+    currentStep = stepNum;
+    
+    // Determine the active segment based on currentStep
+    let segmentKey = 'profile-a';
+    if (currentStep === 2) segmentKey = 'profile-b';
+    if (currentStep === 3) segmentKey = 'profile-dep';
+    
+    selectProfileGroup(segmentKey);
+    
+    // Update Stepper buttons state
+    const prevBtn = document.getElementById('stepper-prev');
+    const nextBtn = document.getElementById('stepper-next');
+    if (prevBtn) prevBtn.disabled = (currentStep === 1);
+    if (nextBtn) {
+      if (currentStep === 3) {
+        nextBtn.textContent = '계산하기 🎯';
+      } else {
+        nextBtn.textContent = '다음 ▶';
+      }
+    }
+  }
+
+  // Stepper Button Listeners
+  const prevBtn = document.getElementById('stepper-prev');
+  const nextBtn = document.getElementById('stepper-next');
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      goToStep(currentStep - 1);
+    });
+  }
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      if (currentStep === 3) {
+        // Trigger comprehensive integrated calculation
+        btnCalcIncomeIntegrated.click();
+        
+        // Only show report tab if validation succeeded (no error displayed)
+        const errorEl = document.getElementById('income-form-error');
+        if (errorEl && errorEl.style.display === 'block') {
+          return;
+        }
+        
+        // Show report tab
+        const reportTabBtn = document.querySelector('.tab-btn[data-tab="report"]');
+        if (reportTabBtn) reportTabBtn.click();
+      } else {
+        goToStep(currentStep + 1);
+      }
+    });
+  }
+
+  // Spouse B Toggle Change Handler
+  const enableSpouseBCheckbox = document.getElementById('enable-spouse-b');
+  if (enableSpouseBCheckbox) {
+    enableSpouseBCheckbox.addEventListener('change', (e) => {
+      const isEnabled = e.target.checked;
+      
+      const bSegmentBtn = document.querySelector('.profile-segment-wrapper .segment-btn[data-segment="profile-b"]');
+      if (bSegmentBtn) {
+        bSegmentBtn.style.display = isEnabled ? 'inline-block' : 'none';
+      }
+      const bMobileOption = document.querySelector('#mobile-spouse-select option[value="profile-b"]');
+      if (bMobileOption) {
+        bMobileOption.style.display = isEnabled ? 'block' : 'none';
+      }
+      
+      // Toggle results page elements
+      const bTaxCard = document.getElementById('res-b-tax-report-card');
+      const bFinCard = document.getElementById('res-b-financial-report-card');
+      if (bTaxCard) bTaxCard.style.display = isEnabled ? 'block' : 'none';
+      if (bFinCard) bFinCard.style.display = isEnabled ? 'block' : 'none';
+      
+      // If we are currently on Spouse B step and it is being disabled, switch to step 1
+      if (!isEnabled && currentStep === 2) {
+        goToStep(1);
+      }
+      
+      // Auto-recalculate when Spouse B toggle state changes
+      btnCalcIncomeIntegrated.click();
+    });
+  }
+
   function selectProfileGroup(targetGroup) {
+    if (targetGroup === 'profile-b') {
+      const checkbox = document.getElementById('enable-spouse-b');
+      if (checkbox && !checkbox.checked) {
+        checkbox.checked = true;
+        checkbox.dispatchEvent(new Event('change'));
+      }
+    }
+    const isSpouseBEnabled = document.getElementById('enable-spouse-b')?.checked;
+    if (targetGroup === 'profile-b' && !isSpouseBEnabled) {
+      targetGroup = 'profile-a';
+    }
+
     profileSegmentBtns.forEach(btn => {
       const isActive = btn.dataset.segment === targetGroup;
       btn.classList.toggle('active', isActive);
@@ -1071,6 +1262,29 @@ document.addEventListener('DOMContentLoaded', () => {
         group.style.display = 'none';
       }
     });
+    
+    // Sync currentStep state when segments are clicked manually
+    if (targetGroup === 'profile-a') currentStep = 1;
+    else if (targetGroup === 'profile-b') currentStep = 2;
+    else if (targetGroup === 'profile-dep') currentStep = 3;
+    
+    // Update stepper buttons disabled/text state
+    const prevBtn = document.getElementById('stepper-prev');
+    const nextBtn = document.getElementById('stepper-next');
+    if (prevBtn) prevBtn.disabled = (currentStep === 1);
+    if (nextBtn) {
+      if (currentStep === 3) {
+        nextBtn.textContent = '계산하기 🎯';
+      } else {
+        nextBtn.textContent = '다음 ▶';
+      }
+    }
+
+    // Show/hide the "Add Dependent" button `#btn-add-couple-dep` dynamically
+    const btnAddCoupleDep = document.getElementById('btn-add-couple-dep');
+    if (btnAddCoupleDep) {
+      btnAddCoupleDep.style.display = (targetGroup === 'profile-dep') ? 'block' : 'none';
+    }
   }
 
   profileSegmentBtns.forEach(btn => {
@@ -1142,18 +1356,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (floatingBarBtn && bottomSheet && bottomSheetDim && bottomSheetCloseBtn && bottomSheetBody && originResultCard) {
     const openBottomSheet = () => {
-      // 결과 리포트 콘텐츠 복제 및 동기화 (이벤트 핸들러 유실 방지를 위해 cloneNode(true) 대신 innerHTML 복사 후 공유 버튼만 재매핑)
-      bottomSheetBody.innerHTML = originResultCard.innerHTML;
+      // 결과 리포트 콘텐츠 복제 및 동기화 (상세 리포트 + 요약 브리핑)
+      const reportMainCard = document.getElementById('report-main-card');
+      bottomSheetBody.innerHTML = originResultCard.innerHTML + (reportMainCard ? reportMainCard.innerHTML : '');
       
       // 복사된 헤더 영역 제거 (Bottom Sheet 자체 헤더가 있으므로)
-      const copiedHeader = bottomSheetBody.querySelector('.card-title');
-      if (copiedHeader) copiedHeader.remove();
+      bottomSheetBody.querySelectorAll('.card-title').forEach(copiedHeader => {
+        if (copiedHeader) copiedHeader.remove();
+      });
 
       // 복사된 리포트 내 공유 버튼 이벤트 재매핑
       const copyBtn = bottomSheetBody.querySelector('#btn-share-report');
       if (copyBtn) {
         copyBtn.addEventListener('click', () => {
-          const originCopyBtn = originResultCard.querySelector('#btn-share-report');
+          const originCopyBtn = document.getElementById('btn-share-report');
           if (originCopyBtn) originCopyBtn.click();
         });
       }
@@ -1235,7 +1451,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
       <div style="color:var(--accent-info);">📋 공제 내역</div>
       <div>· 인적공제(기초${result.basicDeduction.toLocaleString()} + 자녀${result.childDeduction.toLocaleString()}): <strong>${result.personDeduction.toLocaleString()} 원</strong></div>
-      <div>· 배우자 상속공제: <strong>${result.spouseDeduction.toLocaleString()} 원</strong> ${result.spouseDeduction >= 500000000 ? '(법정지분 한도)' : '(최소공제)'}</div>
+      <div>· 배우자 상속공제: <strong>${result.spouseDeduction.toLocaleString()} 원</strong> ${result.spouseDeduction > 500000000 ? '(법정지분 한도)' : '(최소공제)'}</div>
       ${result.coResidentDeduction > 0 ? `<div>· 동거주택 상속공제: <strong>${result.coResidentDeduction.toLocaleString()} 원</strong></div>` : ''}
       ${result.financialDeduction > 0 ? `<div>· 금융재산 상속공제: <strong>${result.financialDeduction.toLocaleString()} 원</strong></div>` : ''}
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
@@ -1428,6 +1644,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const optCoupleYePeople = document.getElementById('inc-couple-ye-people');
   const btnAddCoupleDep = document.getElementById('btn-add-couple-dep');
 
+  if (optCoupleYePeople) {
+    optCoupleYePeople.querySelectorAll('.person-card').forEach(card => {
+      const removeBtn = card.querySelector('.btn-remove-person');
+      if (removeBtn) {
+        removeBtn.addEventListener('click', () => {
+          card.remove();
+          saveStateToLocalStorage();
+        });
+      }
+    });
+  }
+
   btnAddCoupleDep.addEventListener('click', () => {
     const currentCount = optCoupleYePeople.querySelectorAll('.person-card').length;
     if (currentCount >= 5) {
@@ -1504,6 +1732,55 @@ document.addEventListener('DOMContentLoaded', () => {
   function parseIncomeInputs() {
     var aBizRev = parseVal("inc-a-business-revenue");
     var bBizRev = parseVal("inc-b-business-revenue");
+    const isSpouseBEnabled = document.getElementById('enable-spouse-b')?.checked;
+    const aIsHouseholder = document.getElementById("inc-a-is-householder") ? document.getElementById("inc-a-is-householder").checked : true;
+
+    if (!isSpouseBEnabled) {
+      return {
+        aSalary: parseVal("inc-a-salary"),
+        aBusinessRevenue: aBizRev,
+        aBusinessExpense: parseVal("inc-a-business-expense"),
+        aPensionIncome: parseVal("inc-a-pension-income"),
+        aOtherRevenue: parseVal("inc-a-other-revenue"),
+        aOtherExpense: parseVal("inc-a-other-expense"),
+        aCard: parseVal("inc-a-card"),
+        aYellow: parseVal("inc-a-yellow"),
+        aPension: parseVal("inc-a-pension"),
+        aIrp: parseVal("inc-a-irp"),
+        aMedical: parseVal("inc-a-medical"),
+        aFinancialGen: parseVal("inc-a-financial-gen"),
+        aFinancialOverseas: parseVal("inc-a-financial-overseas"),
+        aIsaIncome: parseVal("inc-a-isa"),
+        aIsaType: document.getElementById("inc-a-isa-type").value,
+        aBondSeparated: parseVal("inc-a-bond"),
+        aType: aBizRev > 0 ? 'business' : 'wage',
+        bSalary: 0,
+        bBusinessRevenue: 0,
+        bBusinessExpense: 0,
+        bPensionIncome: 0,
+        bOtherRevenue: 0,
+        bOtherExpense: 0,
+        bCard: 0,
+        bYellow: 0,
+        bPension: 0,
+        bIrp: 0,
+        bMedical: 0,
+        bFinancialGen: 0,
+        bFinancialOverseas: 0,
+        bIsaIncome: 0,
+        bIsaType: 'general',
+        bBondSeparated: 0,
+        bType: 'wage',
+        aVentureInvestment: parseVal("inc-a-venture"),
+        aHousingSubscription: parseVal("inc-a-housing-sub"),
+        aHousingLoanRepay: parseVal("inc-a-housing-loan"),
+        aIsHouseholder: aIsHouseholder,
+        bVentureInvestment: 0,
+        bHousingSubscription: 0,
+        bHousingLoanRepay: 0
+      };
+    }
+
     return {
       aSalary: parseVal("inc-a-salary"),
       aBusinessRevenue: aBizRev,
@@ -1515,6 +1792,7 @@ document.addEventListener('DOMContentLoaded', () => {
       aYellow: parseVal("inc-a-yellow"),
       aPension: parseVal("inc-a-pension"),
       aIrp: parseVal("inc-a-irp"),
+      aMedical: parseVal("inc-a-medical"),
       aFinancialGen: parseVal("inc-a-financial-gen"),
       aFinancialOverseas: parseVal("inc-a-financial-overseas"),
       aIsaIncome: parseVal("inc-a-isa"),
@@ -1531,6 +1809,7 @@ document.addEventListener('DOMContentLoaded', () => {
       bYellow: parseVal("inc-b-yellow"),
       bPension: parseVal("inc-b-pension"),
       bIrp: parseVal("inc-b-irp"),
+      bMedical: parseVal("inc-b-medical"),
       bFinancialGen: parseVal("inc-b-financial-gen"),
       bFinancialOverseas: parseVal("inc-b-financial-overseas"),
       bIsaIncome: parseVal("inc-b-isa"),
@@ -1540,6 +1819,7 @@ document.addEventListener('DOMContentLoaded', () => {
       aVentureInvestment: parseVal("inc-a-venture"),
       aHousingSubscription: parseVal("inc-a-housing-sub"),
       aHousingLoanRepay: parseVal("inc-a-housing-loan"),
+      aIsHouseholder: aIsHouseholder,
       bVentureInvestment: parseVal("inc-b-venture"),
       bHousingSubscription: parseVal("inc-b-housing-sub"),
       bHousingLoanRepay: parseVal("inc-b-housing-loan")
@@ -1548,9 +1828,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function validateIncomeInputs(d) {
     clearInlineErrors();
-    if (d.aSalary < 0 || d.bSalary < 0) { showInlineError("income-form-error", "소득금액은 0원 이상이어야 합니다."); return false; }
+    const isSpouseBEnabled = document.getElementById('enable-spouse-b')?.checked;
+    
+    if (d.aSalary < 0 || (isSpouseBEnabled && d.bSalary < 0)) { showInlineError("income-form-error", "소득금액은 0원 이상이어야 합니다."); return false; }
     if (d.aIsaType === "sub" && d.aSalary > 50000000) { showInlineError("income-form-error", "배우자 A ISA 서민형 자격 없음 (급여 5,000만 초과)"); return false; }
-    if (d.bIsaType === "sub" && d.bSalary > 50000000) { showInlineError("income-form-error", "배우자 B ISA 서민형 자격 없음 (급여 5,000만 초과)"); return false; }
+    if (isSpouseBEnabled && d.bIsaType === "sub" && d.bSalary > 50000000) { showInlineError("income-form-error", "배우자 B ISA 서민형 자격 없음 (급여 5,000만 초과)"); return false; }
     const allNonNeg = [d.aCard, d.bCard, d.aYellow, d.bYellow, d.aPension, d.bPension,
       d.aFinancialGen, d.aFinancialOverseas, d.aIsaIncome, d.aBondSeparated,
       d.bFinancialGen, d.bFinancialOverseas, d.bIsaIncome, d.bBondSeparated,
@@ -1565,8 +1847,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const dependents = [];
     const depNames = [];
     for (const card of cards) {
-      const name = (card.querySelector(".opt-dep-name").value || "").trim();
-      if (!name) { showInlineError("income-form-error", "부양가족 이름을 입력해주세요."); return null; }
+      let name = (card.querySelector(".opt-dep-name").value || "").trim();
+      if (!name) {
+        name = card.querySelector(".person-name")?.textContent || "부양가족";
+      }
       if (depNames.includes(name)) { showInlineError("income-form-error", "중복된 부양가족 이름: " + name); return null; }
       depNames.push(name);
       const cardVal = parseVal(card.querySelector(".opt-dep-card"));
@@ -1723,7 +2007,9 @@ document.addEventListener('DOMContentLoaded', () => {
       isaType: d.aIsaType,
       bondSeparated: d.aBondSeparated,
       card: d.aCard, cash: 0, pensionSavings: d.aPension, irpSavings: d.aIrp, yellowUmbrella: d.aYellow, SME: false,
-      housingSubscription: d.aHousingSubscription, housingLoanRepay: d.aHousingLoanRepay, ventureInvestment: d.aVentureInvestment
+      housingSubscription: d.aHousingSubscription, housingLoanRepay: d.aHousingLoanRepay, ventureInvestment: d.aVentureInvestment,
+      isHouseholder: d.aIsHouseholder, spouseHousingSubscription: d.bHousingSubscription,
+      medicalExpense: d.aMedical
     };
     const personBOptData = {
       totalSalary: d.bSalary,
@@ -1738,7 +2024,9 @@ document.addEventListener('DOMContentLoaded', () => {
       isaType: d.bIsaType,
       bondSeparated: d.bBondSeparated,
       card: d.bCard, cash: 0, pensionSavings: d.bPension, irpSavings: d.bIrp, yellowUmbrella: d.bYellow, SME: false,
-      housingSubscription: d.bHousingSubscription, housingLoanRepay: d.bHousingLoanRepay, ventureInvestment: d.bVentureInvestment
+      housingSubscription: d.bHousingSubscription, housingLoanRepay: d.bHousingLoanRepay, ventureInvestment: d.bVentureInvestment,
+      isHouseholder: false, spouseHousingSubscription: d.aHousingSubscription,
+      medicalExpense: d.bMedical
     };
     const optResult = TaxOptimizer.optimizeCoupleYearEnd({ personA: personAOptData, personB: personBOptData, dependents });
     const best = optResult.best;
@@ -1752,8 +2040,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const bDeps = [];
       let aCardSum = personAOptData.card;
       let bCardSum = personBOptData.card;
-      let aMedicalSum = 0;
-      let bMedicalSum = 0;
+      let aMedicalSum = personAOptData.medicalExpense || 0;
+      let bMedicalSum = personBOptData.medicalExpense || 0;
       let aEduSum = 0;
       let bEduSum = 0;
       let aChildCount = 0;
@@ -1943,19 +2231,73 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderCardNavigation(d) {
-    const aThreshold = Math.floor(d.aSalary * 0.25);
-    const bThreshold = Math.floor(d.bSalary * 0.25);
-    const aCardLimit = d.aSalary > 120000000 ? 2000000 : d.aSalary > 70000000 ? 2500000 : 3000000;
-    const bCardLimit = d.bSalary > 120000000 ? 2000000 : d.bSalary > 70000000 ? 2500000 : 3000000;
-    document.getElementById("res-card-nav-content").innerHTML =
-      (d.aCard >= aThreshold + aCardLimit ? "배우자 A 카드공제 한도 도달. " : "배우자 A 카드 " + Math.max(0, aThreshold + aCardLimit - d.aCard).toLocaleString() + "원 추가 사용 가능. ") +
-      (d.bCard >= bThreshold + bCardLimit ? "배우자 B 카드공제 한도 도달." : "배우자 B 카드 " + Math.max(0, bThreshold + bCardLimit - d.bCard).toLocaleString() + "원 추가 사용 가능.");
+    const isSpouseBEnabled = document.getElementById('enable-spouse-b')?.checked;
+    
+    const aMix = TaxCalculator.calculateCardOptimalMix({
+      totalSalary: d.aSalary,
+      cardUsage: d.aCard,
+      cashUsage: 0,
+      traditionalMarket: 0,
+      publicTransit: 0,
+      bookPerformance: 0
+    });
+    
+    let html = `
+      <div style="margin-bottom: 12px; padding: 10px; background: rgba(56,189,248,0.06); border-radius: 8px;">
+        <h5 style="margin: 0 0 6px 0; color: var(--accent-primary); font-size: 0.88rem;">👤 배우자 A 카드 소비 최적화 가이드</h5>
+        <div>문턱(25%): <strong>${aMix.threshold.toLocaleString()}원</strong> | 현재 사용액: <strong>${aMix.totalUsage.toLocaleString()}원</strong></div>
+        <div style="margin-top: 4px; font-size: 0.8rem; line-height: 1.4;">
+    `;
+    
+    if (aMix.remainingToThreshold > 0) {
+      html += `🚩 배우자 A 카드 사용액이 문턱까지 <strong>${aMix.remainingToThreshold.toLocaleString()}원</strong> 부족합니다. 이 금액만큼은 혜택이 많은 <strong>신용카드</strong>를 우선 사용하세요.`;
+    } else if (!aMix.isLimitReached) {
+      html += `✅ 배우자 A 카드공제 문턱 달성! 남은 한도(${aMix.limit.toLocaleString()}원)를 채우기 위해 <strong>체크카드/현금</strong>으로 <strong>${aMix.additionalCashNeeded.toLocaleString()}원</strong>을 더 사용하시는 것이 유리합니다 (공제율 30% 적용).`;
+    } else {
+      html += `🎉 배우자 A 카드공제 한도 도달! 기본 공제 한도(<strong>${aMix.limit.toLocaleString()}원</strong>)에 도달했습니다. 추가 한도(전통시장, 대중교통 등)를 적극 활용하세요.`;
+    }
+    html += `</div></div>`;
+    
+    if (isSpouseBEnabled) {
+      const bMix = TaxCalculator.calculateCardOptimalMix({
+        totalSalary: d.bSalary,
+        cardUsage: d.bCard,
+        cashUsage: 0,
+        traditionalMarket: 0,
+        publicTransit: 0,
+        bookPerformance: 0
+      });
+      html += `
+        <div style="padding: 10px; background: rgba(0, 212, 170, 0.06); border-radius: 8px;">
+          <h5 style="margin: 0 0 6px 0; color: var(--accent-secondary); font-size: 0.88rem;">👤 배우자 B 카드 소비 최적화 가이드</h5>
+          <div>문턱(25%): <strong>${bMix.threshold.toLocaleString()}원</strong> | 현재 사용액: <strong>${bMix.totalUsage.toLocaleString()}원</strong></div>
+          <div style="margin-top: 4px; font-size: 0.8rem; line-height: 1.4;">
+      `;
+      if (bMix.remainingToThreshold > 0) {
+        html += `🚩 배우자 B 카드 사용액이 문턱까지 <strong>${bMix.remainingToThreshold.toLocaleString()}원</strong> 부족합니다. 이 금액만큼은 혜택이 많은 <strong>신용카드</strong>를 우선 사용하세요.`;
+      } else if (!bMix.isLimitReached) {
+        html += `✅ 배우자 B 카드공제 문턱 달성! 남은 한도(${bMix.limit.toLocaleString()}원)를 채우기 위해 <strong>체크카드/현금</strong>으로 <strong>${bMix.additionalCashNeeded.toLocaleString()}원</strong>을 더 사용하시는 것이 유리합니다 (공제율 30% 적용).`;
+      } else {
+        html += `🎉 배우자 B 카드공제 한도 도달! 기본 공제 한도(<strong>${bMix.limit.toLocaleString()}원</strong>)에 도달했습니다. 추가 한도(전통시장, 대중교통 등)를 적극 활용하세요.`;
+      }
+      html += `</div></div>`;
+    }
+    
+    document.getElementById("res-card-nav-content").innerHTML = html;
     showAccordionSection("acc-card-nav");
   }
 
   function renderMedicalComparison(d, dependents) {
-    const totalMedical = dependents.reduce((s, dep) => s + dep.medical, 0);
-    if (totalMedical <= 0) return;
+    const isSpouseBEnabled = document.getElementById('enable-spouse-b')?.checked;
+    if (!isSpouseBEnabled) {
+      hideAccordionSection("acc-medical");
+      return;
+    }
+    const totalMedical = dependents.reduce((s, dep) => s + dep.medical, 0) + (d.aMedical || 0) + (d.bMedical || 0);
+    if (totalMedical <= 0) {
+      hideAccordionSection("acc-medical");
+      return;
+    }
     const aMed = Math.max(0, Math.floor((totalMedical - Math.floor(d.aSalary * 0.03)) * 0.15));
     const bMed = Math.max(0, Math.floor((totalMedical - Math.floor(d.bSalary * 0.03)) * 0.15));
     const maxMed = Math.max(aMed, bMed, 1);
@@ -2276,50 +2618,135 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // 🏥 건강보험료 시뮬레이터
-  document.getElementById('hi-type').addEventListener('change', function () {
-    const isEmployee = this.value === 'employee';
-    document.getElementById('hi-employee-fields').style.display = isEmployee ? 'block' : 'none';
-    document.getElementById('hi-regional-fields').style.display = isEmployee ? 'none' : 'block';
+  const hiTypeEl = document.getElementById('hi-type');
+  if (hiTypeEl) {
+    hiTypeEl.addEventListener('change', function () {
+      const isEmployee = this.value === 'employee';
+      const empFields = document.getElementById('hi-employee-fields');
+      const regFields = document.getElementById('hi-regional-fields');
+      if (empFields) empFields.style.display = isEmployee ? 'block' : 'none';
+      if (regFields) regFields.style.display = isEmployee ? 'none' : 'block';
+    });
+  }
+
+  // 🛡️ 보장성 보험료 세액공제
+  document.getElementById('btn-calc-insurance-credit').addEventListener('click', () => {
+    const premium = parseVal('insurance-premium');
+    const result = TaxCalculator.calculateInsuranceCredit({ totalPremium: premium });
+    document.getElementById('insurance-result').style.display = 'block';
+    document.getElementById('insurance-result-content').innerHTML = `
+      <div>연간 보험료 납입액: <strong>${result.totalPremium.toLocaleString()} 원</strong></div>
+      <div>공제 한도: ${result.limit.toLocaleString()} 원</div>
+      <div>공제 대상 금액: <strong>${result.eligibleAmount.toLocaleString()} 원</strong></div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div>세액공제율: ${result.creditRate}%</div>
+      <div style="font-weight:bold;color:var(--accent-primary);font-size:0.95rem;">세액공제액: <strong>${result.credit.toLocaleString()} 원</strong></div>
+      <div style="color:var(--accent-warning);">지방소득세: ${result.localTax.toLocaleString()} 원</div>
+      <div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">💰 총 혜택: <strong>${result.totalBenefit.toLocaleString()} 원</strong></div>
+      ${result.isMaxed ? '<div style="margin-top:6px;padding:6px;background:rgba(0,212,170,0.08);border-radius:6px;font-size:0.78rem;">✅ 보험료 한도(100만 원)에 도달했습니다. 추가 납입 시 세액공제 혜택이 없습니다.</div>' : `<div style="margin-top:6px;font-size:0.78rem;opacity:0.7;">📌 한도까지 ${Math.max(0, result.limit - result.totalPremium).toLocaleString()} 원 추가 가능</div>`}
+    `;
   });
-  document.getElementById('btn-calc-health-insurance').addEventListener('click', () => {
-    const isEmployee = document.getElementById('hi-type').value === 'employee';
-    let opts = { isEmployee };
-    if (isEmployee) {
-      opts.earnedIncome = parseVal('hi-earned-income');
-      opts.otherIncome = parseVal('hi-other-income');
-    } else {
-      opts.regionalIncome = parseVal('hi-regional-income');
-      opts.regionalPropertyValue = parseVal('hi-regional-property');
-    }
-    const hi = TaxCalculator.calculateHealthInsurance(opts);
-    document.getElementById('hi-result').style.display = 'block';
-    let html = '';
-    if (hi.type === 'employee') {
-      html = `
-        <div>월평균 근로소득: ${hi.earnedMonthly.toLocaleString()} 원</div>
-        <div>직장 건강보험료 (월): <strong>${hi.workedPremium.toLocaleString()} 원</strong></div>
-        <div>장기요양보험료 (월): <strong>${hi.longTermCare.toLocaleString()} 원</strong></div>
-        ${hi.incomeMonthlyPremium > 0 ? `<div style="color:var(--accent-warning);">⚠️ 소득월액보험료 (월): <strong>${hi.incomeMonthlyPremium.toLocaleString()} 원</strong> (기타소득 2,000만 초과)</div>` : '<div>소득월액보험료: 없음 (기타소득 2,000만 이하)</div>'}
-        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-        <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-secondary);">월 보험료 합계: ${hi.monthlyPremium.toLocaleString()} 원</div>
-        <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-primary);">연 보험료 합계: <strong>${hi.annualPremium.toLocaleString()} 원</strong></div>
+
+  // 🏠 월세 세액공제
+  document.getElementById('btn-calc-rent-credit').addEventListener('click', () => {
+    const totalSalary = parseVal('rent-salary');
+    const annualRent = parseVal('rent-amount');
+    const result = TaxCalculator.calculateRentCredit({ totalSalary, annualRent });
+    document.getElementById('rent-result').style.display = 'block';
+    if (!result.isEligible) {
+      document.getElementById('rent-result-content').innerHTML = `
+        <div style="color:var(--accent-warning);font-weight:bold;">❌ ${result.reason}</div>
       `;
-    } else {
-      html = `
-        <div>소득점수: ${hi.details.incomeScore.toLocaleString()}</div>
-        <div>재산점수: ${hi.details.propertyScore.toLocaleString()}</div>
-        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-        <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-secondary);">월 보험료 합계: ${hi.monthlyPremium.toLocaleString()} 원</div>
-        <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-primary);">연 보험료 합계: <strong>${hi.annualPremium.toLocaleString()} 원</strong></div>
-      `;
+      return;
     }
-    const checkDependent = document.getElementById('hi-dependent-check').checked;
-    if (checkDependent && isEmployee) {
-      const depResult = TaxCalculator.checkDependentStatus({ otherIncome: opts.otherIncome, isWageOnly: true, isPropertyOwner: false });
-      html += `<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;"><div style="font-weight:bold;">🔍 피부양자 자격: ${depResult.isEligible ? '✅ 유지' : '❌ 상실'}</div><div style="font-size:0.78rem;opacity:0.7;">${depResult.reason}</div>`;
-    }
-    document.getElementById('hi-result-content').innerHTML = html;
+    document.getElementById('rent-result-content').innerHTML = `
+      <div>총급여: ${result.totalSalary.toLocaleString()} 원</div>
+      <div>연간 월세 납입액: <strong>${result.annualRent.toLocaleString()} 원</strong></div>
+      <div>공제 한도: ${result.limit.toLocaleString()} 원</div>
+      <div>공제 대상 금액: <strong>${result.eligibleAmount.toLocaleString()} 원</strong></div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div>세액공제율: ${result.creditRate}%${result.totalSalary <= 55000000 ? ' (총급여 5,500만 이하 15%)' : ' (총급여 5,500만 초과 12%)'}</div>
+      <div style="font-weight:bold;color:var(--accent-primary);font-size:0.95rem;">세액공제액: <strong>${result.credit.toLocaleString()} 원</strong></div>
+      <div style="color:var(--accent-warning);">지방소득세: ${result.localTax.toLocaleString()} 원</div>
+      <div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">💰 총 혜택: <strong>${result.totalBenefit.toLocaleString()} 원</strong></div>
+      ${result.isMaxed ? '<div style="margin-top:6px;padding:6px;background:rgba(0,212,170,0.08);border-radius:6px;font-size:0.78rem;">✅ 월세 한도(750만 원)에 도달했습니다.</div>' : ''}
+    `;
   });
+
+  // 💝 일반 기부금 세액공제
+  document.getElementById('btn-calc-donation-credit').addEventListener('click', () => {
+    const totalIncome = parseVal('donation-income');
+    const statutoryDonation = parseVal('donation-statutory');
+    const designatedDonation = parseVal('donation-designated');
+    const religiousDonation = parseVal('donation-religious');
+    const result = TaxCalculator.calculateDonationCredit({ totalIncome, statutoryDonation, designatedDonation, religiousDonation });
+    document.getElementById('donation-result').style.display = 'block';
+    document.getElementById('donation-result-content').innerHTML = `
+      <div>연간 총소득: <strong>${result.totalIncome.toLocaleString()} 원</strong></div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div>📌 기부 내역</div>
+      <div>· 법정기부금: ${result.statutoryDonation.toLocaleString()} 원</div>
+      <div>· 지정기부금: ${result.designatedDonation.toLocaleString()} 원</div>
+      <div>· 종교단체 기부금: ${result.religiousDonation.toLocaleString()} 원</div>
+      <div>· 기부 합계: <strong>${result.totalDonation.toLocaleString()} 원</strong></div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div style="color:var(--accent-info);">📋 공제 명세</div>
+      <div>· 지정기부금 한도(소득의 30%): ${result.incomeLimit.toLocaleString()} 원</div>
+      <div>· 법정기부금 세액공제(100%): <strong>${result.statutoryCredit.toLocaleString()} 원</strong></div>
+      <div>· 지정기부금 세액공제(30%): <strong>${result.designatedCredit.toLocaleString()} 원</strong> (대상 ${result.designatedEligible.toLocaleString()}원)</div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div style="font-weight:bold;color:var(--accent-primary);font-size:0.95rem;">총 세액공제액: <strong>${result.totalCredit.toLocaleString()} 원</strong></div>
+      <div style="color:var(--accent-warning);">지방소득세: ${result.localTax.toLocaleString()} 원</div>
+      <div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">💰 총 혜택: <strong>${result.totalBenefit.toLocaleString()} 원</strong></div>
+    `;
+  });
+
+  // 🏥 건강보험료 계산
+  const btnCalcHi = document.getElementById('btn-calc-health-insurance');
+  if (btnCalcHi) {
+    btnCalcHi.addEventListener('click', () => {
+      const isEmployee = (document.getElementById('hi-type')?.value || 'employee') === 'employee';
+      let opts = { isEmployee };
+      if (isEmployee) {
+        opts.earnedIncome = parseVal('hi-earned-income');
+        opts.otherIncome = parseVal('hi-other-income');
+      } else {
+        opts.regionalIncome = parseVal('hi-regional-income');
+        opts.regionalPropertyValue = parseVal('hi-regional-property');
+      }
+      const hi = TaxCalculator.calculateHealthInsurance(opts);
+      const hiResult = document.getElementById('hi-result');
+      if (hiResult) hiResult.style.display = 'block';
+      let html = '';
+      if (hi.type === 'employee') {
+        html = `
+          <div>월평균 근로소득: ${hi.earnedMonthly.toLocaleString()} 원</div>
+          <div>직장 건강보험료 (월): <strong>${hi.workedPremium.toLocaleString()} 원</strong></div>
+          <div>장기요양보험료 (월): <strong>${hi.longTermCare.toLocaleString()} 원</strong></div>
+          ${hi.incomeMonthlyPremium > 0 ? `<div style="color:var(--accent-warning);">⚠️ 소득월액보험료 (월): <strong>${hi.incomeMonthlyPremium.toLocaleString()} 원</strong> (기타소득 2,000만 초과)</div>` : '<div>소득월액보험료: 없음 (기타소득 2,000만 이하)</div>'}
+          <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+          <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-secondary);">월 보험료 합계: ${hi.monthlyPremium.toLocaleString()} 원</div>
+          <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-primary);">연 보험료 합계: <strong>${hi.annualPremium.toLocaleString()} 원</strong></div>
+        `;
+      } else {
+        html = `
+          <div>소득점수: ${hi.details.incomeScore.toLocaleString()}</div>
+          <div>재산점수: ${hi.details.propertyScore.toLocaleString()}</div>
+          <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+          <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-secondary);">월 보험료 합계: ${hi.monthlyPremium.toLocaleString()} 원</div>
+          <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-primary);">연 보험료 합계: <strong>${hi.annualPremium.toLocaleString()} 원</strong></div>
+        `;
+      }
+      const checkDependentEl = document.getElementById('hi-dependent-check');
+      const checkDependent = checkDependentEl ? checkDependentEl.checked : false;
+      if (checkDependent && isEmployee) {
+        const depResult = TaxCalculator.checkDependentStatus({ otherIncome: opts.otherIncome, isWageOnly: true, isPropertyOwner: false });
+        html += `<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;"><div style="font-weight:bold;">🔍 피부양자 자격: ${depResult.isEligible ? '✅ 유지' : '❌ 상실'}</div><div style="font-size:0.78rem;opacity:0.7;">${depResult.reason}</div>`;
+      }
+      const hiResultContent = document.getElementById('hi-result-content');
+      if (hiResultContent) hiResultContent.innerHTML = html;
+    });
+  }
 
   // 🏠 부동산 보유세
   document.getElementById('prop-house-count').addEventListener('input', function () {
@@ -2564,35 +2991,60 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // 🏠 간주임대료 실시간
-  const debouncedDeemedRent = debounce(() => { if (!isLoadingState) document.getElementById('btn-calc-deemed-rent').click(); });
+  const debouncedDeemedRent = debounce(() => {
+    if (!isLoadingState) {
+      const btn = document.getElementById('btn-calc-deemed-rent');
+      if (btn) btn.click();
+    }
+  });
   ['deemed-house-count','deemed-deposit','deemed-highprice','deemed-small'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('input', debouncedDeemedRent); el.addEventListener('change', debouncedDeemedRent); }
   });
 
   // 🏥 건강보험료 실시간
-  const debouncedHealthIns = debounce(() => { if (!isLoadingState) document.getElementById('btn-calc-health-insurance').click(); });
+  const debouncedHealthIns = debounce(() => {
+    if (!isLoadingState) {
+      const btn = document.getElementById('btn-calc-health-insurance');
+      if (btn) btn.click();
+    }
+  });
   ['hi-type','hi-earned-income','hi-other-income','hi-regional-income','hi-regional-property','hi-dependent-check'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('input', debouncedHealthIns); el.addEventListener('change', debouncedHealthIns); }
   });
 
   // 🏠 부동산 보유세 실시간
-  const debouncedPropertyTax = debounce(() => { if (!isLoadingState) document.getElementById('btn-calc-property-tax').click(); });
+  const debouncedPropertyTax = debounce(() => {
+    if (!isLoadingState) {
+      const btn = document.getElementById('btn-calc-property-tax');
+      if (btn) btn.click();
+    }
+  });
   ['prop-public-price','prop-market-price','prop-house-count','prop-one-house'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('input', debouncedPropertyTax); el.addEventListener('change', debouncedPropertyTax); }
   });
 
   // 🏟️ 체육시설 공제 실시간
-  const debouncedSports = debounce(() => { if (!isLoadingState) document.getElementById('btn-calc-sports').click(); });
+  const debouncedSports = debounce(() => {
+    if (!isLoadingState) {
+      const btn = document.getElementById('btn-calc-sports');
+      if (btn) btn.click();
+    }
+  });
   ['sports-salary','sports-fee','sports-has-pt'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('input', debouncedSports); el.addEventListener('change', debouncedSports); }
   });
 
   // 🎁 고향사랑기부제 실시간
-  const debouncedHometown = debounce(() => { if (!isLoadingState) document.getElementById('btn-calc-hometown').click(); });
+  const debouncedHometown = debounce(() => {
+    if (!isLoadingState) {
+      const btn = document.getElementById('btn-calc-hometown');
+      if (btn) btn.click();
+    }
+  });
   ['hometown-amount','hometown-disaster'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('input', debouncedHometown); el.addEventListener('change', debouncedHometown); }
@@ -2737,6 +3189,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 단계형 섹션 초기화
   initStepSections();
+  
+  // 초기 배우자 B 탭 버튼 가시성 설정 (체크박스 상태에 따라)
+  (function initSpouseBVisibility() {
+    const chk = document.getElementById('enable-spouse-b');
+    const isEnabled = chk ? chk.checked : true;
+    const bSegmentBtn = document.querySelector('.profile-segment-wrapper .segment-btn[data-segment="profile-b"]');
+    if (bSegmentBtn) bSegmentBtn.style.display = isEnabled ? 'inline-block' : 'none';
+    const bMobileOption = document.querySelector('#mobile-spouse-select option[value="profile-b"]');
+    if (bMobileOption) bMobileOption.style.display = isEnabled ? 'block' : 'none';
+    const bTaxCard = document.getElementById('res-b-tax-report-card');
+    const bFinCard = document.getElementById('res-b-financial-report-card');
+    if (bTaxCard) bTaxCard.style.display = isEnabled ? 'block' : 'none';
+    if (bFinCard) bFinCard.style.display = isEnabled ? 'block' : 'none';
+  })();
+  
   goToStep(1);
   updateInputProgress();
   initRealtimeWarningsAndSync();
@@ -2771,8 +3238,31 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     btnCalcIncomeIntegrated.click();
     btnCalcVat.click();
-    btnCalcCapital.click();
-    btnCalcOptGs.click();
+    // safely click capital and opt-gs
+    const _btnCapital = document.getElementById('btn-calc-capital');
+    if (_btnCapital) _btnCapital.click();
+    const _btnOptGs = document.getElementById('btn-calc-opt-gs');
+    if (_btnOptGs) _btnOptGs.click();
+
+    // Trigger sub-calculators click to ensure their outputs are computed immediately
+    [
+      'btn-calc-inheritance',
+      'btn-calc-marriage-gift',
+      'btn-calc-isa-opt',
+      'btn-calc-hometown',
+      'btn-calc-sports',
+      'btn-calc-deemed-rent',
+      'btn-calc-health-insurance',
+      'btn-calc-property-tax',
+      'btn-calc-pension-opt',
+      'btn-calc-card-ratio',
+      'btn-calc-expense-ratio',
+      'btn-calc-gift-timeline',
+      'btn-calc-gift-tax'
+    ].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.click();
+    });
   }, 0);
 });
 
