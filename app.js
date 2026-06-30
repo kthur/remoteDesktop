@@ -993,33 +993,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 3. 양도소득세 탭 입력 전환 제어 (부동산 vs 주식)
   // 1-2. 양도/증여/상속 세그먼트 컨트롤 클릭 바인딩
-  // Profile Segment Toggle
+  // Profile Segment Toggle & Mobile Select Sync
   const profileSegmentBtns = document.querySelectorAll('.profile-segment-wrapper .segment-btn');
   const profileGroups = document.querySelectorAll('.profile-segment-group');
-  
+  const mobileSpouseSelect = document.getElementById('mobile-spouse-select');
+
+  function selectProfileGroup(targetGroup) {
+    profileSegmentBtns.forEach(btn => {
+      const isActive = btn.dataset.segment === targetGroup;
+      btn.classList.toggle('active', isActive);
+      if (isActive) {
+        btn.style.background = 'var(--accent-primary)';
+        btn.style.color = '#fff';
+      } else {
+        btn.style.background = 'transparent';
+        btn.style.color = 'var(--text-secondary-dark)';
+      }
+    });
+
+    if (mobileSpouseSelect && mobileSpouseSelect.value !== targetGroup) {
+      mobileSpouseSelect.value = targetGroup;
+    }
+
+    profileGroups.forEach(group => {
+      if (group.dataset.group === targetGroup) {
+        group.style.display = 'block';
+      } else {
+        group.style.display = 'none';
+      }
+    });
+  }
+
   profileSegmentBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      profileSegmentBtns.forEach(b => {
-        b.classList.remove('active');
-        b.style.background = 'transparent';
-        b.style.color = 'var(--text-secondary-dark)';
-      });
-      btn.classList.add('active');
-      btn.style.background = 'var(--accent-primary)';
-      btn.style.color = '#fff';
-
-      const targetGroup = btn.dataset.segment;
-      profileGroups.forEach(group => {
-        if (group.dataset.group === targetGroup) {
-          group.style.display = 'block';
-        } else {
-          group.style.display = 'none';
-        }
-      });
-
-      // Stepper sync removed as we now use segment controls exclusively
+      selectProfileGroup(btn.dataset.segment);
     });
   });
+
+  if (mobileSpouseSelect) {
+    mobileSpouseSelect.addEventListener('change', () => {
+      selectProfileGroup(mobileSpouseSelect.value);
+    });
+  }
 
   // Capital Segment Toggle
   const capitalSegmentBtns = document.querySelectorAll('.segment-control-wrapper:not(.profile-segment-wrapper) .segment-btn');
@@ -1561,6 +1576,90 @@ document.addEventListener('DOMContentLoaded', () => {
     updateResultWithHighlight("res-" + id + "-financial-comp", (result.financialCompAmount || 0).toLocaleString() + " 원");
   }
 
+  let currentCustomAssignment = null;
+  let isCustomDeductionApplied = false;
+
+  function renderDeductionAssigner(d, dependents, best) {
+    const container = document.getElementById("deduction-assigner-section");
+    const listContainer = document.getElementById("deduction-assigner-list");
+    if (!container || !listContainer) return;
+
+    if (dependents.length === 0) {
+      container.style.display = "none";
+      return;
+    }
+
+    container.style.display = "block";
+
+    if (!currentCustomAssignment) {
+      currentCustomAssignment = {
+        deps: {},
+        medical: best ? best.medicalTarget : 'a'
+      };
+      dependents.forEach(dep => {
+        if (best && best.bDeps.includes(dep.name)) {
+          currentCustomAssignment.deps[dep.name] = 'b';
+        } else {
+          currentCustomAssignment.deps[dep.name] = 'a';
+        }
+      });
+    }
+
+    let html = '';
+
+    dependents.forEach(dep => {
+      const selectedValue = currentCustomAssignment.deps[dep.name] || 'a';
+      const recommendedValue = (best && best.bDeps.includes(dep.name)) ? 'b' : 'a';
+      
+      html += `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; background:rgba(255,255,255,0.01); border-bottom:1px solid rgba(255,255,255,0.03);">
+          <div>
+            <strong>👥 ${dep.name}</strong> <span style="font-size:0.75rem; opacity:0.6;">(${dep.relation === 'child' ? '자녀' : dep.relation === 'parent' ? '부모' : '기타'})</span>
+            <div style="font-size:0.7rem; opacity:0.7; margin-top:2px;">
+              인적공제 150만 ${dep.medical > 0 ? ` · 의료비 ${dep.medical.toLocaleString()}원` : ''} ${dep.edu > 0 ? ` · 교육비 ${dep.edu.toLocaleString()}원` : ''}
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:0.7rem; color:var(--accent-secondary); font-weight:bold;">
+              ${recommendedValue === 'a' ? 'A 권장' : 'B 권장'}
+            </span>
+            <select class="form-input custom-dep-assign" data-dep-name="${dep.name}" style="padding:4px 8px; font-size:0.8rem; width:auto; margin-bottom:0;">
+              <option value="a" ${selectedValue === 'a' ? 'selected' : ''}>배우자 A</option>
+              <option value="b" ${selectedValue === 'b' ? 'selected' : ''}>배우자 B</option>
+            </select>
+          </div>
+        </div>
+      `;
+    });
+
+    const totalMedical = dependents.reduce((s, dep) => s + dep.medical, 0);
+    if (totalMedical > 0) {
+      const selectedMed = currentCustomAssignment.medical;
+      const recommendedMed = best ? best.medicalTarget : 'a';
+      html += `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; background:rgba(255,255,255,0.01); border-bottom:1px solid rgba(255,255,255,0.03);">
+          <div>
+            <strong>🏥 의료비 몰아주기 (합계: ${totalMedical.toLocaleString()}원)</strong>
+            <div style="font-size:0.7rem; opacity:0.7; margin-top:2px;">
+              의료비 세액공제는 부부 중 한 사람에게 몰아주는 것이 유리합니다.
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:0.7rem; color:var(--accent-secondary); font-weight:bold;">
+              ${recommendedMed === 'a' ? 'A 권장' : 'B 권장'}
+            </span>
+            <select class="form-input" id="custom-medical-assign" style="padding:4px 8px; font-size:0.8rem; width:auto; margin-bottom:0;">
+              <option value="a" ${selectedMed === 'a' ? 'selected' : ''}>배우자 A</option>
+              <option value="b" ${selectedMed === 'b' ? 'selected' : ''}>배우자 B</option>
+            </select>
+          </div>
+        </div>
+      `;
+    }
+
+    listContainer.innerHTML = html;
+  }
+
   function runOptimizerAndRender(d, dependents) {
     const personAOptData = {
       totalSalary: d.aSalary,
@@ -1594,30 +1693,141 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const optResult = TaxOptimizer.optimizeCoupleYearEnd({ personA: personAOptData, personB: personBOptData, dependents });
     const best = optResult.best;
-    if (best) {
+
+    renderDeductionAssigner(d, dependents, best);
+
+    let activeAssignment = best;
+
+    if (isCustomDeductionApplied && currentCustomAssignment) {
+      const aDeps = [];
+      const bDeps = [];
+      let aCardSum = personAOptData.card;
+      let bCardSum = personBOptData.card;
+      let aMedicalSum = 0;
+      let bMedicalSum = 0;
+      let aEduSum = 0;
+      let bEduSum = 0;
+      let aChildCount = 0;
+      let bChildCount = 0;
+      let aSenior = false, bSenior = false;
+      let aDisabled = false, bDisabled = false;
+      let aBirth = false, bBirth = false;
+
+      dependents.forEach(dep => {
+        const target = currentCustomAssignment.deps[dep.name] || 'a';
+        if (target === 'b') {
+          bDeps.push(dep);
+          bCardSum += dep.card;
+          bMedicalSum += dep.medical;
+          bEduSum += dep.edu;
+          if (dep.relation === 'child') bChildCount++;
+          if (dep.senior) bSenior = true;
+          if (dep.disabled) bDisabled = true;
+          if (dep.birth) bBirth = true;
+        } else {
+          aDeps.push(dep);
+          aCardSum += dep.card;
+          aMedicalSum += dep.medical;
+          aEduSum += dep.edu;
+          if (dep.relation === 'child') aChildCount++;
+          if (dep.senior) aSenior = true;
+          if (dep.disabled) aDisabled = true;
+          if (dep.birth) aBirth = true;
+        }
+      });
+
+      const medTarget = currentCustomAssignment.medical;
+      const totalMedical = aMedicalSum + bMedicalSum;
+      const customMed = {
+        aMed: medTarget === 'a' ? totalMedical : 0,
+        bMed: medTarget === 'b' ? totalMedical : 0
+      };
+
+      const customAResult = TaxCalculator.calculateYearEndTax({
+        ...personAOptData,
+        dependents: aDeps.length,
+        cardUsage: aCardSum,
+        medicalExpense: customMed.aMed,
+        educationExpense: aEduSum,
+        childrenCount: aChildCount,
+        hasSeniorDependent: aSenior,
+        hasDisabledDependent: aDisabled,
+        hasBirthOrAdoption: aBirth,
+        birthOrder: 1
+      });
+
+      const customBResult = TaxCalculator.calculateYearEndTax({
+        ...personBOptData,
+        dependents: bDeps.length,
+        cardUsage: bCardSum,
+        medicalExpense: customMed.bMed,
+        educationExpense: bEduSum,
+        childrenCount: bChildCount,
+        hasSeniorDependent: bSenior,
+        hasDisabledDependent: bDisabled,
+        hasBirthOrAdoption: bBirth,
+        birthOrder: 1
+      });
+
+      activeAssignment = {
+        combinationIndex: -1,
+        medicalTarget: medTarget,
+        aDeps: aDeps.map(d => d.name),
+        bDeps: bDeps.map(d => d.name),
+        aTax: customAResult.totalTax,
+        bTax: customBResult.totalTax,
+        totalTax: customAResult.totalTax + customBResult.totalTax,
+        aResult: customAResult,
+        bResult: customBResult
+      };
+
       document.getElementById("res-couple-ye-desc").innerHTML = [
-        "배우자 A 배정 부양가족: <strong>[" + (best.aDeps.join(", ") || "없음") + "]</strong><br>",
-        "배우자 B 배정 부양가족: <strong>[" + (best.bDeps.join(", ") || "없음") + "]</strong><br>",
-        "최적 배정 시 부부 합산 세액: <strong style='color:var(--accent-secondary); font-size:1.05rem;'>" + best.totalTax.toLocaleString() + " 원</strong> (단독 몰아주기 대비 <strong style='color:var(--accent-secondary);'>약 " + optResult.savings.toLocaleString() + " 원 절약</strong>)<br>",
-        "<span style='font-size:0.8rem; opacity:0.8;'>* 의료비 공제는 <strong>" + (best.medicalTarget === "a" ? "배우자 A" : "배우자 B") + "</strong> 밑으로 수렴하는 것이 절세에 최적입니다.</span>"
+        "<div style='background:rgba(255,217,61,0.06); padding:8px 12px; border-radius:6px; border:1px solid rgba(255,217,61,0.2); margin-bottom:10px; font-size:0.78rem; color:var(--accent-gold);'>⚠️ <strong>사용자 지정 배정</strong>이 적용된 상태입니다.</div>",
+        "배우자 A 배정 부양가족: <strong>[" + (activeAssignment.aDeps.join(", ") || "없음") + "]</strong><br>",
+        "배우자 B 배정 부양가족: <strong>[" + (activeAssignment.bDeps.join(", ") || "없음") + "]</strong><br>",
+        "사용자 지정 시 부부 합산 세액: <strong style='color:var(--accent-secondary); font-size:1.05rem;'>" + activeAssignment.totalTax.toLocaleString() + " 원</strong><br>",
+        "<span style='font-size:0.8rem; opacity:0.8;'>* 의료비 공제는 <strong>" + (activeAssignment.medicalTarget === "a" ? "배우자 A" : "배우자 B") + "</strong> 밑으로 청구됩니다.</span>"
       ].join("");
-      renderSpouseResults("a", best.aResult);
-      renderSpouseResults("b", best.bResult);
+
+      renderSpouseResults("a", activeAssignment.aResult);
+      renderSpouseResults("b", activeAssignment.bResult);
+
       const worstTax = Math.max(optResult.allATax, optResult.allBTax);
-      const bestTax = best.totalTax;
-      const savings = Math.max(0, worstTax - bestTax);
+      const customTax = activeAssignment.totalTax;
+      const savings = Math.max(0, worstTax - customTax);
       document.getElementById("comp-worst-val").textContent = worstTax.toLocaleString() + " 원";
-      document.getElementById("comp-opt-val").textContent = bestTax.toLocaleString() + " 원";
+      document.getElementById("comp-opt-val").textContent = customTax.toLocaleString() + " 원";
       document.getElementById("comp-savings-val").textContent = savings.toLocaleString() + " 원";
       if (worstTax > 0) {
         document.getElementById("comp-worst-bar").style.width = "100%";
-        document.getElementById("comp-opt-bar").style.width = Math.max(5, Math.min(100, Math.round((bestTax / worstTax) * 100))) + "%";
-      } else {
-        document.getElementById("comp-worst-bar").style.width = "0%";
-        document.getElementById("comp-opt-bar").style.width = "0%";
+        document.getElementById("comp-opt-bar").style.width = Math.max(5, Math.min(100, Math.round((customTax / worstTax) * 100))) + "%";
+      }
+    } else {
+      if (best) {
+        document.getElementById("res-couple-ye-desc").innerHTML = [
+          "배우자 A 배정 부양가족: <strong>[" + (best.aDeps.join(", ") || "없음") + "]</strong><br>",
+          "배우자 B 배정 부양가족: <strong>[" + (best.bDeps.join(", ") || "없음") + "]</strong><br>",
+          "최적 배정 시 부부 합산 세액: <strong style='color:var(--accent-secondary); font-size:1.05rem;'>" + best.totalTax.toLocaleString() + " 원</strong> (단독 몰아주기 대비 <strong style='color:var(--accent-secondary);'>약 " + optResult.savings.toLocaleString() + " 원 절약</strong>)<br>",
+          "<span style='font-size:0.8rem; opacity:0.8;'>* 의료비 공제는 <strong>" + (best.medicalTarget === "a" ? "배우자 A" : "배우자 B") + "</strong> 밑으로 수렴하는 것이 절세에 최적입니다.</span>"
+        ].join("");
+        renderSpouseResults("a", best.aResult);
+        renderSpouseResults("b", best.bResult);
+        const worstTax = Math.max(optResult.allATax, optResult.allBTax);
+        const bestTax = best.totalTax;
+        const savings = Math.max(0, worstTax - bestTax);
+        document.getElementById("comp-worst-val").textContent = worstTax.toLocaleString() + " 원";
+        document.getElementById("comp-opt-val").textContent = bestTax.toLocaleString() + " 원";
+        document.getElementById("comp-savings-val").textContent = savings.toLocaleString() + " 원";
+        if (worstTax > 0) {
+          document.getElementById("comp-worst-bar").style.width = "100%";
+          document.getElementById("comp-opt-bar").style.width = Math.max(5, Math.min(100, Math.round((bestTax / worstTax) * 100))) + "%";
+        } else {
+          document.getElementById("comp-worst-bar").style.width = "0%";
+          document.getElementById("comp-opt-bar").style.width = "0%";
+        }
       }
     }
-    return { optResult, best };
+    return { optResult, best: activeAssignment };
   }
 
   function renderAdviceSection(d, aResult) {
@@ -1756,9 +1966,53 @@ document.addEventListener('DOMContentLoaded', () => {
     renderFamilySummary(d, aResult, bResult, best, optResult, dependents);
 
     showCalcStatus(false);
-    // 🆕 P0: 플로팅 요약 바 업데이트
     updateFloatingBar(best, d);
   });
+
+  // Custom Deduction Assigner Click Handlers
+  const btnApplyCustom = document.getElementById("btn-apply-custom-assignment");
+  if (btnApplyCustom) {
+    btnApplyCustom.addEventListener("click", () => {
+      const customDepAssignSelects = document.querySelectorAll(".custom-dep-assign");
+      const customDeps = {};
+      customDepAssignSelects.forEach(select => {
+        customDeps[select.dataset.depName] = select.value;
+      });
+      const customMedicalSelect = document.getElementById("custom-medical-assign");
+      const customMedical = customMedicalSelect ? customMedicalSelect.value : 'a';
+
+      currentCustomAssignment = {
+        deps: customDeps,
+        medical: customMedical
+      };
+      isCustomDeductionApplied = true;
+
+      // Re-trigger calculation
+      const d = parseIncomeInputs();
+      if (!validateIncomeInputs(d)) return;
+      const dependents = collectDependents();
+      if (!dependents) return;
+
+      showCalcStatus(true);
+      const aResult = TaxCalculator.calculateComprehensiveIncome(buildSpouseCalcOpts(d, "a"));
+      const bResult = TaxCalculator.calculateComprehensiveIncome(buildSpouseCalcOpts(d, "b"));
+      const { optResult, best } = runOptimizerAndRender(d, dependents);
+      renderFamilySummary(d, aResult, bResult, best, optResult, dependents);
+      showCalcStatus(false);
+      updateFloatingBar(best, d);
+    });
+  }
+
+  const btnApplyOptimal = document.getElementById("btn-apply-optimal-assignment");
+  if (btnApplyOptimal) {
+    btnApplyOptimal.addEventListener("click", () => {
+      isCustomDeductionApplied = false;
+      currentCustomAssignment = null;
+
+      // Re-trigger calculation to default optimal
+      btnCalcIncomeIntegrated.click();
+    });
+  }
 
   function updateFloatingBar(best, d) {
     const bar = document.getElementById('floating-result-bar');

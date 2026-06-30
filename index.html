@@ -48,7 +48,7 @@
 <nav aria-label="메인 메뉴" class="tab-navigation" role="tablist">
 <button aria-controls="tab-profile" aria-selected="true" class="tab-btn active" data-tab="profile" role="tab">👤 정보 입력</button>
 <button aria-controls="tab-optimize" aria-selected="false" class="tab-btn" data-tab="optimize" role="tab">🎯 최적화 도구</button>
-<button aria-controls="tab-report" aria-selected="false" class="tab-btn" data-tab="report" role="tab">🏆 통합 리포트</button>
+<button aria-controls="tab-report" aria-selected="false" class="tab-btn" data-tab="report" role="tab">🏆 리포트·공제 최적화</button>
 <button aria-controls="tab-capital" aria-selected="false" class="tab-btn" data-tab="capital" role="tab">🏠 양도·증여</button>
 </nav>
 <!-- ==================== 1. 종합소득세 대분류 탭 ==================== -->
@@ -81,6 +81,15 @@
 <div id="manual-input-container" style="display:none; margin-top:1rem;">
 
 <!-- 📄 홈택스 PDF 드롭존 토글 버튼 및 영역 -->
+
+<div class="mobile-spouse-select-wrapper">
+  <label for="mobile-spouse-select" style="font-size:0.8rem; font-weight:700; margin-bottom:6px; display:block;">대상자 선택 (모바일)</label>
+  <select id="mobile-spouse-select" class="form-input">
+    <option value="profile-a">배우자 A</option>
+    <option value="profile-b">배우자 B</option>
+    <option value="profile-dep">부양가족</option>
+  </select>
+</div>
 
 <div class="segment-control-wrapper profile-segment-wrapper" style="display:flex; margin-bottom:1.5rem;">
 <button class="segment-btn active" data-segment="profile-a" type="button" style="background:var(--accent-primary); color:#fff;">배우자 A</button>
@@ -388,154 +397,6 @@
 <!-- ==================== 2. 최적화 도구 탭 ==================== -->
 <section aria-label="최적화 도구" class="calculator-panel" id="tab-optimize" role="tabpanel">
 
-<!-- 🆕 P1-2: 독립 계산기 섹션 구분선 -->
-<div class="section-divider" style="grid-column: 1 / -1; margin: 1rem 0; text-align: center;">
-  <span style="display:inline-block; padding: 4px 16px; font-size:0.72rem; font-weight:700; color:var(--accent-secondary); border:1px solid rgba(0,212,170,0.2); border-radius:20px; background:rgba(0,212,170,0.06); letter-spacing:0.5px;">
-    📌 추가 절세 분석 도구
-  </span>
-</div>
-<div class="input-card" style="grid-column: 1 / -1; margin-top: 0.5rem;">
-<h2 class="card-title">💰 연금저축/IRP 세액공제 최적화</h2>
-<div class="grid-2col" style="display:grid; gap:1.5rem;">
-<div>
-<div class="form-group">
-<label>대상 선택</label>
-<select class="form-input" id="pension-target">
-<option value="a">배우자 A</option>
-<option value="b">배우자 B</option>
-</select>
-</div>
-<div class="form-group">
-<label>연간 총급여 (연말정산 기준) <span class="tooltip-icon" data-tooltip="연말정산 시 적용되는 연간 총급여액입니다.">?</span></label>
-<div style="display:flex; gap:6px;">
-  <input class="form-input money-input" id="pension-salary" inputmode="numeric" type="text" value="" readonly style="background:rgba(255,255,255,0.02); color:#aaa; cursor:not-allowed; flex:1;"/>
-  <a href="#" class="btn-edit-profile-salary" data-spouse-id="pension-target" style="font-size:0.75rem; text-decoration:none; color:var(--accent-primary); display:flex; align-items:center; white-space:nowrap; border:1px solid rgba(108,99,255,0.3); padding:4px 8px; border-radius:6px; background:rgba(108,99,255,0.05); transition:all 0.2s;">프로필 수정</a>
-</div>
-</div>
-<div class="form-group">
-<label>현재까지 납입한 연금저축 <span class="tooltip-icon" data-tooltip="올해 1월부터 현재까지 납입한 연금저축 총액입니다.">?</span></label>
-<input class="form-input money-input" id="pension-amount" inputmode="numeric" type="text" value=""/>
-</div>
-<div class="form-group">
-<label>현재까지 납입한 IRP <span class="tooltip-icon" data-tooltip="올해 1월부터 현재까지 납입한 IRP 총액입니다.">?</span></label>
-<input class="form-input money-input" id="pension-irp-amount" inputmode="numeric" type="text" value=""/>
-</div>
-<button class="btn-primary" id="btn-calc-pension-opt" style="margin-top:0.5rem;">🎯 최적화 분석</button>
-</div>
-<div id="pension-opt-result" style="background:rgba(0,212,170,0.05); padding:1.5rem; border-radius:12px; display:none;">
-<h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 연금 세액공제 최적화</h4>
-<div id="pension-opt-content" style="font-size:0.82rem; line-height:1.6;"></div>
-</div>
-</div>
-</div><div class="input-card" style="grid-column: 1 / -1; margin-top: 1.5rem;">
-<h2 class="card-title">💳 신용카드 vs 체크카드 황금비율 계산기</h2>
-<div class="grid-2col" style="display:grid; gap:1.5rem;">
-<div>
-<div class="form-group">
-<label>대상 선택</label>
-<select class="form-input" id="card-target">
-<option value="a">배우자 A</option>
-<option value="b">배우자 B</option>
-</select>
-</div>
-<div class="form-group">
-<label>연간 총급여 <span class="tooltip-icon" data-tooltip="연간 총급여액을 입력하세요. 카드 소득공제 한도 계산에 사용됩니다.">?</span></label>
-<div style="display:flex; gap:6px;">
-  <input class="form-input money-input" id="card-salary" inputmode="numeric" type="text" value="" readonly style="background:rgba(255,255,255,0.02); color:#aaa; cursor:not-allowed; flex:1;"/>
-  <a href="#" class="btn-edit-profile-salary" data-spouse-id="card-target" style="font-size:0.75rem; text-decoration:none; color:var(--accent-primary); display:flex; align-items:center; white-space:nowrap; border:1px solid rgba(108,99,255,0.3); padding:4px 8px; border-radius:6px; background:rgba(108,99,255,0.05); transition:all 0.2s;">프로필 수정</a>
-</div>
-</div>
-<div class="form-group">
-<label>현재까지 신용카드 사용액 <span class="tooltip-icon" data-tooltip="올해 1월부터 현재까지의 신용카드 사용액입니다.">?</span></label>
-<input class="form-input money-input" id="card-usage-amount" inputmode="numeric" type="text" value=""/>
-</div>
-<div class="form-group">
-<label>현재까지 체크카드/현금 사용액 <span class="tooltip-icon" data-tooltip="올해 1월부터 현재까지의 체크카드/현금 사용액입니다. 체크카드는 30% 공제율이 적용됩니다.">?</span></label>
-<input class="form-input money-input" id="card-cash-amount" inputmode="numeric" type="text" value=""/>
-</div>
-<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:0.6rem 0;"/>
-<h5 style="font-size:0.8rem;font-weight:700;margin-bottom:6px;color:var(--accent-info);">➕ 추가 공제 대상 지출 (별도 한도 적용)</h5>
-<div class="grid-2col" style="display:grid;gap:8px;">
-<div class="form-group" style="margin-bottom:0;">
-<label>전통시장 사용액 <span class="tooltip-icon" data-tooltip="전통시장에서 신용/체크카드 사용 시 30% 공제율, 별도 한도 300만 원">?</span></label>
-<input class="form-input money-input" id="card-traditional" inputmode="numeric" type="text" value=""/>
-</div>
-<div class="form-group" style="margin-bottom:0;">
-<label>대중교통 사용액 <span class="tooltip-icon" data-tooltip="대중교통(버스/지하철) 사용 시 40% 공제율, 별도 한도 300만 원">?</span></label>
-<input class="form-input money-input" id="card-transit" inputmode="numeric" type="text" value=""/>
-</div>
-<div class="form-group" style="margin-bottom:0;">
-<label>도서·공연 사용액 <span class="tooltip-icon" data-tooltip="도서 구입/공연 관람 시 30% 공제율, 별도 한도 300만 원 (총급여 7천만↓)">?</span></label>
-<input class="form-input money-input" id="card-book" inputmode="numeric" type="text" value=""/>
-</div>
-</div>
-<button class="btn-primary" id="btn-calc-card-ratio" style="margin-top:0.5rem;">🎯 황금비율 분석</button>
-</div>
-<div id="card-ratio-result" style="background:rgba(56,189,248,0.05); padding:1.5rem; border-radius:12px; display:none;">
-<h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 맞춤형 카드 사용 전략</h4>
-<div id="card-ratio-content" style="font-size:0.82rem; line-height:1.6;"></div>
-</div>
-</div>
-</div><div class="input-card" style="grid-column: 1 / -1; margin-top: 1.5rem;">
-<h2 class="card-title">🏟️ 체육시설 이용료 소득공제 (2025.7월 신설)</h2>
-<div class="grid-2col" style="display:grid; gap:1.5rem;">
-<div>
-
-    <div class="form-group">
-      <label>대상 선택</label>
-      <select id="sports-target" class="form-input">
-        <option value="a">배우자 A</option>
-        <option value="b">배우자 B</option>
-      </select>
-    </div>
-    <div class="form-group">
-    <label>연간 총급여 <span class="tooltip-icon" data-tooltip="연간 총급여액입니다. 7,000만 원 이하 시 체육시설 공제 혜택을 받을 수 있습니다.">?</span></label>
-<div style="display:flex; gap:6px;">
-  <input class="form-input money-input" id="sports-salary" inputmode="numeric" type="text" value="" readonly style="background:rgba(255,255,255,0.02); color:#aaa; cursor:not-allowed; flex:1;"/>
-  <a href="#" class="btn-edit-profile-salary" data-spouse-id="sports-target" style="font-size:0.75rem; text-decoration:none; color:var(--accent-primary); display:flex; align-items:center; white-space:nowrap; border:1px solid rgba(108,99,255,0.3); padding:4px 8px; border-radius:6px; background:rgba(108,99,255,0.05); transition:all 0.2s;">프로필 수정</a>
-</div>
-</div>
-<div class="form-group">
-<label>연간 수영장/체육단련장 이용료 <span class="tooltip-icon" data-tooltip="수영장, 체육단련장 등 시설 이용료 연간 합계액입니다.">?</span></label>
-<input class="form-input money-input" id="sports-fee" inputmode="numeric" type="text" value=""/>
-</div>
-<div style="font-size:0.78rem;">
-<label><input id="sports-has-pt" type="checkbox"/> PT(개인트레이닝) 포함 (50%만 인정)</label>
-</div>
-<button class="btn-primary" id="btn-calc-sports" style="margin-top:0.5rem;">🎯 공제액 계산</button>
-</div>
-<div id="sports-result" style="background:rgba(56,189,248,0.05); padding:1.5rem; border-radius:12px; display:none;">
-<h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 체육시설 이용료 공제 내역</h4>
-<div id="sports-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
-</div>
-</div>
-</div><div class="input-card" style="grid-column: 1 / -1; margin-top: 1.5rem;">
-<h2 class="card-title">🎁 고향사랑기부제 최적화 (2026년 개편)</h2>
-<div class="grid-2col" style="display:grid; gap:1.5rem;">
-<div>
-
-    <div class="form-group">
-      <label>대상 선택</label>
-      <select id="hometown-target" class="form-input">
-        <option value="a">배우자 A</option>
-        <option value="b">배우자 B</option>
-      </select>
-    </div>
-    <div class="form-group">
-    <label>기부 금액 (연간) <span class="tooltip-icon" data-tooltip="고향사랑기부제 연간 기부금액입니다. 200만 원 한도 내에서 세액공제됩니다.">?</span></label>
-<input class="form-input money-input" id="hometown-amount" inputmode="numeric" type="text" value=""/>
-</div>
-<div style="font-size:0.78rem; margin-bottom:10px;">
-<label><input id="hometown-disaster" type="checkbox"/> 특별재난지역 기부 (20만 초과 33% 공제)</label>
-</div>
-<button class="btn-primary" id="btn-calc-hometown" style="margin-top:0.5rem;">🎯 기부 최적화 분석</button>
-</div>
-<div id="hometown-result" style="background:rgba(255,217,61,0.05); padding:1.5rem; border-radius:12px; display:none;">
-<h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 고향사랑기부제 분석 리포트</h4>
-<div id="hometown-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
-</div>
-</div>
-</div></section>
 <!-- Removed tab-business wrapper here -->
 <div class="grid-2col" style="display:grid; gap:1.5rem;">
 <div>
@@ -997,6 +858,23 @@
 <span class="empty-icon">📊</span>
           입력값을 수정하면 실시간으로 리포트가 업데이트됩니다
         </div>
+<!-- 🎯 종합소득세 공제 배분 선택기 (Deduction Assigner) -->
+<div id="deduction-assigner-section" style="display:none; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:1.2rem; border-radius:8px; margin-bottom:1.5rem;">
+  <h4 style="font-weight:700; margin-bottom:10px; color:var(--accent-primary); display:flex; align-items:center; gap:8px;">
+    🎯 종합소득세 인적·의료비·교육비 공제 선택기
+  </h4>
+  <p style="font-size:0.78rem; opacity:0.8; margin-bottom:12px; line-height:1.4;">
+    부양가족 기본공제(인적공제)와 의료비, 교육비 등의 공제 대상자를 직접 조정해 보며 부부 합산 세금 변화를 실시간으로 비교해 보세요.
+  </p>
+  <div id="deduction-assigner-list" style="display:grid; gap:10px; font-size:0.82rem; margin-bottom: 12px;">
+    <!-- Dynamic items generated by JS -->
+  </div>
+  <div style="display:flex; gap:10px;">
+    <button class="btn-primary" id="btn-apply-custom-assignment" style="padding:6px 12px; font-size:0.78rem; cursor:pointer;">🎯 선택한 배정 적용 및 재계산</button>
+    <button class="btn-secondary" id="btn-apply-optimal-assignment" style="padding:6px 12px; font-size:0.78rem; cursor:pointer; background:rgba(0,212,170,0.1); border-color:var(--accent-secondary); color:#fff;">✨ 권장 최적 배정으로 초기화</button>
+  </div>
+</div>
+
 <!-- 맞벌이 연말정산 최적 몰아주기 배정안 -->
 <div id="res-couple-ye-container" style="background:rgba(0,212,170,0.1); padding:1rem; border-radius:8px; border-left:4px solid var(--accent-secondary); margin-bottom:1.5rem;">
 <h4 style="font-weight:700; margin-bottom:5px;">🎯 맞벌이 부부 부양가족 배정 최적안</h4>
@@ -1110,6 +988,162 @@
 <div class="accordion-body" id="acc-body-family">
 <div id="res-family-summary-content" style="font-size:0.82rem; line-height:1.6;"></div>
 <button id="btn-share-report" style="margin-top:10px; padding:8px 14px; background:var(--accent-gold); color:#0f172a; border:none; border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer;">📤 리포트 복사하기</button>
+</div>
+</div><div class="accordion-section" id="acc-deductions-opt" style="display:block;">
+<div class="accordion-header">🛠️ 종합소득세 공제 최적화 도구 (연금·카드·기부·체육)</div>
+<div class="accordion-body" id="acc-body-deductions-opt">
+
+  <!-- 💰 연금저축/IRP 세액공제 최적화 -->
+  <div class="input-card" style="margin-top: 0.5rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03);">
+    <h2 class="card-title">💰 연금저축/IRP 세액공제 최적화</h2>
+    <div class="grid-2col" style="display:grid; gap:1.5rem;">
+      <div>
+        <div class="form-group">
+          <label>대상 선택</label>
+          <select class="form-input" id="pension-target">
+            <option value="a">배우자 A</option>
+            <option value="b">배우자 B</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>연간 총급여 (연말정산 기준) <span class="tooltip-icon" data-tooltip="연말정산 시 적용되는 연간 총급여액입니다.">?</span></label>
+          <div style="display:flex; gap:6px;">
+            <input class="form-input money-input" id="pension-salary" inputmode="numeric" type="text" value="" readonly style="background:rgba(255,255,255,0.02); color:#aaa; cursor:not-allowed; flex:1;"/>
+            <a href="#" class="btn-edit-profile-salary" data-spouse-id="pension-target" style="font-size:0.75rem; text-decoration:none; color:var(--accent-primary); display:flex; align-items:center; white-space:nowrap; border:1px solid rgba(108,99,255,0.3); padding:4px 8px; border-radius:6px; background:rgba(108,99,255,0.05); transition:all 0.2s;">프로필 수정</a>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>현재까지 납입한 연금저축 <span class="tooltip-icon" data-tooltip="올해 1월부터 현재까지 납입한 연금저축 총액입니다.">?</span></label>
+          <input class="form-input money-input" id="pension-amount" inputmode="numeric" type="text" value=""/>
+        </div>
+        <div class="form-group">
+          <label>현재까지 납입한 IRP <span class="tooltip-icon" data-tooltip="올해 1월부터 현재까지 납입한 IRP 총액입니다.">?</span></label>
+          <input class="form-input money-input" id="pension-irp-amount" inputmode="numeric" type="text" value=""/>
+        </div>
+        <button class="btn-primary" id="btn-calc-pension-opt" style="margin-top:0.5rem;">🎯 최적화 분석</button>
+      </div>
+      <div id="pension-opt-result" style="background:rgba(0,212,170,0.05); padding:1.5rem; border-radius:12px; display:none;">
+        <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 연금 세액공제 최적화</h4>
+        <div id="pension-opt-content" style="font-size:0.82rem; line-height:1.6;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 💳 신용카드 vs 체크카드 황금비율 계산기 -->
+  <div class="input-card" style="margin-top: 1.5rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03);">
+    <h2 class="card-title">💳 신용카드 vs 체크카드 황금비율 계산기</h2>
+    <div class="grid-2col" style="display:grid; gap:1.5rem;">
+      <div>
+        <div class="form-group">
+          <label>대상 선택</label>
+          <select class="form-input" id="card-target">
+            <option value="a">배우자 A</option>
+            <option value="b">배우자 B</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>연간 총급여 <span class="tooltip-icon" data-tooltip="연간 총급여액을 입력하세요. 카드 소득공제 한도 계산에 사용됩니다.">?</span></label>
+          <div style="display:flex; gap:6px;">
+            <input class="form-input money-input" id="card-salary" inputmode="numeric" type="text" value="" readonly style="background:rgba(255,255,255,0.02); color:#aaa; cursor:not-allowed; flex:1;"/>
+            <a href="#" class="btn-edit-profile-salary" data-spouse-id="card-target" style="font-size:0.75rem; text-decoration:none; color:var(--accent-primary); display:flex; align-items:center; white-space:nowrap; border:1px solid rgba(108,99,255,0.3); padding:4px 8px; border-radius:6px; background:rgba(108,99,255,0.05); transition:all 0.2s;">프로필 수정</a>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>현재까지 신용카드 사용액 <span class="tooltip-icon" data-tooltip="올해 1월부터 현재까지의 신용카드 사용액입니다.">?</span></label>
+          <input class="form-input money-input" id="card-usage-amount" inputmode="numeric" type="text" value=""/>
+        </div>
+        <div class="form-group">
+          <label>현재까지 체크카드/현금 사용액 <span class="tooltip-icon" data-tooltip="올해 1월부터 현재까지의 체크카드/현금 사용액입니다. 체크카드는 30% 공제율이 적용됩니다.">?</span></label>
+          <input class="form-input money-input" id="card-cash-amount" inputmode="numeric" type="text" value=""/>
+        </div>
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:0.6rem 0;"/>
+        <h5 style="font-size:0.8rem;font-weight:700;margin-bottom:6px;color:var(--accent-info);">➕ 추가 공제 대상 지출 (별도 한도 적용)</h5>
+        <div class="grid-2col" style="display:grid;gap:8px;">
+          <div class="form-group" style="margin-bottom:0;">
+            <label>전통시장 사용액 <span class="tooltip-icon" data-tooltip="전통시장에서 신용/체크카드 사용 시 30% 공제율, 별도 한도 300만 원">?</span></label>
+            <input class="form-input money-input" id="card-traditional" inputmode="numeric" type="text" value=""/>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>대중교통 사용액 <span class="tooltip-icon" data-tooltip="대중교통(버스/지하철) 사용 시 40% 공제율, 별도 한도 300만 원">?</span></label>
+            <input class="form-input money-input" id="card-transit" inputmode="numeric" type="text" value=""/>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>도서·공연 사용액 <span class="tooltip-icon" data-tooltip="도서 구입/공연 관람 시 30% 공제율, 별도 한도 300만 원 (총급여 7천만↓)">?</span></label>
+            <input class="form-input money-input" id="card-book" inputmode="numeric" type="text" value=""/>
+          </div>
+        </div>
+        <button class="btn-primary" id="btn-calc-card-ratio" style="margin-top:0.5rem;">🎯 황금비율 분석</button>
+      </div>
+      <div id="card-ratio-result" style="background:rgba(56,189,248,0.05); padding:1.5rem; border-radius:12px; display:none;">
+        <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 맞춤형 카드 사용 전략</h4>
+        <div id="card-ratio-content" style="font-size:0.82rem; line-height:1.6;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🏟️ 체육시설 이용료 소득공제 -->
+  <div class="input-card" style="margin-top: 1.5rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03);">
+    <h2 class="card-title">🏟️ 체육시설 이용료 소득공제</h2>
+    <div class="grid-2col" style="display:grid; gap:1.5rem;">
+      <div>
+        <div class="form-group">
+          <label>대상 선택</label>
+          <select id="sports-target" class="form-input">
+            <option value="a">배우자 A</option>
+            <option value="b">배우자 B</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>연간 총급여 <span class="tooltip-icon" data-tooltip="연간 총급여액입니다. 7,000만 원 이하 시 체육시설 공제 혜택을 받을 수 있습니다.">?</span></label>
+          <div style="display:flex; gap:6px;">
+            <input class="form-input money-input" id="sports-salary" inputmode="numeric" type="text" value="" readonly style="background:rgba(255,255,255,0.02); color:#aaa; cursor:not-allowed; flex:1;"/>
+            <a href="#" class="btn-edit-profile-salary" data-spouse-id="sports-target" style="font-size:0.75rem; text-decoration:none; color:var(--accent-primary); display:flex; align-items:center; white-space:nowrap; border:1px solid rgba(108,99,255,0.3); padding:4px 8px; border-radius:6px; background:rgba(108,99,255,0.05); transition:all 0.2s;">프로필 수정</a>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>연간 수영장/체육단련장 이용료 <span class="tooltip-icon" data-tooltip="수영장, 체육단련장 등 시설 이용료 연간 합계액입니다.">?</span></label>
+          <input class="form-input money-input" id="sports-fee" inputmode="numeric" type="text" value=""/>
+        </div>
+        <div style="font-size:0.78rem;">
+          <label><input id="sports-has-pt" type="checkbox"/> PT(개인트레이닝) 포함 (50%만 인정)</label>
+        </div>
+        <button class="btn-primary" id="btn-calc-sports" style="margin-top:0.5rem;">🎯 공제액 계산</button>
+      </div>
+      <div id="sports-result" style="background:rgba(56,189,248,0.05); padding:1.5rem; border-radius:12px; display:none;">
+        <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 체육시설 이용료 공제 내역</h4>
+        <div id="sports-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🎁 고향사랑기부제 최적화 -->
+  <div class="input-card" style="margin-top: 1.5rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03);">
+    <h2 class="card-title">🎁 고향사랑기부제 최적화 (2026년 개편)</h2>
+    <div class="grid-2col" style="display:grid; gap:1.5rem;">
+      <div>
+        <div class="form-group">
+          <label>대상 선택</label>
+          <select id="hometown-target" class="form-input">
+            <option value="a">배우자 A</option>
+            <option value="b">배우자 B</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>기부 금액 (연간) <span class="tooltip-icon" data-tooltip="고향사랑기부제 연간 기부금액입니다. 200만 원 한도 내에서 세액공제됩니다.">?</span></label>
+          <input class="form-input money-input" id="hometown-amount" inputmode="numeric" type="text" value=""/>
+        </div>
+        <div style="font-size:0.78rem; margin-bottom:10px;">
+          <label><input id="hometown-disaster" type="checkbox"/> 특별재난지역 기부 (20만 초과 33% 공제)</label>
+        </div>
+        <button class="btn-primary" id="btn-calc-hometown" style="margin-top:0.5rem;">🎯 기부 최적화 분석</button>
+      </div>
+      <div id="hometown-result" style="background:rgba(255,217,61,0.05); padding:1.5rem; border-radius:12px; display:none;">
+        <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 고향사랑기부제 분석 리포트</h4>
+        <div id="hometown-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
+      </div>
+    </div>
+  </div>
+
 </div>
 </div><div class="accordion-section" id="acc-advice">
 <div class="accordion-header">💡 맞춤형 절세 추가 가이드</div>

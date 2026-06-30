@@ -1711,3 +1711,18 @@ body.light-mode .unit-toggle-btn {
     font-size: 0.62rem;
   }
 }
+
+/* Mobile Spouse Select Dropdown styling */
+.mobile-spouse-select-wrapper {
+  display: none;
+}
+@media (max-width: 768px) {
+  .profile-segment-wrapper {
+    display: none !important;
+  }
+  .mobile-spouse-select-wrapper {
+    display: block;
+    margin-bottom: 1.5rem;
+  }
+}
+
