@@ -1224,20 +1224,20 @@ body.light-mode .pdf-dropzone {
   /* ============================================================
      📱 모바일: 결과 카드는 입력 후에 표시 (자연스러운 흐름)
      ============================================================ */
-  #tab-income.calculator-panel.active {
+  #tab-profile.calculator-panel.active {
     display: flex;
     flex-direction: column;
   }
   /* 입력 카드 먼저 (order 1) */
-  #tab-income.calculator-panel.active > .input-card:first-child {
+  #tab-profile.calculator-panel.active > .input-card:first-child {
     order: 1;
   }
   /* 결과 카드: 그 다음 (order 2) */
-  #tab-income.calculator-panel.active > #inc-result-card {
+  #tab-profile.calculator-panel.active > #inc-result-card {
     order: 2;
   }
   /* 서브 입력 카드(연금/카드): 맨 아래 (order 3) */
-  #tab-income.calculator-panel.active > .input-card:not(:first-child) {
+  #tab-profile.calculator-panel.active > .input-card:not(:first-child) {
     order: 3;
   }
   /* 빈 상태일 때 모바일 결과 카드에 안내 배지 표시 */
