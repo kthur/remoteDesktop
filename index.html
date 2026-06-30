@@ -77,18 +77,12 @@
 
 <!-- 📄 홈택스 PDF 드롭존 토글 버튼 및 영역 -->
 
-<div class="segment-control-wrapper profile-segment-wrapper" style="margin-bottom:1.5rem; display: flex; gap: 8px; background: rgba(0,0,0,0.15); padding: 4px; border-radius: 10px;">
-<button class="segment-btn active" data-segment="profile-a" style="flex: 1; padding: 10px; border: none; background: var(--accent-primary); color: #fff; font-weight: 700; font-size: 0.85rem; border-radius: 6px; cursor: pointer; text-align: center;" type="button">👨 배우자 A</button>
-<button class="segment-btn" data-segment="profile-b" style="flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-secondary-dark); font-weight: 700; font-size: 0.85rem; border-radius: 6px; cursor: pointer; text-align: center;" type="button">👩 배우자 B</button>
-<button class="segment-btn" data-segment="profile-dep" style="flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-secondary-dark); font-weight: 700; font-size: 0.85rem; border-radius: 6px; cursor: pointer; text-align: center;" type="button">👥 부양가족</button>
+<div class="segment-control-wrapper profile-segment-wrapper" style="display:none;">
+<button class="segment-btn active" data-segment="profile-a" type="button">배우자 A</button>
+<button class="segment-btn" data-segment="profile-b" type="button">배우자 B</button>
+<button class="segment-btn" data-segment="profile-dep" type="button">부양가족</button>
 </div>
-<div class="pdf-toggle-container" style="margin-bottom:1rem;">
-<button class="pdf-toggle-btn" id="pdf-toggle-btn" style="width:100%; padding:10px 14px; background:rgba(108,99,255,0.1); border:1px solid rgba(108,99,255,0.2); border-radius:8px; color:var(--text-primary-dark); font-weight:700; font-size:0.85rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:var(--transition-smooth);" type="button">
-<span>📄 홈택스 PDF로 자동 입력하기</span>
-<span id="pdf-toggle-arrow" style="font-size:0.7rem; opacity:0.7;">▼</span>
-</button>
-</div>
-<div class="pdf-dropzone collapsed" id="pdf-dropzone" style="display:none; transition:max-height 0.3s ease; overflow:hidden;">
+<div class="pdf-dropzone" id="pdf-dropzone" style="transition:max-height 0.3s ease; overflow:hidden; margin-top: 0.5rem;">
 <div class="pdf-dropzone-content">
 <span class="pdf-dropzone-icon">📄</span>
 <h3>홈택스 PDF로 자동 입력</h3>
@@ -392,6 +386,11 @@
 
 <section aria-label="소득세/연말정산" class="calculator-panel" id="tab-income" role="tabpanel">
 <div class="result-card" id="inc-result-card">
+<div class="breadcrumb" id="breadcrumb">
+<span class="breadcrumb-item active">TAX NAVI</span>
+<span class="breadcrumb-sep">›</span>
+<span class="breadcrumb-item active">소득·연말</span>
+</div>
 <h2 class="card-title">🏆 종합 절세 통합 리포트</h2>
 <div class="calc-status idle" id="calc-status-income"><span class="calc-spinner"></span>계산 중...</div>
 <div class="empty-state" id="res-report-empty">
@@ -506,7 +505,14 @@
 </div>
 <!-- AI 절세 개선 추천 카드 리스트 -->
 
-</div><div class="input-card" style="grid-column: 1 / -1; margin-top: 1.5rem;">
+</div>
+<!-- 🆕 P1-2: 독립 계산기 섹션 구분선 -->
+<div class="section-divider" style="grid-column: 1 / -1; margin: 1rem 0; text-align: center;">
+  <span style="display:inline-block; padding: 4px 16px; font-size:0.72rem; font-weight:700; color:var(--accent-secondary); border:1px solid rgba(0,212,170,0.2); border-radius:20px; background:rgba(0,212,170,0.06); letter-spacing:0.5px;">
+    📌 추가 절세 분석 도구
+  </span>
+</div>
+<div class="input-card" style="grid-column: 1 / -1; margin-top: 0.5rem;">
 <h2 class="card-title">💰 연금저축/IRP 세액공제 최적화</h2>
 <div class="grid-2col" style="display:grid; gap:1.5rem;">
 <div>

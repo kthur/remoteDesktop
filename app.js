@@ -35,6 +35,39 @@ document.addEventListener('DOMContentLoaded', () => {
     return hasMinus ? '-' + formatted : formatted;
   };
 
+  // 🆕 P0-5: 결과값 업데이트 시 하이라이트 효과
+  function updateResultWithHighlight(elId, value) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const formatted = typeof value === 'number' ? value.toLocaleString() + ' 원' : value;
+    if (el.textContent !== formatted) {
+      el.textContent = formatted;
+      el.classList.remove('result-highlight');
+      void el.offsetWidth;
+      el.classList.add('result-highlight');
+    }
+  }
+
+  // 🆕 P0-12: 토스트 메시지 표시
+  function showToast(message, duration) {
+    if (duration === undefined) duration = 2000;
+    let container = document.getElementById('toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'toast-container';
+      container.className = 'toast-container';
+      document.body.appendChild(container);
+    }
+    var toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(function() {
+      toast.classList.add('out');
+      setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 250);
+    }, duration);
+  }
+
   const formatInputOnEvent = (e) => {
     const el = e.target;
     let originalSelectionStart = el.selectionStart;
@@ -122,25 +155,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (arrow) arrow.textContent = body.classList.contains('collapsed') ? '▼' : '▲';
       });
     });
-
-    // PDF 토글 버튼 핸들러
-    const pdfToggleBtn = document.getElementById('pdf-toggle-btn');
-    const pdfDropzone = document.getElementById('pdf-dropzone');
-    const pdfToggleArrow = document.getElementById('pdf-toggle-arrow');
-    if (pdfToggleBtn && pdfDropzone && pdfToggleArrow) {
-      pdfToggleBtn.addEventListener('click', () => {
-        const isHidden = pdfDropzone.style.display === 'none';
-        if (isHidden) {
-          pdfDropzone.style.display = 'block';
-          pdfDropzone.classList.remove('collapsed');
-          pdfToggleArrow.textContent = '▲';
-        } else {
-          pdfDropzone.style.display = 'none';
-          pdfDropzone.classList.add('collapsed');
-          pdfToggleArrow.textContent = '▼';
-        }
-      });
-    }
 
     // Stepper navigation (P1)
     initStepper();
@@ -246,6 +260,9 @@ document.addEventListener('DOMContentLoaded', () => {
         nextBtn.onclick = () => goToStep(targetStep + 1);
       }
     }
+
+    // Update breadcrumb
+    updateBreadcrumb('profile', targetGroup);
   }
 
   function updateInputProgress() {
@@ -610,18 +627,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       el.addEventListener('blur', function() {
         koreanReading.classList.remove('visible');
-        // 포커스 해제 시 원 단위로 자동 변환 (localStorage 일관성 유지)
-        if (currentUnit !== 'won') {
-          var rawVal = parseInt(el.value.replace(/,/g, ''), 10) || 0;
-          var wonVal = rawVal * unitFactors[currentUnit];
-          el.value = formatNumberWithCommas(wonVal);
-          currentUnit = 'won';
-          el.dataset.unit = 'won';
-          unitGroup.querySelectorAll('.unit-toggle-btn').forEach(function(b) { b.classList.remove('active'); });
-          unitGroup.querySelector('.unit-toggle-btn:first-child').classList.add('active');
-          updateHelper();
-          el.dispatchEvent(new Event('input', { bubbles: true }));
-        }
+        // 단위 유지 — localStorage 저장 시에만 원 단위로 변환
       });
     });
   }
@@ -1008,6 +1014,29 @@ document.addEventListener('DOMContentLoaded', () => {
     themeToggleBtn.querySelector('.theme-text').textContent = isLight ? '다크 모드로 전환' : '라이트 모드로 전환';
   });
 
+  // 🆕 P2-4: breadcrumb 업데이트
+  function updateBreadcrumb(tabKey, subKey) {
+    var bc = document.getElementById('breadcrumb');
+    if (!bc) return;
+    var labels = {
+      profile: '프로필', income: '소득·연말', business: '사업·자산',
+      capital: '양도·증여·상속', report: '통합 리포트'
+    };
+    var subLabels = {
+      transfer: '양도소득', holding: '보유세', gift: '증여·상속',
+      'profile-a': '배우자A', 'profile-b': '배우자B', 'profile-dep': '부양가족'
+    };
+    var parts = [];
+    parts.push('<span class="breadcrumb-item active">TAX NAVI</span>');
+    parts.push('<span class="breadcrumb-sep">›</span>');
+    parts.push('<span class="breadcrumb-item active">' + (labels[tabKey] || tabKey) + '</span>');
+    if (subKey && subLabels[subKey]) {
+      parts.push('<span class="breadcrumb-sep">›</span>');
+      parts.push('<span class="breadcrumb-item active">' + subLabels[subKey] + '</span>');
+    }
+    bc.innerHTML = parts.join('');
+  }
+
   // 2. 대분류 탭 전환 (종합소득세 / 양도소득세)
   const tabButtons = document.querySelectorAll('.tab-btn');
   const panels = document.querySelectorAll('.calculator-panel');
@@ -1026,6 +1055,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (targetPanel) {
         targetPanel.classList.add('active');
       }
+      updateBreadcrumb(btn.dataset.tab);
     });
   });
 
@@ -1088,6 +1118,7 @@ document.addEventListener('DOMContentLoaded', () => {
           group.style.display = 'none';
         }
       });
+      updateBreadcrumb('capital', activeSegment);
     });
   });
 
@@ -1590,18 +1621,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderSpouseResults(id, result) {
-    document.getElementById("res-" + id + "-expense").textContent = (result.salaryDeduction || result.expense || 0).toLocaleString() + " 원";
-    document.getElementById("res-" + id + "-person").textContent = (result.personDeduction || 0).toLocaleString() + " 원";
-    document.getElementById("res-" + id + "-taxable").textContent = result.taxableIncome.toLocaleString() + " 원";
-    document.getElementById("res-" + id + "-rate").textContent = result.bracketRate + "%";
-    document.getElementById("res-" + id + "-total").textContent = result.totalTax.toLocaleString() + " 원";
+    updateResultWithHighlight("res-" + id + "-expense", (result.salaryDeduction || result.expense || 0).toLocaleString() + " 원");
+    updateResultWithHighlight("res-" + id + "-person", (result.personDeduction || 0).toLocaleString() + " 원");
+    updateResultWithHighlight("res-" + id + "-taxable", result.taxableIncome.toLocaleString() + " 원");
+    updateResultWithHighlight("res-" + id + "-rate", result.bracketRate + "%");
+    updateResultWithHighlight("res-" + id + "-total", result.totalTax.toLocaleString() + " 원");
   }
 
   function renderFinancialDetails(id, result) {
-    document.getElementById("res-" + id + "-isa-free").textContent = (result.isaTaxfreeAmount || 0).toLocaleString() + " 원";
-    document.getElementById("res-" + id + "-isa-tax").textContent = (result.isaSeparatedTax || 0).toLocaleString() + " 원";
-    document.getElementById("res-" + id + "-bond-tax").textContent = (result.bondSeparatedTax || 0).toLocaleString() + " 원";
-    document.getElementById("res-" + id + "-financial-comp").textContent = (result.financialCompAmount || 0).toLocaleString() + " 원";
+    updateResultWithHighlight("res-" + id + "-isa-free", (result.isaTaxfreeAmount || 0).toLocaleString() + " 원");
+    updateResultWithHighlight("res-" + id + "-isa-tax", (result.isaSeparatedTax || 0).toLocaleString() + " 원");
+    updateResultWithHighlight("res-" + id + "-bond-tax", (result.bondSeparatedTax || 0).toLocaleString() + " 원");
+    updateResultWithHighlight("res-" + id + "-financial-comp", (result.financialCompAmount || 0).toLocaleString() + " 원");
   }
 
   function runOptimizerAndRender(d, dependents) {
@@ -1766,8 +1797,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCardNavigation(d);
     renderMedicalComparison(d, dependents);
     renderFamilySummary(d, aResult, bResult, best, optResult, dependents);
-    showAccordionSection("acc-individual");
-    showAccordionSection("acc-advice");
 
     showCalcStatus(false);
     // 🆕 P0: 플로팅 요약 바 업데이트
@@ -1803,10 +1832,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const navText = document.getElementById('res-card-nav-content').innerText;
     const totalText = `[TAX NAVI 가족 절세 리포트]\n\n${summaryText}\n\n[소비 네비게이션]\n${navText}\n\n👉 https://kthur.github.io/tax_calculator/`;
     navigator.clipboard.writeText(totalText).then(() => {
-      const btn = document.getElementById('btn-share-report');
-      btn.textContent = '✅ 복사 완료!';
-      setTimeout(() => { btn.textContent = '📤 리포트 복사하기'; }, 2000);
-    }).catch(() => { alert('클립보드 복사에 실패했습니다. 직접 복사해 주세요.'); });
+      showToast('✅ 리포트가 클립보드에 복사되었습니다');
+    }).catch(() => { showToast('❌ 복사 실패. 직접 복사해 주세요.', 3000); });
   });
 
   // 📅 10년 주기 증여 타임라인
@@ -2658,4 +2685,10 @@ function renderAdvice(containerId, adviceList, actionCallback) {
   carousel.appendChild(nav);
 
   container.appendChild(carousel);
+
+  // 🆕 브레드크럼 초기화
+  const activeTab = document.querySelector('.tab-btn.active');
+  if (activeTab) {
+    updateBreadcrumb(activeTab.dataset.tab);
+  }
 }
