@@ -1455,3 +1455,130 @@ TaxCalculator.calculateSelfEmployedTax = function(opts) {
     effectiveRate: totalIncome > 0 ? Math.round(totalTax / totalIncome * 10000) / 100 : 0
   };
 };
+
+// ──────────────────────────────────────────────
+// 채권 분리과세 절세 계산기
+// ──────────────────────────────────────────────
+TaxCalculator.calculateBondDeduction = function(opts) {
+  var investment = opts.investment || 0;
+  var bondType = opts.bondType || 'long'; // long: 장기채권, short: 일반채권
+  var userTaxRate = opts.userTaxRate || 0; // 종합소득세율 (0~0.45)
+  var isFinancialCompTax = opts.isFinancialCompTax || false; // 금융종합과세 대상 여부
+
+  // 채권 이자 추정 (연 4% 가정)
+  var estimatedInterest = Math.floor(investment * 0.04);
+
+  // 분리과세: 30% (실효 27.27% + 지방 2.73%)
+  var separatedTax = 0;
+  var separatedLocalTax = 0;
+  if (bondType === 'long') {
+    separatedTax = Math.floor(estimatedInterest * (30 / 110));
+    separatedLocalTax = Math.floor(estimatedInterest * (3 / 110));
+  } else {
+    // 일반채권: 15.4% 원천징수 (14% + 지방 1.4%)
+    separatedTax = Math.floor(estimatedInterest * 0.14);
+    separatedLocalTax = Math.floor(estimatedInterest * 0.014);
+  }
+  var separatedTotal = separatedTax + separatedLocalTax;
+
+  // 종합과세 가정: 투자자 세율 적용
+  var comprehensiveTax = Math.floor(estimatedInterest * userTaxRate);
+  var comprehensiveLocalTax = Math.floor(comprehensiveTax * 0.1);
+  var comprehensiveTotal = comprehensiveTax + comprehensiveLocalTax;
+
+  var isSeparatedBetter = separatedTotal < comprehensiveTotal;
+  var savings = Math.abs(separatedTotal - comprehensiveTotal);
+  var effectiveRate = investment > 0 ? Math.round(separatedTotal / investment * 10000) / 100 : 0;
+
+  return {
+    investment: investment,
+    bondType: bondType,
+    bondTypeLabel: bondType === 'long' ? '장기채권 (30% 분리과세)' : '일반채권 (15.4% 원천징수)',
+    estimatedInterest: estimatedInterest,
+    separatedTax: separatedTax,
+    separatedLocalTax: separatedLocalTax,
+    separatedTotal: separatedTotal,
+    comprehensiveTax: comprehensiveTax,
+    comprehensiveLocalTax: comprehensiveLocalTax,
+    comprehensiveTotal: comprehensiveTotal,
+    isSeparatedBetter: isSeparatedBetter,
+    savings: savings,
+    effectiveRate: effectiveRate,
+    recommendation: isSeparatedBetter
+      ? '분리과세(30%)가 유리합니다. 금융소득종합과세 대상자에게 특히 추천합니다.'
+      : '현재 세율구간에서는 종합과세가 유리할 수 있습니다. 단, 금융소득 2,000만 원 초과 시 분리과세가 강제됩니다.'
+  };
+};
+
+// ──────────────────────────────────────────────
+// 벤처투자 소득공제 시뮬레이터 (독립형)
+// ──────────────────────────────────────────────
+TaxCalculator.calculateVentureSimulation = function(opts) {
+  var ventureAmount = opts.ventureAmount || 0;
+  var annualIncome = opts.annualIncome || 0;
+
+  var deduction = TaxCalculator.calculateVentureInvestmentDeduction(annualIncome, ventureAmount);
+  var incomeAfterDeduction = Math.max(0, annualIncome - deduction);
+  var taxBefore = TaxCalculator.calculateIncomeTax(annualIncome);
+  var taxAfter = TaxCalculator.calculateIncomeTax(incomeAfterDeduction);
+  var taxSavings = taxBefore.tax - taxAfter.tax;
+  var localTaxSavings = Math.floor(taxSavings * 0.1);
+  var totalSavings = taxSavings + localTaxSavings;
+  var effectiveSavingsRate = ventureAmount > 0 ? Math.round(totalSavings / ventureAmount * 10000) / 100 : 0;
+
+  return {
+    ventureAmount: ventureAmount,
+    annualIncome: annualIncome,
+    deduction: deduction,
+    incomeAfterDeduction: incomeAfterDeduction,
+    taxBefore: taxBefore.tax,
+    rateBefore: taxBefore.rate,
+    taxAfter: taxAfter.tax,
+    rateAfter: taxAfter.rate,
+    taxSavings: taxSavings,
+    localTaxSavings: localTaxSavings,
+    totalSavings: totalSavings,
+    effectiveSavingsRate: effectiveSavingsRate,
+    hasLimitExceeded: ventureAmount > 30000000,
+    recommendation: ventureAmount <= 0
+      ? '벤처투자 금액을 입력하세요.'
+      : (totalSavings > 0
+        ? '벤처투자 소득공제로 ' + totalSavings.toLocaleString() + '원 절세 효과가 예상됩니다. (투자 대비 ' + effectiveSavingsRate + '%)'
+        : '현재 소득 수준에서는 벤처투자 공제 효과가 미미합니다.')
+  };
+};
+
+// ──────────────────────────────────────────────
+// 노란우산공제 계산기 (독립형)
+// ──────────────────────────────────────────────
+TaxCalculator.calculateYellowUmbrellaSimulation = function(opts) {
+  var businessIncome = opts.businessIncome || 0;
+  var payment = opts.payment || 0;
+
+  var deduction = TaxCalculator.calculateYellowUmbrellaDeduction(businessIncome, payment);
+  var limit = 2000000;
+  if (businessIncome <= 40000000) {
+    limit = 5000000;
+  } else if (businessIncome <= 100000000) {
+    limit = 3000000;
+  }
+  var incomeForTax = Math.max(0, businessIncome);
+  var taxRateInfo = TaxCalculator.calculateIncomeTax(incomeForTax);
+  var estimatedTaxSavings = Math.floor(deduction * taxRateInfo.rate);
+
+  return {
+    businessIncome: businessIncome,
+    payment: payment,
+    deduction: deduction,
+    limit: limit,
+    isFullDeduction: payment <= limit,
+    unusedAmount: Math.max(0, payment - limit),
+    taxRate: taxRateInfo.rate,
+    estimatedTaxSavings: estimatedTaxSavings,
+    recommendation: payment <= 0
+      ? '연간 납입액을 입력하세요.'
+      : (payment > limit
+        ? '납입액이 한도(' + limit.toLocaleString() + '원)를 초과했습니다. 초과분 ' + (payment - limit).toLocaleString() + '원은 공제되지 않습니다.'
+        : '납입액 전액(' + payment.toLocaleString() + '원)이 소득공제됩니다. 예상 절세액: ' + estimatedTaxSavings.toLocaleString() + '원')
+  };
+};

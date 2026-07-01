@@ -587,7 +587,9 @@ document.addEventListener('DOMContentLoaded', () => {
       'hi-regional-income', 'hi-regional-property',
       'standard-itemized', 'ecocar-price',
       'housing-salary', 'housing-sub-amount', 'housing-jeonse-repay', 'housing-mortgage-interest',
-      'se-revenue', 'se-other-income', 'se-financial-income'
+      'se-revenue', 'se-other-income', 'se-financial-income',
+      'bond-investment', 'venture-amount', 'venture-income',
+      'yellow-business-income', 'yellow-payment'
     ];
     
     targetIds.forEach(id => {
@@ -1087,8 +1089,8 @@ document.addEventListener('DOMContentLoaded', () => {
     var bc = document.getElementById('breadcrumb');
     if (!bc) return;
     var labels = {
-      profile: '프로필', income: '소득·연말', business: '사업·자산',
-      capital: '양도·증여·상속', report: '통합 리포트'
+      profile: '소득·지출 입력', income: '소득·연말', business: '사업·자산',
+      capital: '양도·증여·상속', report: '종합 리포트', optimize: '공제·절세 최적화'
     };
     var subLabels = {
       transfer: '양도소득', holding: '보유세', gift: '증여·상속',
@@ -2853,6 +2855,88 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   });
 
+  // 📈 장기채권 분리과세 절세 계산기
+  document.getElementById('btn-calc-bond').addEventListener('click', () => {
+    const investment = parseVal('bond-investment');
+    const bondType = document.getElementById('bond-type').value;
+    const userTaxRate = parseFloat(document.getElementById('bond-tax-rate').value);
+    const isFinancialCompTax = document.getElementById('bond-financial-comp').checked;
+    const result = TaxCalculator.calculateBondDeduction({ investment, bondType, userTaxRate, isFinancialCompTax });
+    document.getElementById('bond-result').style.display = 'block';
+    document.getElementById('bond-result-content').innerHTML = `
+      <div>채권 유형: <strong>${result.bondTypeLabel}</strong></div>
+      <div>투자 금액: ${result.investment.toLocaleString()} 원</div>
+      <div>추정 연이자 (4%): <strong>${result.estimatedInterest.toLocaleString()} 원</strong></div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div style="color:var(--accent-primary);">📌 분리과세</div>
+      <div>· 원천세: ${result.separatedTax.toLocaleString()} 원</div>
+      <div>· 지방소득세: ${result.separatedLocalTax.toLocaleString()} 원</div>
+      <div style="font-weight:bold;">· 합계: <strong>${result.separatedTotal.toLocaleString()} 원</strong></div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04);margin:6px 0;">
+      <div style="color:var(--accent-secondary);">📌 종합과세 (가정, 세율 ${(result.comprehensiveTotal > 0 ? Math.round(result.comprehensiveTotal / result.estimatedInterest * 10000) / 100 : 0)}%)</div>
+      <div>· 소득세: ${result.comprehensiveTax.toLocaleString()} 원</div>
+      <div>· 지방소득세: ${result.comprehensiveLocalTax.toLocaleString()} 원</div>
+      <div style="font-weight:bold;">· 합계: <strong>${result.comprehensiveTotal.toLocaleString()} 원</strong></div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div style="font-size:0.95rem;font-weight:bold;color:${result.isSeparatedBetter ? 'var(--accent-secondary)' : 'var(--accent-info)'};">
+        ${result.isSeparatedBetter ? '✅ 분리과세(30%)가 유리합니다' : 'ℹ️ 종합과세가 유리합니다'}
+      </div>
+      ${result.savings > 0 ? `<div style="font-size:0.85rem;margin-top:4px;">절세 차이: <strong>${result.savings.toLocaleString()} 원</strong></div>` : ''}
+      <div style="margin-top:6px;padding:6px;background:rgba(108,99,255,0.06);border-radius:6px;font-size:0.75rem;">
+        💡 ${result.recommendation}
+      </div>
+    `;
+  });
+
+  // 🚀 벤처투자 소득공제 시뮬레이터
+  document.getElementById('btn-calc-venture').addEventListener('click', () => {
+    const ventureAmount = parseVal('venture-amount');
+    const annualIncome = parseVal('venture-income');
+    const result = TaxCalculator.calculateVentureSimulation({ ventureAmount, annualIncome });
+    document.getElementById('venture-result').style.display = 'block';
+    document.getElementById('venture-result-content').innerHTML = `
+      <div>벤처투자 금액: <strong>${result.ventureAmount.toLocaleString()} 원</strong></div>
+      <div>연간 소득: ${result.annualIncome.toLocaleString()} 원</div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div>소득공제액: <strong>${result.deduction.toLocaleString()} 원</strong></div>
+      ${result.hasLimitExceeded ? '<div style="color:var(--accent-warning);font-size:0.78rem;">⚠️ 3,000만 원 초과분은 70%만 공제됩니다.</div>' : ''}
+      <div>공제 후 소득: ${result.incomeAfterDeduction.toLocaleString()} 원</div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div>공제 전 세율: ${(result.rateBefore * 100).toFixed(0)}%</div>
+      <div>공제 후 세율: ${(result.rateAfter * 100).toFixed(0)}%</div>
+      <div>소득세 절감: <strong>${result.taxSavings.toLocaleString()} 원</strong></div>
+      <div>지방소득세 절감: ${result.localTaxSavings.toLocaleString()} 원</div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div style="font-size:1rem;font-weight:bold;color:var(--accent-secondary);">💰 총 절세 효과: <strong>${result.totalSavings.toLocaleString()} 원</strong></div>
+      <div style="font-size:0.82rem;">투자 대비 절세율: ${result.effectiveSavingsRate}%</div>
+      <div style="margin-top:6px;padding:6px;background:rgba(0,212,170,0.06);border-radius:6px;font-size:0.75rem;">
+        📌 ${result.recommendation}
+      </div>
+    `;
+  });
+
+  // 🟡 노란우산공제 계산기
+  document.getElementById('btn-calc-yellow').addEventListener('click', () => {
+    const businessIncome = parseVal('yellow-business-income');
+    const payment = parseVal('yellow-payment');
+    const result = TaxCalculator.calculateYellowUmbrellaSimulation({ businessIncome, payment });
+    document.getElementById('yellow-result').style.display = 'block';
+    document.getElementById('yellow-result-content').innerHTML = `
+      <div>연간 사업소득: <strong>${result.businessIncome.toLocaleString()} 원</strong></div>
+      <div>연간 납입액: ${result.payment.toLocaleString()} 원</div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div>공제 한도: <strong>${result.limit.toLocaleString()} 원</strong></div>
+      <div>소득공제액: <strong>${result.deduction.toLocaleString()} 원</strong></div>
+      ${!result.isFullDeduction ? `<div style="color:var(--accent-warning);font-size:0.78rem;">⚠️ 초과분 ${result.unusedAmount.toLocaleString()}원은 공제되지 않습니다.</div>` : ''}
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div>적용 세율: ${(result.taxRate * 100).toFixed(0)}%</div>
+      <div style="font-size:1rem;font-weight:bold;color:var(--accent-secondary);">💰 예상 절세액: <strong>${result.estimatedTaxSavings.toLocaleString()} 원</strong></div>
+      <div style="margin-top:6px;padding:6px;background:rgba(255,217,61,0.06);border-radius:6px;font-size:0.75rem;">
+        📌 ${result.recommendation}
+      </div>
+    `;
+  });
+
   // 🏠 부동산 보유세
   document.getElementById('prop-house-count').addEventListener('input', function () {
     document.getElementById('prop-one-house').checked = parseInt(this.value) === 1;
@@ -3031,7 +3115,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 새 섹션 input 초기화 (money-input 포맷 적용)
   var newMoneyFields = [
-      'expense-revenue','hi-earned-income','hi-other-income','hi-regional-income','hi-regional-property',
+      'expense-revenue','hi-earned-income','hi-other-income','hi-regional-income','hi-regional-property','bond-investment','venture-amount','venture-income','yellow-business-income','yellow-payment',
       'prop-public-price','prop-market-price','gift-amount','gift-past','stock-exchange-rate',
       'inc-a-irp','inc-b-irp','pension-salary','pension-amount','pension-irp-amount',
       'card-salary','card-usage-amount','card-cash-amount',
