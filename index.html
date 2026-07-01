@@ -1306,6 +1306,140 @@
   </div>
 </div>
 
+<!-- 📋 표준세액공제 계산기 -->
+<div class="input-card" style="margin-top: 1.5rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03);">
+  <h2 class="card-title">📋 표준세액공제 계산기 (연 13만 원)</h2>
+  <div class="grid-2col" style="display:grid; gap:1.5rem;">
+    <div>
+      <div class="form-group">
+        <label>항목별 세액공제 합계 <span class="tooltip-icon" data-tooltip="보험료·의료비·교육비·기부금 등 항목별 세액공제 합계를 입력하세요. 13만 원 미만이면 표준공제가 유리합니다.">?</span></label>
+        <input class="form-input money-input" id="standard-itemized" inputmode="numeric" type="text" value=""/>
+      </div>
+      <button class="btn-primary" id="btn-calc-standard-credit" style="margin-top:0.5rem;">🎯 표준공제 vs 항목별 비교</button>
+    </div>
+    <div id="standard-result" style="background:rgba(56,189,248,0.05); padding:1.5rem; border-radius:12px; display:none;">
+      <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 표준세액공제 비교 결과</h4>
+      <div id="standard-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 🚗 전기차·친환경차 세액공제 계산기 -->
+<div class="input-card" style="margin-top: 1.5rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03);">
+  <h2 class="card-title">🚗 전기차·친환경차 세액공제 계산기</h2>
+  <div class="grid-2col" style="display:grid; gap:1.5rem;">
+    <div>
+      <div class="form-group">
+        <label>차량 유형</label>
+        <select class="form-input" id="ecocar-type">
+          <option value="electric">전기차 (EV)</option>
+          <option value="hybrid">하이브리드차 (HEV)</option>
+          <option value="hydrogen">수소전기차 (FCEV)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>차량 가격 (출고가) <span class="tooltip-icon" data-tooltip="차량의 출고 가격(부가세 포함)을 입력하세요. 개별소비세 및 취득세 감면액을 계산합니다.">?</span></label>
+        <input class="form-input money-input" id="ecocar-price" inputmode="numeric" type="text" value=""/>
+      </div>
+      <button class="btn-primary" id="btn-calc-ecocar" style="margin-top:0.5rem;">🎯 세액공제 계산</button>
+    </div>
+    <div id="ecocar-result" style="background:rgba(0,212,170,0.05); padding:1.5rem; border-radius:12px; display:none;">
+      <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 친환경차 세제 혜택 내역</h4>
+      <div id="ecocar-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 🏠 주택자금 공제 계산기 -->
+<div class="input-card" style="margin-top: 1.5rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03);">
+  <h2 class="card-title">🏠 주택자금 공제 계산기</h2>
+  <div class="grid-2col" style="display:grid; gap:1.5rem;">
+    <div>
+      <div class="form-group">
+        <label>대상 선택</label>
+        <select id="housing-target" class="form-input">
+          <option value="a">배우자 A</option>
+          <option value="b">배우자 B</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>연간 총급여 <span class="tooltip-icon" data-tooltip="연간 총급여액입니다. 주택청약 소득공제는 7,000만 원 이하만 가능합니다.">?</span></label>
+        <div style="display:flex; gap:6px;">
+          <input class="form-input money-input" id="housing-salary" inputmode="numeric" type="text" value="" readonly style="background:rgba(255,255,255,0.02); color:#aaa; cursor:not-allowed; flex:1;"/>
+          <a href="#" class="btn-edit-profile-salary" data-spouse-id="housing-target" style="font-size:0.75rem; text-decoration:none; color:var(--accent-primary); display:flex; align-items:center; white-space:nowrap; border:1px solid rgba(108,99,255,0.3); padding:4px 8px; border-radius:6px; background:rgba(108,99,255,0.05); transition:all 0.2s;">프로필 수정</a>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>주택청약종합저축 연간 납입액 <span class="tooltip-icon" data-tooltip="주택청약종합저축 연간 납입액입니다. 총급여 7,000만 원 이하 시 연 240만 원 한도 소득공제됩니다.">?</span></label>
+        <input class="form-input money-input" id="housing-sub-amount" inputmode="numeric" type="text" value=""/>
+      </div>
+      <div class="form-group">
+        <label>전세자금대출 원리금 상환액 <span class="tooltip-icon" data-tooltip="전세자금대출의 연간 원리금 상환액입니다. 연 400만 원 한도 소득공제됩니다.">?</span></label>
+        <input class="form-input money-input" id="housing-jeonse-repay" inputmode="numeric" type="text" value=""/>
+      </div>
+      <div class="form-group">
+        <label>장기주택저당차입금 이자상환액 <span class="tooltip-icon" data-tooltip="장기(15년↑) 주택담보대출의 연간 이자 상환액입니다. 연 1,800만 원 한도 소득공제됩니다.">?</span></label>
+        <input class="form-input money-input" id="housing-mortgage-interest" inputmode="numeric" type="text" value=""/>
+      </div>
+      <button class="btn-primary" id="btn-calc-housing-fund" style="margin-top:0.5rem;">🎯 주택자금 공제 계산</button>
+    </div>
+    <div id="housing-result" style="background:rgba(255,217,61,0.05); padding:1.5rem; border-radius:12px; display:none;">
+      <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 주택자금 소득공제 명세서</h4>
+      <div id="housing-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 🧮 개인사업자 종합소득세 간편 계산기 -->
+<div class="input-card" style="margin-top: 1.5rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03);">
+  <h2 class="card-title">🧮 개인사업자 종합소득세 간편 계산</h2>
+  <div class="grid-2col" style="display:grid; gap:1.5rem;">
+    <div>
+      <div class="form-group">
+        <label>업종 선택</label>
+        <select class="form-input" id="se-biz-code">
+          <option value="940500">서비스업 (크몽/숨고 등)</option>
+          <option value="940909">정보통신업 (프로그래머/IT)</option>
+          <option value="941200">유튜브/1인 미디어</option>
+          <option value="940100">제조업</option>
+          <option value="940200">도소매업</option>
+          <option value="940300">음식점업</option>
+          <option value="940800">의료업</option>
+          <option value="941000">교육서비스업</option>
+          <option value="941100">예술/스포츠업</option>
+          <option value="940600">건설업</option>
+          <option value="940700">운수업</option>
+          <option value="940400">부동산업</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>연간 총수입금액 (매출) <span class="tooltip-icon" data-tooltip="사업의 연간 총 매출액입니다.">?</span></label>
+        <input class="form-input money-input" id="se-revenue" inputmode="numeric" type="text" value=""/>
+      </div>
+      <div class="form-group">
+        <label>경비율 방식</label>
+        <select class="form-input" id="se-declared-type">
+          <option value="simple">단순경비율 (추계신고)</option>
+          <option value="standard">기준경비율 (장부 작성)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>기타소득 (연간) <span class="tooltip-icon" data-tooltip="사업 외 기타소득(프리랜서 외 부수입)이 있다면 입력하세요.">?</span></label>
+        <input class="form-input money-input" id="se-other-income" inputmode="numeric" type="text" value="0"/>
+      </div>
+      <div class="form-group">
+        <label>금융소득 (연간) <span class="tooltip-icon" data-tooltip="이자·배당 등 금융소득이 있다면 입력하세요.">?</span></label>
+        <input class="form-input money-input" id="se-financial-income" inputmode="numeric" type="text" value="0"/>
+      </div>
+      <button class="btn-primary" id="btn-calc-self-employed-tax" style="margin-top:0.5rem;">🎯 종합소득세 간편 계산</button>
+    </div>
+    <div id="se-result" style="background:rgba(108,99,255,0.05); padding:1.5rem; border-radius:12px; display:none;">
+      <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 종합소득세 예상 세액</h4>
+      <div id="se-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
+    </div>
+  </div>
+</div>
+
 </div>
 <div class="accordion-section" id="acc-advice">
 <div class="accordion-header">💡 맞춤형 절세 추가 가이드</div>

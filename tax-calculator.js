@@ -1319,3 +1319,139 @@ TaxCalculator.calculateDonationCredit = function(opts) {
     totalBenefit: totalCredit + localTax
   };
 };
+
+// ──────────────────────────────────────────────
+// 표준세액공제 계산기
+// ──────────────────────────────────────────────
+TaxCalculator.calculateStandardCredit = function(opts) {
+  var itemizedTotal = opts.itemizedTotal || 0;
+  var standardCredit = 130000;
+  var isStandardBetter = itemizedTotal < standardCredit;
+  var difference = Math.abs(standardCredit - itemizedTotal);
+  return {
+    itemizedTotal: itemizedTotal,
+    standardCredit: standardCredit,
+    isStandardBetter: isStandardBetter,
+    recommendedAmount: isStandardBetter ? standardCredit : itemizedTotal,
+    difference: difference,
+    recommendation: isStandardBetter
+      ? "표준세액공제(13만 원)가 유리합니다. 별도 증빙 없이 자동 적용됩니다."
+      : "항목별 세액공제 합계가 표준공제보다 큽니다. 항목별 공제를 선택하세요."
+  };
+};
+
+// ──────────────────────────────────────────────
+// 전기차·친환경차 세액공제 계산기
+// ──────────────────────────────────────────────
+TaxCalculator.calculateEcoCarCredit = function(opts) {
+  var carPrice = opts.carPrice || 0;
+  var carType = opts.carType || 'electric'; // electric, hybrid, hydrogen
+  var individualConsumeTax = 0;
+  var acquisitionTax = 0;
+  var eduTax = 0;
+  if (carType === 'electric') {
+    individualConsumeTax = Math.min(5000000, Math.floor(carPrice * 0.05));
+    acquisitionTax = Math.min(1400000, Math.floor(carPrice * 0.04));
+    eduTax = Math.floor(acquisitionTax * 0.2);
+  } else if (carType === 'hybrid') {
+    individualConsumeTax = Math.min(2000000, Math.floor(carPrice * 0.04));
+    acquisitionTax = Math.min(800000, Math.floor(carPrice * 0.04));
+    eduTax = Math.floor(acquisitionTax * 0.2);
+  } else if (carType === 'hydrogen') {
+    individualConsumeTax = Math.min(5000000, Math.floor(carPrice * 0.05));
+    acquisitionTax = Math.min(1400000, Math.floor(carPrice * 0.04));
+    eduTax = Math.floor(acquisitionTax * 0.2);
+  }
+  var totalBenefit = individualConsumeTax + acquisitionTax + eduTax;
+  return {
+    carPrice: carPrice,
+    carType: carType,
+    carTypeLabel: carType === 'electric' ? '전기차' : carType === 'hybrid' ? '하이브리드차' : '수소전기차',
+    individualConsumeTax: individualConsumeTax,
+    acquisitionTax: acquisitionTax,
+    eduTax: eduTax,
+    totalBenefit: totalBenefit
+  };
+};
+
+// ──────────────────────────────────────────────
+// 주택자금 공제 계산기
+// ──────────────────────────────────────────────
+TaxCalculator.calculateHousingFundDeduction = function(opts) {
+  var totalSalary = opts.totalSalary || 0;
+  var subscriptionAmount = opts.subscriptionAmount || 0;  // 주택청약 납입액
+  var jeonseLoanRepay = opts.jeonseLoanRepay || 0;       // 전세대출 원리금
+  var mortgageInterest = opts.mortgageInterest || 0;      // 장기주택저당 이자
+
+  var subscriptionLimit = totalSalary <= 70000000 ? 2400000 : 0;
+  var subscriptionDeduction = Math.min(subscriptionAmount, subscriptionLimit);
+
+  var jeonseLimit = 4000000;
+  var jeonseDeduction = Math.min(jeonseLoanRepay, jeonseLimit);
+
+  var mortgageLimit = 18000000;
+  var mortgageDeduction = Math.min(mortgageInterest, mortgageLimit);
+
+  var totalDeduction = subscriptionDeduction + jeonseDeduction + mortgageDeduction;
+  var taxRate = TaxCalculator.calculateIncomeTax(totalSalary).rate;
+  var estimatedTaxSavings = Math.floor(totalDeduction * taxRate);
+
+  return {
+    totalSalary: totalSalary,
+    subscriptionAmount: subscriptionAmount,
+    jeonseLoanRepay: jeonseLoanRepay,
+    mortgageInterest: mortgageInterest,
+    subscriptionLimit: subscriptionLimit,
+    subscriptionDeduction: subscriptionDeduction,
+    jeonseLimit: jeonseLimit,
+    jeonseDeduction: jeonseDeduction,
+    mortgageLimit: mortgageLimit,
+    mortgageDeduction: mortgageDeduction,
+    totalDeduction: totalDeduction,
+    taxRate: taxRate,
+    estimatedTaxSavings: estimatedTaxSavings
+  };
+};
+
+// ──────────────────────────────────────────────
+// 개인사업자 종합소득세 간편 계산기
+// ──────────────────────────────────────────────
+TaxCalculator.calculateSelfEmployedTax = function(opts) {
+  var totalRevenue = opts.totalRevenue || 0;
+  var bizCode = opts.bizCode || '940500'; // 기본: 서비스업
+  var declaredType = opts.declaredType || 'simple'; // simple or standard
+  var otherIncome = opts.otherIncome || 0;
+  var financialIncome = opts.financialIncome || 0;
+
+  var ratioInfo = TaxCalculator.getExpenseRatioInfo(bizCode);
+  var expenseRate = declaredType === 'simple' ? ratioInfo.simpleRate : ratioInfo.standardRate;
+  var bizIncome = Math.floor(totalRevenue * (1 - expenseRate));
+  var totalIncome = bizIncome + otherIncome + financialIncome;
+  var taxResult = TaxCalculator.calculateIncomeTax(totalIncome);
+  var salaryDeduction = TaxCalculator.calculateSalaryDeduction(totalIncome);
+  var basicDeduction = 1500000;
+  var taxableIncome = Math.max(0, totalIncome - salaryDeduction - basicDeduction);
+  var finalResult = TaxCalculator.calculateIncomeTax(taxableIncome);
+  var localTax = Math.floor(finalResult.tax * 0.1);
+  var totalTax = finalResult.tax + localTax;
+
+  return {
+    totalRevenue: totalRevenue,
+    bizCode: bizCode,
+    bizCodeLabel: ratioInfo.label,
+    declaredType: declaredType,
+    expenseRate: expenseRate,
+    bizIncome: bizIncome,
+    otherIncome: otherIncome,
+    financialIncome: financialIncome,
+    totalIncome: totalIncome,
+    salaryDeduction: salaryDeduction,
+    basicDeduction: basicDeduction,
+    taxableIncome: taxableIncome,
+    taxRate: finalResult.rate,
+    incomeTax: finalResult.tax,
+    localTax: localTax,
+    totalTax: totalTax,
+    effectiveRate: totalIncome > 0 ? Math.round(totalTax / totalIncome * 10000) / 100 : 0
+  };
+};

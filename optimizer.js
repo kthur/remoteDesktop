@@ -17,13 +17,13 @@ const TaxOptimizer = {
       
       let aCardSum = personA.card;
       let aCashSum = personA.cash;
-      let aMedicalSum = 0;
+      let aMedicalSum = personA.medicalExpense || 0;
       let aEduSum = 0;
       let aChildCount = 0;
 
       let bCardSum = personB.card;
       let bCashSum = personB.cash;
-      let bMedicalSum = 0;
+      let bMedicalSum = personB.medicalExpense || 0;
       let bEduSum = 0;
       let bChildCount = 0;
 
@@ -92,7 +92,9 @@ const TaxOptimizer = {
           housingSubscription: personA.housingSubscription || 0,
           housingLoanRepay: personA.housingLoanRepay || 0,
           mortgageInterest: personA.mortgageInterest || 0,
-          ventureInvestment: personA.ventureInvestment || 0
+          ventureInvestment: personA.ventureInvestment || 0,
+          isHouseholder: personA.isHouseholder !== false,
+          spouseHousingSubscription: personA.spouseHousingSubscription || 0
         });
 
         const bResult = TaxCalculator.calculateYearEndTax({
@@ -125,7 +127,9 @@ const TaxOptimizer = {
           housingSubscription: personB.housingSubscription || 0,
           housingLoanRepay: personB.housingLoanRepay || 0,
           mortgageInterest: personB.mortgageInterest || 0,
-          ventureInvestment: personB.ventureInvestment || 0
+          ventureInvestment: personB.ventureInvestment || 0,
+          isHouseholder: personB.isHouseholder !== false,
+          spouseHousingSubscription: personB.spouseHousingSubscription || 0
         });
 
         const coupleTax = aResult.totalTax + bResult.totalTax;

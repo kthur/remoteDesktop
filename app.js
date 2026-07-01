@@ -584,7 +584,10 @@ document.addEventListener('DOMContentLoaded', () => {
       'deemed-deposit', 'deemed-small',
       'insurance-premium', 'rent-salary', 'rent-amount',
       'donation-income', 'donation-statutory', 'donation-designated', 'donation-religious',
-      'hi-regional-income', 'hi-regional-property'
+      'hi-regional-income', 'hi-regional-property',
+      'standard-itemized', 'ecocar-price',
+      'housing-salary', 'housing-sub-amount', 'housing-jeonse-repay', 'housing-mortgage-interest',
+      'se-revenue', 'se-other-income', 'se-financial-income'
     ];
     
     targetIds.forEach(id => {
@@ -1029,7 +1032,8 @@ document.addEventListener('DOMContentLoaded', () => {
     { id: 'hometown-target', amount: 'hometown-amount' }, // only has amount, no salary
     { id: 'isa-target', salary: 'isa-salary', amount: 'isa-annual' },
     { id: 'rent-target', salary: 'rent-salary', amount: 'rent-amount' },
-    { id: 'insurance-target', amount: 'insurance-premium' }
+    { id: 'insurance-target', amount: 'insurance-premium' },
+    { id: 'housing-target', salary: 'housing-salary', amount: 'housing-sub-amount' }
   ];
 
   targetSelectors.forEach(config => {
@@ -2747,6 +2751,107 @@ document.addEventListener('DOMContentLoaded', () => {
       if (hiResultContent) hiResultContent.innerHTML = html;
     });
   }
+
+  // 📋 표준세액공제
+  document.getElementById('btn-calc-standard-credit').addEventListener('click', () => {
+    const itemizedTotal = parseVal('standard-itemized');
+    const result = TaxCalculator.calculateStandardCredit({ itemizedTotal });
+    document.getElementById('standard-result').style.display = 'block';
+    document.getElementById('standard-result-content').innerHTML = `
+      <div>항목별 세액공제 합계: <strong>${result.itemizedTotal.toLocaleString()} 원</strong></div>
+      <div>표준세액공제: <strong>${result.standardCredit.toLocaleString()} 원</strong></div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div style="font-size:0.95rem;font-weight:bold;color:${result.isStandardBetter ? 'var(--accent-secondary)' : 'var(--accent-info)'};">
+        ${result.isStandardBetter ? '✅ 표준세액공제(13만 원) 선택!' : 'ℹ️ 항목별 공제 선택 (표준공제보다 ' + result.difference.toLocaleString() + '원 큼)'}
+      </div>
+      <div style="margin-top:6px;padding:8px;background:rgba(0,212,170,0.06);border-radius:6px;font-size:0.78rem;">
+        💡 ${result.recommendation}
+      </div>
+    `;
+  });
+
+  // 🚗 전기차·친환경차 세액공제
+  document.getElementById('btn-calc-ecocar').addEventListener('click', () => {
+    const carPrice = parseVal('ecocar-price');
+    const carType = document.getElementById('ecocar-type').value;
+    const result = TaxCalculator.calculateEcoCarCredit({ carPrice, carType });
+    document.getElementById('ecocar-result').style.display = 'block';
+    document.getElementById('ecocar-result-content').innerHTML = `
+      <div>차량 유형: <strong>${result.carTypeLabel}</strong></div>
+      <div>차량 가격: ${result.carPrice.toLocaleString()} 원</div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div style="color:var(--accent-info);">개별소비세 감면: <strong>${result.individualConsumeTax.toLocaleString()} 원</strong></div>
+      <div style="color:var(--accent-info);">취득세 감면: <strong>${result.acquisitionTax.toLocaleString()} 원</strong></div>
+      <div style="color:var(--accent-warning);">교육세 감면: ${result.eduTax.toLocaleString()} 원</div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div style="font-size:1rem;font-weight:bold;color:var(--accent-secondary);">💰 총 세제 혜택: <strong>${result.totalBenefit.toLocaleString()} 원</strong></div>
+      <div style="margin-top:6px;padding:6px;background:rgba(0,212,170,0.06);border-radius:6px;font-size:0.75rem;">
+        📌 2025~2026년 기준 감면 한도 적용. 국고보조금·지방보조금은 별도입니다.
+      </div>
+    `;
+  });
+
+  // 🏠 주택자금 공제
+  document.getElementById('btn-calc-housing-fund').addEventListener('click', () => {
+    const totalSalary = parseVal('housing-salary');
+    const subscriptionAmount = parseVal('housing-sub-amount');
+    const jeonseLoanRepay = parseVal('housing-jeonse-repay');
+    const mortgageInterest = parseVal('housing-mortgage-interest');
+    const result = TaxCalculator.calculateHousingFundDeduction({ totalSalary, subscriptionAmount, jeonseLoanRepay, mortgageInterest });
+    document.getElementById('housing-result').style.display = 'block';
+    document.getElementById('housing-result-content').innerHTML = `
+      <div>총급여: <strong>${result.totalSalary.toLocaleString()} 원</strong></div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div>📌 주택청약종합저축</div>
+      <div>· 납입액: ${result.subscriptionAmount.toLocaleString()} 원</div>
+      ${result.subscriptionLimit > 0 ? `<div>· 공제 한도: ${result.subscriptionLimit.toLocaleString()} 원</div><div>· 소득공제: <strong>${result.subscriptionDeduction.toLocaleString()} 원</strong></div>` : '<div style="color:var(--accent-warning);">· 총급여 7,000만 초과로 공제 불가</div>'}
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04);margin:6px 0;">
+      <div>📌 전세자금대출 원리금</div>
+      <div>· 상환액: ${result.jeonseLoanRepay.toLocaleString()} 원</div>
+      <div>· 소득공제: <strong>${result.jeonseDeduction.toLocaleString()} 원</strong> (한도 ${result.jeonseLimit.toLocaleString()}원)</div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04);margin:6px 0;">
+      <div>📌 장기주택저당차입금 이자</div>
+      <div>· 이자액: ${result.mortgageInterest.toLocaleString()} 원</div>
+      <div>· 소득공제: <strong>${result.mortgageDeduction.toLocaleString()} 원</strong> (한도 ${result.mortgageLimit.toLocaleString()}원)</div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div style="font-size:0.95rem;font-weight:bold;color:var(--accent-primary);">총 소득공제액: <strong>${result.totalDeduction.toLocaleString()} 원</strong></div>
+      <div style="font-size:0.95rem;font-weight:bold;color:var(--accent-secondary);">💰 예상 절세액: <strong>${result.estimatedTaxSavings.toLocaleString()} 원</strong> (세율 ${(result.taxRate * 100).toFixed(0)}% 적용)</div>
+    `;
+  });
+
+  // 🧮 개인사업자 종합소득세 간편 계산
+  document.getElementById('btn-calc-self-employed-tax').addEventListener('click', () => {
+    const totalRevenue = parseVal('se-revenue');
+    const bizCode = document.getElementById('se-biz-code').value;
+    const declaredType = document.getElementById('se-declared-type').value;
+    const otherIncome = parseVal('se-other-income');
+    const financialIncome = parseVal('se-financial-income');
+    const result = TaxCalculator.calculateSelfEmployedTax({ totalRevenue, bizCode, declaredType, otherIncome, financialIncome });
+    document.getElementById('se-result').style.display = 'block';
+    document.getElementById('se-result-content').innerHTML = `
+      <div>업종: <strong>${result.bizCodeLabel}</strong></div>
+      <div>연간 매출: ${result.totalRevenue.toLocaleString()} 원</div>
+      <div>경비율: ${(result.expenseRate * 100).toFixed(0)}% (${result.declaredType === 'simple' ? '단순경비율' : '기준경비율'})</div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div>사업소득: <strong>${result.bizIncome.toLocaleString()} 원</strong> (매출 ${result.totalRevenue.toLocaleString()} × ${((1 - result.expenseRate) * 100).toFixed(0)}%)</div>
+      <div>기타소득: ${result.otherIncome.toLocaleString()} 원</div>
+      <div>금융소득: ${result.financialIncome.toLocaleString()} 원</div>
+      <div>종합소득 합계: <strong>${result.totalIncome.toLocaleString()} 원</strong></div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div>근로소득공제: ${result.salaryDeduction.toLocaleString()} 원</div>
+      <div>기본공제: ${result.basicDeduction.toLocaleString()} 원</div>
+      <div>과세표준: <strong>${result.taxableIncome.toLocaleString()} 원</strong></div>
+      <div>세율: ${(result.taxRate * 100).toFixed(0)}%</div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+      <div style="font-size:0.9rem;color:var(--accent-primary);">소득세: <strong>${result.incomeTax.toLocaleString()} 원</strong></div>
+      <div style="color:var(--accent-warning);">지방소득세: ${result.localTax.toLocaleString()} 원</div>
+      <div style="font-size:1rem;font-weight:bold;color:var(--accent-secondary);">💰 총 예상 세액: <strong>${result.totalTax.toLocaleString()} 원</strong></div>
+      <div style="font-size:0.78rem;opacity:0.7;">실효세율: ${result.effectiveRate}% (종합소득 대비)</div>
+      <div style="margin-top:6px;padding:6px;background:rgba(0,212,170,0.06);border-radius:6px;font-size:0.75rem;">
+        📌 실제 세액은 부양가족·기부금·연금 등 추가 공제에 따라 달라집니다.
+      </div>
+    `;
+  });
 
   // 🏠 부동산 보유세
   document.getElementById('prop-house-count').addEventListener('input', function () {
