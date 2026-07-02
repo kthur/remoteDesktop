@@ -3453,6 +3453,262 @@ document.addEventListener('DOMContentLoaded', () => {
       if (btn) btn.click();
     });
   }, 0);
+
+  // ==========================================
+  // 🔗 배우자 연동 센터 (Spouse Sync Center) 로직
+  // ==========================================
+
+  // XOR 기반의 대칭형 키 암호화/복호화 헬퍼 (개인정보 보호용)
+  function encryptDecrypt(input, key) {
+    let output = "";
+    for (let i = 0; i < input.length; i++) {
+      const charCode = input.charCodeAt(i) ^ key.charCodeAt(i % key.length);
+      output += String.fromCharCode(charCode);
+    }
+    return btoa(unescape(encodeURIComponent(output)));
+  }
+
+  function decrypt(ciphertext, key) {
+    try {
+      const raw = decodeURIComponent(escape(atob(ciphertext)));
+      let output = "";
+      for (let i = 0; i < raw.length; i++) {
+        const charCode = raw.charCodeAt(i) ^ key.charCodeAt(i % key.length);
+        output += String.fromCharCode(charCode);
+      }
+      return output;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // 1. 내보내기용 상태 직렬화
+  function serializeState() {
+    saveStateToLocalStorage();
+    return localStorage.getItem('tax_calculator_state');
+  }
+
+  // 2. 상태 역직렬화 및 UI 반영
+  function deserializeAndLoad(jsonStr, mode) {
+    try {
+      const importedState = JSON.parse(jsonStr);
+      if (!importedState || !importedState.statics) {
+        showToast('❌ 올바르지 않은 데이터 형식입니다.');
+        return false;
+      }
+
+      if (mode === 'merge') {
+        const localSaved = localStorage.getItem('tax_calculator_state');
+        const localState = localSaved ? JSON.parse(localSaved) : { statics: {}, dependents: [] };
+        
+        const mergedStatics = { ...localState.statics };
+        
+        for (const key in importedState.statics) {
+          const isSpouseBField = key.startsWith('inc-b-') || key === 'enable-spouse-b';
+          const isSpouseAField = key.startsWith('inc-a-');
+          
+          if (isSpouseBField || isSpouseAField) {
+            const impVal = importedState.statics[key];
+            const localVal = localState.statics[key];
+            if (isSpouseBField) {
+              mergedStatics[key] = impVal;
+            } else if (isSpouseAField) {
+              if (!localVal || localVal === "0" || localVal === 0) {
+                mergedStatics[key] = impVal;
+              }
+            }
+          } else {
+            if (!mergedStatics[key] && importedState.statics[key]) {
+              mergedStatics[key] = importedState.statics[key];
+            }
+          }
+        }
+
+        const mergedDependents = [ ...localState.dependents ];
+        const localDepKeys = new Set(mergedDependents.map(d => d.name + '_' + d.relation));
+        if (importedState.dependents) {
+          importedState.dependents.forEach(dep => {
+            const depKey = dep.name + '_' + dep.relation;
+            if (!localDepKeys.has(depKey)) {
+              mergedDependents.push(dep);
+            }
+          });
+        }
+
+        const mergedState = { statics: mergedStatics, dependents: mergedDependents };
+        localStorage.setItem('tax_calculator_state', JSON.stringify(mergedState));
+      } else {
+        localStorage.setItem('tax_calculator_state', jsonStr);
+      }
+
+      loadStateFromLocalStorage();
+      
+      if (btnCalcIncomeIntegrated) btnCalcIncomeIntegrated.click();
+      
+      showToast('✅ 배우자 데이터 연동 및 동기화 완료!');
+      
+      const badge = document.getElementById('sync-status');
+      if (badge) {
+        badge.textContent = '연동됨';
+        badge.className = 'sync-status-badge connected';
+      }
+      return true;
+    } catch (e) {
+      console.error(e);
+      showToast('❌ 데이터 동기화 도중 오류가 발생했습니다.');
+      return false;
+    }
+  }
+
+  // 3. UI 버튼 이벤트 리스너 연결
+  const btnSyncGenerate = document.getElementById('btn-sync-generate');
+  const btnSyncCopyCode = document.getElementById('btn-sync-copy-code');
+  const btnSyncShowQr = document.getElementById('btn-sync-show-qr');
+  const btnSyncConnect = document.getElementById('btn-sync-connect');
+  const syncCodeDisplay = document.getElementById('sync-code-display');
+  const syncCodeVal = document.getElementById('sync-code-val');
+  const syncCodeInput = document.getElementById('sync-code-input');
+  const syncQrWrapper = document.getElementById('sync-qr-wrapper');
+  const syncQrImg = document.getElementById('sync-qr-img');
+
+  const btnOfflineExport = document.getElementById('btn-offline-export');
+  const btnOfflineImport = document.getElementById('btn-offline-import');
+
+  if (btnOfflineExport) {
+    btnOfflineExport.addEventListener('click', () => {
+      const stateStr = serializeState();
+      if (!stateStr) return;
+      const compressed = btoa(encodeURIComponent(stateStr));
+      navigator.clipboard.writeText(compressed).then(() => {
+        showToast('🔒 연동 데이터 복사 완료 (클립보드)');
+      }).catch(() => {
+        alert('복사 실패. 아래 텍스트를 직접 복사하세요:\n\n' + compressed);
+      });
+    });
+  }
+
+  if (btnOfflineImport) {
+    btnOfflineImport.addEventListener('click', () => {
+      const inputCode = prompt('복사한 연동 데이터를 입력해 주세요:');
+      if (!inputCode) return;
+      try {
+        const decoded = decodeURIComponent(atob(inputCode.trim()));
+        if (confirm('수신된 데이터로 기존 데이터를 연동하시겠습니까?\n[확인]: 배우자 데이터만 머지\n[취소]: 전체 덮어쓰기')) {
+          deserializeAndLoad(decoded, 'merge');
+        } else {
+          deserializeAndLoad(decoded, 'replace');
+        }
+      } catch (e) {
+        showToast('❌ 잘못된 코드 형식입니다.');
+      }
+    });
+  }
+
+  if (btnSyncGenerate) {
+    btnSyncGenerate.addEventListener('click', () => {
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      syncCodeVal.textContent = code;
+      syncCodeDisplay.style.display = 'block';
+
+      if (syncQrImg) {
+        const payloadStr = serializeState();
+        const encrypted = encryptDecrypt(payloadStr, code);
+        syncQrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(encrypted)}`;
+      }
+
+      const stateStr = serializeState();
+      const encryptedData = encryptDecrypt(stateStr, code);
+
+      fetch(`https://ntfy.sh/tax_sync_${code}`, {
+        method: 'POST',
+        headers: {
+          'Title': 'Tax Data Sync',
+          'Priority': '5'
+        },
+        body: encryptedData
+      })
+      .then(res => {
+        if (res.ok) {
+          showToast('📡 연동 코드가 생성되었습니다.');
+          const badge = document.getElementById('sync-status');
+          if (badge) {
+            badge.textContent = '코드 대기중';
+            badge.className = 'sync-status-badge connected';
+          }
+        } else {
+          showToast('❌ 연동 서버 통신 실패 (오프라인 연동 권장)');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        showToast('❌ 연동 실패 (인터넷 연결을 확인하세요)');
+      });
+    });
+  }
+
+  if (btnSyncCopyCode) {
+    btnSyncCopyCode.addEventListener('click', () => {
+      const code = syncCodeVal.textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        showToast('✅ 연동 코드가 복사되었습니다.');
+      });
+    });
+  }
+
+  if (btnSyncShowQr && syncQrWrapper) {
+    btnSyncShowQr.addEventListener('click', () => {
+      const isHidden = syncQrWrapper.style.display === 'none';
+      syncQrWrapper.style.display = isHidden ? 'block' : 'none';
+      btnSyncShowQr.textContent = isHidden ? 'QR 접기' : 'QR 보기';
+    });
+  }
+
+  if (btnSyncConnect) {
+    btnSyncConnect.addEventListener('click', () => {
+      const code = syncCodeInput.value.trim();
+      if (code.length !== 6 || isNaN(code)) {
+        showToast('❌ 올바른 6자리 숫자를 입력하세요.');
+        return;
+      }
+
+      showToast('📡 데이터 가져오는 중...');
+      fetch(`https://ntfy.sh/tax_sync_${code}/json?poll=1`)
+      .then(res => res.text())
+      .then(text => {
+        const lines = text.trim().split('\n');
+        let latestMsg = null;
+        for (let i = lines.length - 1; i >= 0; i--) {
+          if (!lines[i]) continue;
+          const msgObj = JSON.parse(lines[i]);
+          if (msgObj.event === 'message' && msgObj.message) {
+            latestMsg = msgObj.message;
+            break;
+          }
+        }
+
+        if (!latestMsg) {
+          showToast('❌ 해당 연동 코드로 등록된 데이터를 찾을 수 없습니다.');
+          return;
+        }
+
+        const decryptedJson = decrypt(latestMsg, code);
+        if (!decryptedJson) {
+          showToast('❌ 데이터 복호화 실패. 올바른 코드인지 확인해 주세요.');
+          return;
+        }
+
+        if (confirm('가져온 배우자 데이터를 연동하시겠습니까?\n[확인]: 배우자 데이터만 머지\n[취소]: 전체 덮어쓰기')) {
+          deserializeAndLoad(decryptedJson, 'merge');
+        } else {
+          deserializeAndLoad(decryptedJson, 'replace');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        showToast('❌ 연동 실패 (인터넷 연결 또는 코드가 만료되었을 수 있습니다)');
+      });
+    });
+  }
 });
 
 function renderAdvice(containerId, adviceList, actionCallback) {

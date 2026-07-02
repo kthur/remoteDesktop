@@ -91,6 +91,56 @@
   </select>
 </div>
 
+<!-- 🔗 배우자 데이터 연동 (Spouse Sync Center) -->
+<div class="spouse-sync-panel">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+    <h3 style="font-size: 0.95rem; font-weight: 800; color: #a78bfa; margin: 0; display: flex; align-items: center; gap: 6px;">
+      🔗 배우자 간 데이터 실시간 연동
+    </h3>
+    <span class="sync-status-badge disconnected" id="sync-status">미연동</span>
+  </div>
+  <p style="font-size: 0.78rem; color: var(--text-secondary-dark); margin: 0 0 1rem 0; line-height: 1.4;">
+    서로 다른 기기나 브라우저에서 입력한 배우자 A와 B의 데이터를 연동하여 실시간 합산 비교합니다.
+  </p>
+  
+  <div class="grid-2col" style="display: grid; gap: 0.75rem; margin-bottom: 1rem;">
+    <!-- 기기 데이터 내보내기 / 코드 생성 -->
+    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 0.75rem; border-radius: 8px;">
+      <span style="font-size: 0.8rem; font-weight: 700; display: block; margin-bottom: 6px; color: var(--text-primary-dark);">1단계: 내 데이터 내보내기</span>
+      <button id="btn-sync-generate" class="btn-primary" style="width: 100%; padding: 8px; font-size: 0.8rem; border-radius: 6px; background: var(--accent-primary); border: none; font-weight: bold; cursor: pointer; color: #fff;">연동 코드 생성</button>
+      <div id="sync-code-display" style="display: none; margin-top: 8px; text-align: center;">
+        <span style="font-size: 0.7rem; color: var(--text-secondary-dark); display: block;">상대방 기기에 입력하세요:</span>
+        <div id="sync-code-val" style="font-size: 1.4rem; font-weight: 800; letter-spacing: 4px; color: var(--accent-gold); margin: 4px 0;">000000</div>
+        <div style="display:flex; gap:4px; justify-content:center; margin-bottom:6px;">
+          <button id="btn-sync-copy-code" style="padding: 2px 8px; font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary-dark); border-radius: 4px; cursor: pointer;">코드 복사</button>
+          <button id="btn-sync-show-qr" style="padding: 2px 8px; font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary-dark); border-radius: 4px; cursor: pointer;">QR 보기</button>
+        </div>
+        <div id="sync-qr-wrapper" style="display:none; margin: 8px auto 0; text-align:center;">
+          <img id="sync-qr-img" src="" style="width:120px; height:120px; border:4px solid white; border-radius:6px;" alt="QR Code" />
+        </div>
+      </div>
+    </div>
+    
+    <!-- 상대 기기 코드 가져오기 / 입력 -->
+    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 0.75rem; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <span style="font-size: 0.8rem; font-weight: 700; display: block; margin-bottom: 6px; color: var(--text-primary-dark);">2단계: 상대방 코드 가져오기</span>
+        <input type="text" id="sync-code-input" class="form-input" placeholder="6자리 코드 입력" maxlength="6" style="text-align: center; font-size: 1.1rem; font-weight: 700; padding: 6px; margin-bottom: 8px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff; width: 100%; border-radius: 6px;" />
+      </div>
+      <button id="btn-sync-connect" class="btn-primary" style="width: 100%; padding: 8px; font-size: 0.8rem; border-radius: 6px; background: var(--accent-secondary); border: none; font-weight: bold; cursor: pointer; color: #000;">연동 완료하기</button>
+    </div>
+  </div>
+
+  <!-- 오프라인 연동 (개인정보 민감용) -->
+  <div style="border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 0.75rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+    <span style="font-size: 0.75rem; color: var(--text-secondary-dark);">🔒 100% 오프라인 직접 연동 (클립보드):</span>
+    <div style="display: flex; gap: 6px;">
+      <button id="btn-offline-export" style="padding: 4px 8px; font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary-dark); border-radius: 4px; cursor: pointer;">내보내기 복사</button>
+      <button id="btn-offline-import" style="padding: 4px 8px; font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary-dark); border-radius: 4px; cursor: pointer;">가져오기 붙여넣기</button>
+    </div>
+  </div>
+</div>
+
 <!-- 배우자 B 활성화 토글 (세그먼트 위에 항상 노출) -->
 <div style="margin-bottom: 10px; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
   <label style="display:flex; align-items:center; gap:8px; font-weight:700; font-size:0.85rem; cursor:pointer;">

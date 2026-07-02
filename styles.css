@@ -1778,3 +1778,40 @@ body.light-mode .stepper-nav-btn {
   cursor: pointer;
   accent-color: var(--accent-primary);
 }
+
+/* 🔗 배우자 연동 센터 스타일 */
+.spouse-sync-panel {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(108, 99, 255, 0.03));
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: 12px;
+  transition: var(--transition-smooth);
+}
+body.light-mode .spouse-sync-panel {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(108, 99, 255, 0.02));
+  border: 1px solid rgba(139, 92, 246, 0.12);
+}
+.sync-status-badge {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 700;
+  display: inline-block;
+  transition: var(--transition-smooth);
+}
+.sync-status-badge.connected {
+  background: rgba(0, 212, 170, 0.15);
+  color: var(--accent-secondary);
+  border: 1px solid rgba(0, 212, 170, 0.3);
+}
+.sync-status-badge.disconnected {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary-dark);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+body.light-mode .sync-status-badge.disconnected {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-secondary-light);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
