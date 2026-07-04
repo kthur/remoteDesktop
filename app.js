@@ -642,53 +642,7 @@ document.addEventListener('DOMContentLoaded', () => {
       el.addEventListener('input', updateHelper);
       updateHelper();
       toggleClearBtnVisibility();
-
-      // 🆕 P2: 단위 토글 버튼
-      var unitGroup = document.createElement('div');
-      unitGroup.className = 'unit-toggle-group';
-      var units = ['won', 'man', 'eok'];
-      var unitLabels = { won: '원', man: '만원', eok: '억원' };
-      var currentUnit = 'won';
       el.dataset.unit = 'won';
-
-      units.forEach(function(u) {
-        var btn = document.createElement('button');
-        btn.className = 'unit-toggle-btn' + (u === 'won' ? ' active' : '');
-        btn.textContent = unitLabels[u];
-        btn.addEventListener('click', function() {
-          if (currentUnit === u) return;
-          // Convert displayed value between units
-          var rawVal = parseInt(el.value.replace(/,/g, ''), 10) || 0;
-          var wonVal = rawVal * unitFactors[currentUnit];
-          var newVal = wonVal / unitFactors[u];
-          el.value = formatNumberWithCommas(Math.floor(newVal));
-          currentUnit = u;
-          el.dataset.unit = u;
-          unitGroup.querySelectorAll('.unit-toggle-btn').forEach(function(b) { b.classList.remove('active'); });
-          btn.classList.add('active');
-          updateHelper();
-          el.dispatchEvent(new Event('input', { bubbles: true }));
-        });
-        unitGroup.appendChild(btn);
-      });
-
-      wrapper.parentNode.insertBefore(unitGroup, helper.nextSibling);
-
-      // 🆕 P2: 포커스 시 한글 읽기 툴팁
-      var koreanReading = document.createElement('div');
-      koreanReading.className = 'korean-reading';
-      wrapper.parentNode.insertBefore(koreanReading, unitGroup.nextSibling);
-      
-      el.addEventListener('focus', function() {
-        var rawVal = parseInt(el.value.replace(/,/g, ''), 10) || 0;
-        var wonVal = rawVal * unitFactors[currentUnit];
-        koreanReading.textContent = '읽기: ' + convertToKoreanWon(wonVal);
-        koreanReading.classList.add('visible');
-      });
-      el.addEventListener('blur', function() {
-        koreanReading.classList.remove('visible');
-        // 단위 유지 — localStorage 저장 시에만 원 단위로 변환
-      });
     });
   }
 
