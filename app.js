@@ -1043,8 +1043,9 @@ document.addEventListener('DOMContentLoaded', () => {
     var bc = document.getElementById('breadcrumb');
     if (!bc) return;
     var labels = {
-      profile: '소득·지출 입력', income: '소득·연말', business: '사업·자산',
-      capital: '양도·증여·상속', report: '종합 리포트', optimize: '공제·절세 최적화'
+      profile: '내 정보 입력', income: '소득·연말',
+      capital: '상속·증여·양도', report: '종합 리포트',
+      salary: '직장인·연말정산', business: '사업·투자·절세'
     };
     var subLabels = {
       transfer: '양도소득', holding: '보유세', gift: '증여·상속',
@@ -3840,4 +3841,45 @@ function renderAdvice(containerId, adviceList, actionCallback) {
   if (activeTab) {
     updateBreadcrumb(activeTab.dataset.tab);
   }
+
+  // 🆕 Profiling modal (첫 방문 시)
+  function initProfilingModal() {
+    var modal = document.getElementById('profiling-modal');
+    if (!modal) return;
+    var done = localStorage.getItem('tax_profiling_done');
+    if (done) return;
+    modal.style.display = 'flex';
+
+    function getSelected() {
+      var checks = document.querySelectorAll('.profiling-check:checked');
+      return Array.from(checks).map(function(c) { return c.value; });
+    }
+
+    document.getElementById('btn-profiling-submit').addEventListener('click', function() {
+      var sel = getSelected();
+      if (sel.length === 0) { sel = ['salary']; }
+      localStorage.setItem('tax_profiling_done', '1');
+      localStorage.setItem('tax_profiling_types', JSON.stringify(sel));
+      modal.style.display = 'none';
+
+      var msg = [];
+      if (sel.indexOf('salary') >= 0) msg.push('💼 직장인 탭에서 연말정산·카드·월세 최적화');
+      if (sel.indexOf('business') >= 0) msg.push('🏭 사업·투자 탭에서 부가세·경비율·노란우산');
+      if (sel.indexOf('invest') >= 0) msg.push('💰 사업·투자 탭에서 ISA·채권·벤처투자');
+      if (sel.indexOf('property') >= 0) msg.push('🏠 상속·증여 탭에서 보유세·양도세');
+      if (sel.indexOf('estate') >= 0) msg.push('🎁 상속·증여 탭에서 증여·상속 플랜');
+
+      var resultEl = document.getElementById('profiling-result');
+      resultEl.style.display = 'block';
+      resultEl.innerHTML = '✅ 선택 완료! 아래 탭을 추천합니다:<br>• ' + msg.join('<br>• ');
+      setTimeout(function() { resultEl.style.display = 'none'; }, 5000);
+    });
+
+    document.getElementById('btn-profiling-skip').addEventListener('click', function() {
+      localStorage.setItem('tax_profiling_done', '1');
+      modal.style.display = 'none';
+    });
+  }
+
+  initProfilingModal();
 }
