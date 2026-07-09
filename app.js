@@ -1,9 +1,14 @@
+function getTargetSalary(targetId) {
+  const el = document.getElementById(targetId);
+  const t = el ? el.value : "a";
+  return parseVal("inc-" + t + "-salary");
+}
 /**
- * 메인 애플리케이션 UI 제어, 이벤트 바인딩 및 차트 렌더링 (배우자 1,2 금융소득 개별 연산 적용)
+ * 메인 ?�플리�??�션 UI ?�어, ?�벤??바인??�?차트 ?�더�?(배우??1,2 금융?�득 개별 ?�산 ?�용)
  */
 
 /**
- * 디바운스 헬퍼 - 실시간 계산에 사용 (입력 후 delay ms 뒤에 fn 실행)
+ * ?�바?�스 ?�퍼 - ?�시�?계산???�용 (?�력 ??delay ms ?�에 fn ?�행)
  */
 function debounce(fn, delay = 400) {
   let timer;
@@ -14,7 +19,7 @@ function debounce(fn, delay = 400) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // 1. 온보딩 스플릿 뷰 초기화
+  // 1. ?�보???�플�?�?초기??
   const initOnboarding = () => {
     const btnPdf = document.getElementById('btn-ob-pdf');
     const btnManual = document.getElementById('btn-ob-manual');
@@ -36,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // 2. 점진적 공개 (Advanced Fields) 초기화
+  // 2. ?�진??공개 (Advanced Fields) 초기??
   const initAdvancedToggles = () => {
     const toggleBtns = document.querySelectorAll('.btn-toggle-advanced');
     toggleBtns.forEach(btn => {
@@ -48,18 +53,18 @@ document.addEventListener('DOMContentLoaded', () => {
           
           const labelType = btn.dataset.labelType;
           if (labelType === 'income') {
-            btn.innerHTML = isHidden ? '➖ 사업·금융·기타 소득 접기 ▲' : '➕ 사업·금융·기타 소득 펼치기 ▼';
+            btn.innerHTML = isHidden ? '???�업·금융·기�? ?�득 ?�기 ?? : '???�업·금융·기�? ?�득 ?�치�???;
           } else if (labelType === 'deduction') {
-            btn.innerHTML = isHidden ? '➖ 추가 공제 항목 접기 ▲' : '➕ 추가 공제 항목 펼치기 ▼';
+            btn.innerHTML = isHidden ? '??추�? 공제 ??�� ?�기 ?? : '??추�? 공제 ??�� ?�치�???;
           } else {
-            btn.innerHTML = isHidden ? '➖ 접기 ▲' : '➕ 펼치기 ▼';
+            btn.innerHTML = isHidden ? '???�기 ?? : '???�치�???;
           }
         }
       });
     });
   };
 
-  // 노란우산공제 활성화 제어 (사업소득 매출액이 0원 초과일 때만 가능)
+  // ?��??�산공제 ?�성???�어 (?�업?�득 매출?�이 0??초과???�만 가??
   const checkYellowUmbrellaState = () => {
     const checkSpouseYellow = (prefix) => {
       const revenueEl = document.getElementById(`inc-${prefix}-business-revenue`);
@@ -69,13 +74,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const revVal = parseInt(revenueEl.value.replace(/,/g, ''), 10) || 0;
       if (revVal <= 0) {
         yellowEl.disabled = true;
-        yellowEl.placeholder = "사업소득 매출 입력 시 활성화";
+        yellowEl.placeholder = "?�업?�득 매출 ?�력 ???�성??;
         yellowEl.value = "";
         yellowEl.style.background = "rgba(255, 255, 255, 0.02)";
         yellowEl.style.cursor = "not-allowed";
       } else {
         yellowEl.disabled = false;
-        yellowEl.placeholder = "연간 납입액 (최대 500만 원 공제)";
+        yellowEl.placeholder = "?�간 ?�입??(최�? 500�???공제)";
         yellowEl.style.background = "";
         yellowEl.style.cursor = "";
       }
@@ -122,11 +127,11 @@ document.addEventListener('DOMContentLoaded', () => {
     return hasMinus ? '-' + formatted : formatted;
   };
 
-  // 🆕 P0-5: 결과값 업데이트 시 하이라이트 효과
+  // ?�� P0-5: 결과�??�데?�트 ???�이?�이???�과
   function updateResultWithHighlight(elId, value) {
     const el = document.getElementById(elId);
     if (!el) return;
-    const formatted = typeof value === 'number' ? value.toLocaleString() + ' 원' : value;
+    const formatted = typeof value === 'number' ? value.toLocaleString() + ' ?? : value;
     if (el.textContent !== formatted) {
       el.textContent = formatted;
       el.classList.remove('result-highlight');
@@ -135,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 🆕 P0-12: 토스트 메시지 표시
+  // ?�� P0-12: ?�스??메시지 ?�시
   function showToast(message, duration) {
     if (duration === undefined) duration = 2000;
     let container = document.getElementById('toast-container');
@@ -226,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
     section.classList.remove('active');
   }
 
-  // 🆕 토스트 메시지 표시
+  // ?�� ?�스??메시지 ?�시
   function showToast(message, duration) {
     duration = duration || 2500;
     let toast = document.getElementById('app-toast');
@@ -265,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!body) return;
         body.classList.toggle('collapsed');
         const arrow = header.querySelector('span:last-child');
-        if (arrow) arrow.textContent = body.classList.contains('collapsed') ? '▼' : '▲';
+        if (arrow) arrow.textContent = body.classList.contains('collapsed') ? '?? : '??;
       });
     });
   }
@@ -293,11 +298,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fill) fill.style.width = pct + '%';
     if (pctLabel) pctLabel.textContent = pct + '%';
     if (label) {
-      if (pct === 0) label.textContent = '입력해 주세요';
-      else if (pct < 30) label.textContent = '기본 정보 입력 중';
-      else if (pct < 60) label.textContent = '공제 항목 입력 중';
-      else if (pct < 100) label.textContent = '추가 입력 가능';
-      else label.textContent = '✅ 모든 항목 입력 완료!';
+      if (pct === 0) label.textContent = '?�력??주세??;
+      else if (pct < 30) label.textContent = '기본 ?�보 ?�력 �?;
+      else if (pct < 60) label.textContent = '공제 ??�� ?�력 �?;
+      else if (pct < 100) label.textContent = '추�? ?�력 가??;
+      else label.textContent = '??모든 ??�� ?�력 ?�료!';
     }
   }
 
@@ -327,7 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
       dependents: []
     };
 
-    // 🆕 P2: 저장 전 money-input 단위를 원으로 자동 변환
+    // ?�� P2: ?�????money-input ?�위�??�으�??�동 변??
     document.querySelectorAll('.money-input[data-unit]').forEach(function(el) {
       var u = el.dataset.unit;
       if (u && u !== 'won') {
@@ -335,14 +340,14 @@ document.addEventListener('DOMContentLoaded', () => {
         var wonVal = raw * (u === 'man' ? 10000 : 100000000);
         el.value = formatNumberWithCommas(wonVal);
         el.dataset.unit = 'won';
-        // 토글 버튼도 리셋
+        // ?��? 버튼??리셋
         var group = el.parentNode.querySelector('.unit-toggle-group');
         if (group) {
           group.querySelectorAll('.unit-toggle-btn').forEach(function(b) { b.classList.remove('active'); });
           var firstBtn = group.querySelector('.unit-toggle-btn');
           if (firstBtn) firstBtn.classList.add('active');
         }
-        // won-helper 업데이트
+        // won-helper ?�데?�트
         var helper = el.parentNode.querySelector('.won-helper');
         if (helper) helper.textContent = convertToKoreanWon(el.value);
       }
@@ -430,43 +435,43 @@ document.addEventListener('DOMContentLoaded', () => {
             card.innerHTML = `
               <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span class="person-name">부양가족 ${idx + 1}</span>
-                  <button class="btn-remove-person">✖</button>
+                  <span class="person-name">부?��?�?${idx + 1}</span>
+                  <button class="btn-remove-person">??/button>
                 </div>
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
                   <div class="form-group" style="margin-bottom:0;">
-                    <label>가족 이름</label>
-                    <input type="text" class="form-input opt-dep-name" value="${dep.name}" placeholder="예: 홍길동">
+                    <label>가�??�름</label>
+                    <input type="text" class="form-input opt-dep-name" value="${dep.name}" placeholder="?? ?�길??>
                   </div>
                   <div class="form-group" style="margin-bottom:0;">
-                    <label>관계 설정</label>
+                    <label>관�??�정</label>
                     <select class="form-input opt-dep-relation">
-                      <option value="child" ${dep.relation === 'child' ? 'selected' : ''}>자녀 (8세 이상)</option>
-                      <option value="parent" ${dep.relation === 'parent' ? 'selected' : ''}>부모 (기본공제)</option>
-                      <option value="other" ${dep.relation === 'other' ? 'selected' : ''}>기타</option>
+                      <option value="child" ${dep.relation === 'child' ? 'selected' : ''}>?��? (8???�상)</option>
+                      <option value="parent" ${dep.relation === 'parent' ? 'selected' : ''}>부�?(기본공제)</option>
+                      <option value="other" ${dep.relation === 'other' ? 'selected' : ''}>기�?</option>
                     </select>
                   </div>
                   <div class="form-group" style="margin-bottom:0;">
-                    <label>가족 카드사용액 <span class="tooltip-icon" data-tooltip="부양가족 명의의 신용카드/체크카드 사용액입니다. 기본공제를 받는 배우자에게 자동으로 합산되어 한도 내 소득공제됩니다.">?</span></label>
-                    <input type="text" inputmode="numeric" class="form-input money-input opt-dep-card" value="${dep.card}" placeholder="연간 합계(원)">
+                    <label>가�?카드?�용??<span class="tooltip-icon" data-tooltip="부?��?�?명의???�용카드/체크카드 ?�용?�입?�다. 기본공제�?받는 배우?�에�??�동?�로 ?�산?�어 ?�도 ???�득공제?�니??">?</span></label>
+                    <input type="text" inputmode="numeric" class="form-input money-input opt-dep-card" value="${dep.card}" placeholder="?�간 ?�계(??">
                   </div>
                   <div class="form-group" style="margin-bottom:0;">
-                    <label>가족 의료비 <span class="tooltip-icon" data-tooltip="해당 가족을 위해 지출한 연간 의료비입니다. 의료비 세액공제는 총급여의 3% 초과 지출액부터 15% 공제 혜택이 적용됩니다.">?</span></label>
-                    <input type="text" inputmode="numeric" class="form-input money-input opt-dep-medical" value="${dep.medical}" placeholder="연간 합계(원)">
+                    <label>가�??�료�?<span class="tooltip-icon" data-tooltip="?�당 가족을 ?�해 지출한 ?�간 ?�료비입?�다. ?�료�??�액공제??총급?�의 3% 초과 지출액부??15% 공제 ?�택???�용?�니??">?</span></label>
+                    <input type="text" inputmode="numeric" class="form-input money-input opt-dep-medical" value="${dep.medical}" placeholder="?�간 ?�계(??">
                   </div>
                   <div class="form-group" style="margin-bottom:0;">
-                    <label>가족 교육비 <span class="tooltip-icon" data-tooltip="가족의 학원비, 학교 등록금 등 교육 비용입니다. 취학전아동/초중고생 1인당 연 300만원, 대학생 연 900만원 한도로 15% 공제됩니다.">?</span></label>
-                    <input type="text" inputmode="numeric" class="form-input money-input opt-dep-edu" value="${dep.edu}" placeholder="연간 합계(원)">
+                    <label>가�?교육�?<span class="tooltip-icon" data-tooltip="가족의 ?�원�? ?�교 ?�록�???교육 비용?�니?? 취학?�아??초중고생 1?�당 ??300만원, ?�?�생 ??900만원 ?�도�?15% 공제?�니??">?</span></label>
+                    <input type="text" inputmode="numeric" class="form-input money-input opt-dep-edu" value="${dep.edu}" placeholder="?�간 ?�계(??">
                   </div>
                   <div class="form-group" style="margin-bottom:0;">
-                    <label>학자금 대출 상환 <span class="tooltip-icon" data-tooltip="본인 또는 부양가족 명의의 학자금 대출 상환 원리금입니다. 연 한도 없이 15% 세액공제를 받습니다.">?</span></label>
-                    <input type="text" inputmode="numeric" class="form-input money-input opt-dep-student-loan" value="${dep.studentLoan}" placeholder="연간 합계(원)">
+                    <label>?�자�??��??�환 <span class="tooltip-icon" data-tooltip="본인 ?�는 부?��?�?명의???�자�??��??�환 ?�리금입?�다. ???�도 ?�이 15% ?�액공제�?받습?�다.">?</span></label>
+                    <input type="text" inputmode="numeric" class="form-input money-input opt-dep-student-loan" value="${dep.studentLoan}" placeholder="?�간 ?�계(??">
                   </div>
                 </div>
                 <div style="display:flex; gap:15px; margin-top:5px; font-size:0.8rem;">
-                  <label><input type="checkbox" class="opt-dep-senior" ${dep.senior ? 'checked' : ''}> 경로우대(70세+)</label>
-                  <label><input type="checkbox" class="opt-dep-disabled" ${dep.disabled ? 'checked' : ''}> 장애인 공제</label>
-                  <label><input type="checkbox" class="opt-dep-birth" ${dep.birth ? 'checked' : ''}> 출산/입양</label>
+                  <label><input type="checkbox" class="opt-dep-senior" ${dep.senior ? 'checked' : ''}> 경로?��?(70??)</label>
+                  <label><input type="checkbox" class="opt-dep-disabled" ${dep.disabled ? 'checked' : ''}> ?�애??공제</label>
+                  <label><input type="checkbox" class="opt-dep-birth" ${dep.birth ? 'checked' : ''}> 출산/?�양</label>
                 </div>
               </div>
             `;
@@ -543,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Korean Currency Helper
   function convertToKoreanWon(value) {
     const num = Math.floor(parseFloat(String(value).replace(/,/g, '')) || 0);
-    if (num === 0) return '0원';
+    if (num === 0) return '0??;
     
     let result = '';
     const eok = Math.floor(num / 100000000);
@@ -551,19 +556,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const won = num % 10000;
     
     if (eok > 0) {
-      result += `${eok}억 `;
+      result += `${eok}??`;
     }
     if (man > 0) {
-      result += `${man.toLocaleString('ko-KR')}만 `;
+      result += `${man.toLocaleString('ko-KR')}�?`;
     }
     if (won > 0 && eok === 0 && man === 0) {
       result += `${won.toLocaleString('ko-KR')}`;
     }
     
-    return result.trim() + ' 원';
+    return result.trim() + ' ??;
   }
 
-  // 🆕 P2: 단위 변환 맵
+  // ?�� P2: ?�위 변??�?
   var unitFactors = { won: 1, man: 10000, eok: 100000000 };
 
   function setupKoreanUnitHelpers() {
@@ -575,18 +580,18 @@ document.addEventListener('DOMContentLoaded', () => {
       'prop-public-price', 'prop-market-price', 'gift-amount', 'gift-past',
       'stock-exchange-rate', 'inc-a-irp', 'inc-b-irp',
       'pension-salary', 'pension-amount', 'pension-irp-amount',
-      'card-salary', 'card-usage-amount', 'card-cash-amount', 'card-traditional', 'card-transit', 'card-book',
+      'card-usage-amount', 'card-cash-amount', 'card-traditional', 'card-transit', 'card-book',
       'inherit-total-asset', 'inherit-spouse-share', 'inherit-coresident-value', 'inherit-financial', 'inherit-gift-past',
       'mg-amount', 'mg-past',
-      'sports-salary', 'sports-fee',
+      'sports-fee',
       'hometown-amount',
       'isa-annual', 'isa-salary', 'isa-pension-transfer',
       'deemed-deposit', 'deemed-small',
-      'insurance-premium', 'rent-salary', 'rent-amount',
+      'insurance-premium', 'rent-amount',
       'donation-income', 'donation-statutory', 'donation-designated', 'donation-religious',
       'hi-regional-income', 'hi-regional-property',
       'standard-itemized', 'ecocar-price',
-      'housing-salary', 'housing-sub-amount', 'housing-jeonse-repay', 'housing-mortgage-interest',
+      'housing-sub-amount', 'housing-jeonse-repay', 'housing-mortgage-interest',
       'se-revenue', 'se-other-income', 'se-financial-income',
       'bond-investment', 'venture-amount', 'venture-income',
       'yellow-business-income', 'yellow-payment'
@@ -596,7 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const el = document.getElementById(id);
       if (!el) return;
 
-      // 모바일 숫자 키패드 지원 및 간편 클리어 버튼 래퍼 구성
+      // 모바???�자 ?�패??지??�?간편 ?�리??버튼 ?�퍼 구성
       el.setAttribute('inputmode', 'decimal');
       const wrapper = document.createElement('div');
       wrapper.className = 'input-clear-wrapper';
@@ -606,7 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const clearBtn = document.createElement('button');
       clearBtn.type = 'button';
       clearBtn.className = 'input-clear-btn';
-      clearBtn.textContent = '✖';
+      clearBtn.textContent = '??;
       wrapper.appendChild(clearBtn);
 
       const toggleClearBtnVisibility = () => {
@@ -627,7 +632,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       el.addEventListener('input', toggleClearBtnVisibility);
 
-      // 원래 won-helper (한글 읽기)
+      // ?�래 won-helper (?��? ?�기)
       const helper = document.createElement('div');
       helper.className = 'won-helper';
       helper.style.fontSize = '0.8rem';
@@ -654,7 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ✅ PDF 업로드 — 홈택스 자동 입력
+  // ??PDF ?�로?????�택???�동 ?�력
   const dropzone = document.getElementById('pdf-dropzone');
   const fileInput = document.getElementById('pdf-file-input');
   const pdfStatus = document.getElementById('pdf-status');
@@ -714,26 +719,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function parseTaxData(text) {
     const clean = text.replace(/\s+/g, ' ');
-    // 국세청 PDF 서식 대응 — 패턴을 관대하게
+    // �?���?PDF ?�식 ?�?????�턴??관?�?�게
     const patterns = [
-      // 총급여: "총급여액 70,000,000" / "총급여 70,000,000" / "총급여액\n70,000,000" 
-      { key: 'totalSalary',   regex: /총급여(?:액)?\s*[:\s]*(?:￦|원)?\s*\[?\s*([\d,]+)\s*\]?/, id: 'inc-a-salary' },
-      // 신용카드: "신용카드사용액" 붙여쓰기 대응
-      { key: 'creditCard',    regex: /신용카드\s*사용액\s*[:\s]*(?:￦|원)?\s*\[?\s*([\d,]+)\s*\]?/, id: 'inc-a-card' },
-      // 체크카드/현금
-      { key: 'cashReceipt',   regex: /(?:체크카드|현금영수증|직불카드)\s*(?:사용액)?\s*[:\s]*(?:￦|원)?\s*\[?\s*([\d,]+)\s*\]?/, id: null },
-      // 연금저축
-      { key: 'pension',       regex: /연금(?:저축|계좌)\s*(?:납입액)?\s*[:\s]*(?:￦|원)?\s*\[?\s*([\d,]+)\s*\]?/, id: 'inc-a-pension' },
-      // 의료비
-      { key: 'medical',       regex: /의료비\s*(?:지출액)?\s*[:\s]*(?:￦|원)?\s*\[?\s*([\d,]+)\s*\]?/, id: null },
-      // 보험료
-      { key: 'insurance',     regex: /(?:보장성\s*보험료|보험료)\s*[:\s]*(?:￦|원)?\s*\[?\s*([\d,]+)\s*\]?/, id: null },
-      // 교육비
-      { key: 'education',     regex: /교육비\s*(?:공제)?\s*[:\s]*(?:￦|원)?\s*\[?\s*([\d,]+)\s*\]?/, id: null },
-      // 주택자금
-      { key: 'housing',       regex: /주택자금\s*(?:공제)?\s*[:\s]*(?:￦|원)?\s*\[?\s*([\d,]+)\s*\]?/, id: null },
-      // 기부금
-      { key: 'donation',      regex: /기부금\s*[:\s]*(?:￦|원)?\s*\[?\s*([\d,]+)\s*\]?/, id: null },
+      // 총급?? "총급?�액 70,000,000" / "총급??70,000,000" / "총급?�액\n70,000,000" 
+      { key: 'totalSalary',   regex: /총급???:???\s*[:\s]*(?:�????\s*\[?\s*([\d,]+)\s*\]?/, id: 'inc-a-salary' },
+      // ?�용카드: "?�용카드?�용?? 붙여?�기 ?�??
+      { key: 'creditCard',    regex: /?�용카드\s*?�용??s*[:\s]*(?:�????\s*\[?\s*([\d,]+)\s*\]?/, id: 'inc-a-card' },
+      // 체크카드/?�금
+      { key: 'cashReceipt',   regex: /(?:체크카드|?�금?�수�?직불카드)\s*(?:?�용???\s*[:\s]*(?:�????\s*\[?\s*([\d,]+)\s*\]?/, id: null },
+      // ?�금?��?
+      { key: 'pension',       regex: /?�금(?:?��?계좌)\s*(?:?�입???\s*[:\s]*(?:�????\s*\[?\s*([\d,]+)\s*\]?/, id: 'inc-a-pension' },
+      // ?�료�?
+      { key: 'medical',       regex: /?�료�?s*(?:지출액)?\s*[:\s]*(?:�????\s*\[?\s*([\d,]+)\s*\]?/, id: null },
+      // 보험�?
+      { key: 'insurance',     regex: /(?:보장??s*보험�?보험�?\s*[:\s]*(?:�????\s*\[?\s*([\d,]+)\s*\]?/, id: null },
+      // 교육�?
+      { key: 'education',     regex: /교육�?s*(?:공제)?\s*[:\s]*(?:�????\s*\[?\s*([\d,]+)\s*\]?/, id: null },
+      // 주택?�금
+      { key: 'housing',       regex: /주택?�금\s*(?:공제)?\s*[:\s]*(?:�????\s*\[?\s*([\d,]+)\s*\]?/, id: null },
+      // 기�?�?
+      { key: 'donation',      regex: /기�?�?s*[:\s]*(?:�????\s*\[?\s*([\d,]+)\s*\]?/, id: null },
     ];
     const result = {};
     const filledFields = [];
@@ -747,7 +752,7 @@ document.addEventListener('DOMContentLoaded', () => {
           el.value = String(val);
           el.classList.add('pdf-filled-field');
           filledFields.push({ id, label: key, value: val });
-          // 하이라이트 3초 후 제거
+          // ?�이?�이??3�????�거
           setTimeout(() => el.classList.remove('pdf-filled-field'), 3000);
         }
       }
@@ -757,38 +762,38 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function processPDF(file) {
-    if (file.type !== 'application/pdf') { alert('PDF 파일만 업로드 가능합니다.'); return; }
+    if (file.type !== 'application/pdf') { alert('PDF ?�일�??�로??가?�합?�다.'); return; }
     pdfStatus.style.display = 'block';
-    pdfStatus.innerHTML = '⏳ PDF 텍스트 추출 중...';
+    pdfStatus.innerHTML = '??PDF ?�스??추출 �?..';
     pdfStatus.style.color = '';
     try {
       if (!window.pdfjsLib) {
-        pdfStatus.innerHTML = '❌ PDF 라이브러리(pdf.min.js)를 찾을 수 없습니다. 프로젝트 폴더에 <code>pdf.min.js</code>와 <code>pdf.worker.min.js</code>가 있는지 확인해 주세요.';
+        pdfStatus.innerHTML = '??PDF ?�이브러�?pdf.min.js)�?찾을 ???�습?�다. ?�로?�트 ?�더??<code>pdf.min.js</code>?� <code>pdf.worker.min.js</code>가 ?�는지 ?�인??주세??';
         pdfStatus.style.color = 'var(--accent-warning)';
         return;
       }
       const extracted = await extractTextFromPDF(file);
       let extractedText = extracted.text;
       const cleanText = extractedText.replace(/\s+/g, ' ').trim();
-      // 텍스트가 100자 미만이면 스캔(이미지) PDF → OCR fallback
+      // ?�스?��? 100??미만?�면 ?�캔(?��?지) PDF ??OCR fallback
       if (cleanText.length < 100) {
         if (typeof Tesseract !== 'undefined') {
-          pdfStatus.innerHTML = '🔍 텍스트 레이어가 부족하여 OCR을 시작합니다...<br><span style="font-size:0.72rem;">첫 실행 시 한국어+영어 언어 데이터(~4MB) 다운로드가 필요합니다</span>';
+          pdfStatus.innerHTML = '?�� ?�스???�이?��? 부족하??OCR???�작?�니??..<br><span style="font-size:0.72rem;">�??�행 ???�국???�어 ?�어 ?�이??~4MB) ?�운로드가 ?�요?�니??/span>';
           try {
             const ocrText = await ocrPDFPages(extracted.pdf, (page, total, progress) => {
               const pct = progress !== undefined ? Math.round(progress * 100) : Math.round(page / total * 100);
-              pdfStatus.innerHTML = `🔍 OCR 페이지 ${page}/${total} 인식 중... ${pct}%<br><span style="font-size:0.72rem;"><span style="display:block; width:${pct}%; height:4px; background:var(--accent-secondary); border-radius:2px; transition:width 0.3s;"></span></span>`;
+              pdfStatus.innerHTML = `?�� OCR ?�이지 ${page}/${total} ?�식 �?.. ${pct}%<br><span style="font-size:0.72rem;"><span style="display:block; width:${pct}%; height:4px; background:var(--accent-secondary); border-radius:2px; transition:width 0.3s;"></span></span>`;
             });
             extractedText = ocrText;
-            pdfStatus.innerHTML = '✅ OCR 인식 완료! 데이터 분석 중...';
+            pdfStatus.innerHTML = '??OCR ?�식 ?�료! ?�이??분석 �?..';
           } catch (ocrErr) {
             console.error(ocrErr);
-            pdfStatus.innerHTML = '❌ OCR 인식에 실패했습니다. 텍스트 레이어가 있는 PDF를 사용해 주세요.';
+            pdfStatus.innerHTML = '??OCR ?�식???�패?�습?�다. ?�스???�이?��? ?�는 PDF�??�용??주세??';
             pdfStatus.style.color = 'var(--accent-warning)';
             return;
           }
         } else {
-          pdfStatus.innerHTML = '⚠️ OCR 라이브러리(Tesseract.js)가 로드되지 않았습니다.<br><span style="font-size:0.72rem;">인터넷 연결을 확인하거나 텍스트 레이어가 있는 PDF를 사용해 주세요.</span>';
+          pdfStatus.innerHTML = '?�️ OCR ?�이브러�?Tesseract.js)가 로드?��? ?�았?�니??<br><span style="font-size:0.72rem;">?�터???�결???�인?�거???�스???�이?��? ?�는 PDF�??�용??주세??</span>';
           pdfStatus.style.color = 'var(--accent-warning)';
           return;
         }
@@ -799,63 +804,65 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.money-input').forEach(el => {
           if (el.value) el.value = formatNumberWithCommas(el.value);
         });
-        pdfStatus.innerHTML = `✅ PDF 분석 완료! <strong>${filledCount}개 항목</strong>이 자동 입력되었습니다.`;
+        pdfStatus.innerHTML = `??PDF 분석 ?�료! <strong>${filledCount}�???��</strong>???�동 ?�력?�었?�니??`;
         pdfStatus.style.color = 'var(--accent-secondary)';
-        // 🆕 P0: PDF 리뷰 모달 표시
+        // ?�� P0: PDF 리뷰 모달 ?�시
         showPDFReviewModal(parsedData._filledFields || [], filledCount);
       } else {
         const preview = extractedText.replace(/\s+/g, ' ').substring(0, 200);
-        pdfStatus.innerHTML = `⚠️ 텍스트를 추출했으나 일치하는 항목이 없습니다.<br>
-          <span style="font-size:0.72rem;opacity:0.7;">추출된 텍스트 미리보기: "${preview}..."</span><br>
-          <span style="font-size:0.72rem;opacity:0.7;">PDF가 국세청 연말정산 간소화 PDF 또는 종합소득세 신고서인지 확인하세요. 암호(생년월일)가 걸려있으면 홈택스에서 재다운로드 후 시도해 주세요.</span>`;
+        pdfStatus.innerHTML = `?�️ ?�스?��? 추출?�으???�치?�는 ??��???�습?�다.<br>
+          <span style="font-size:0.72rem;opacity:0.7;">추출???�스??미리보기: "${preview}..."</span><br>
+          <span style="font-size:0.72rem;opacity:0.7;">PDF가 �?���??�말?�산 간소??PDF ?�는 종합?�득???�고?�인지 ?�인?�세?? ?�호(?�년?�일)가 걸려?�으�??�택?�에???�다?�로?????�도??주세??</span>`;
         pdfStatus.style.color = 'var(--accent-warning)';
       }
     } catch (err) {
       console.error(err);
       if (err.name === 'PasswordException') {
-        pdfStatus.innerHTML = '🔒 암호가 걸린 PDF입니다. 홈택스에서 "암호 설정" 체크를 해제하고 다시 다운로드해 주세요.';
+        pdfStatus.innerHTML = '?�� ?�호가 걸린 PDF?�니?? ?�택?�에??"?�호 ?�정" 체크�??�제?�고 ?�시 ?�운로드??주세??';
       } else {
-        pdfStatus.innerHTML = '❌ PDF를 읽을 수 없습니다. 파일이 손상되지 않았는지 확인해 주세요.';
+        pdfStatus.innerHTML = '??PDF�??�을 ???�습?�다. ?�일???�상?��? ?�았?��? ?�인??주세??';
       }
       pdfStatus.style.color = 'var(--accent-warning)';
     }
   }
 
-  // 🆕 P0: PDF 리뷰 모달
+  // ?�� P0: PDF 리뷰 모달
   function showPDFReviewModal(filledFields, count) {
     const modal = document.getElementById('pdf-review-modal');
     const content = document.getElementById('pdf-review-content');
     if (!modal || !content) return;
     const fieldLabels = {
-      totalSalary: '총급여', creditCard: '신용카드 사용액',
-      cashReceipt: '체크카드/현금', pension: '연금저축',
-      medical: '의료비', insurance: '보험료',
-      education: '교육비', housing: '주택자금', donation: '기부금'
+      totalSalary: '총급??, creditCard: '?�용카드 ?�용??,
+      cashReceipt: '체크카드/?�금', pension: '?�금?��?,
+      medical: '?�료�?, insurance: '보험�?,
+      education: '교육�?, housing: '주택?�금', donation: '기�?�?
     };
-    let html = `<div style="font-weight:700; margin-bottom:8px;">📄 <strong>${count}개</strong> 항목이 자동 입력되었습니다.</div>`;
+    let html = `<div style="font-weight:700; margin-bottom:8px;">?�� <strong>${count}�?/strong> ??��???�동 ?�력?�었?�니??</div>`;
     filledFields.forEach(f => {
       html += `<div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
         <span>${fieldLabels[f.label] || f.label}</span>
-        <span style="font-weight:600; color:var(--accent-secondary);">${f.value.toLocaleString()} 원</span>
+        <span style="font-weight:600; color:var(--accent-secondary);">${f.value.toLocaleString()} ??/span>
       </div>`;
     });
     content.innerHTML = html;
     modal.style.display = 'flex';
     document.getElementById('pdf-review-close').onclick = () => {
       modal.style.display = 'none';
-      // 자동 계산 실행
+      const nextTab = document.querySelector('[data-tab=\"salary\"]');
+      if(nextTab) nextTab.click();
+      // ?�동 계산 ?�행
       const btn = document.getElementById('btn-calc-income-integrated');
       if (btn) btn.click();
-      // 통합 리포트 탭으로 자동 이동 및 포커스
-      const reportTabBtn = document.querySelector('.tab-btn[data-tab="report"]');
+      // ?�합 리포????���??�동 ?�동 �??�커??
+      const reportTabBtn = document.querySelector('.nav-step-btn[data-tab="report"]');
       if (reportTabBtn) reportTabBtn.click();
     };
   }
 
 
-  // ──────────────────────────────────────────────
-  // 🆕 P0: 실시간 세무 경고, ISA 유형 검증 및 총급여 동기화 로직
-  // ──────────────────────────────────────────────
+  // ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
+  // ?�� P0: ?�시�??�무 경고, ISA ?�형 검�?�?총급???�기??로직
+  // ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
 
   function syncDependentSalaries() {
     const spouseASalary = document.getElementById('inc-a-salary')?.value || '0';
@@ -863,7 +870,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Pension
     const pensionTarget = document.getElementById('pension-target')?.value || 'a';
-    const pensionSalaryEl = document.getElementById('pension-salary');
+    
     if (pensionSalaryEl) {
       pensionSalaryEl.value = pensionTarget === 'a' ? spouseASalary : spouseBSalary;
       pensionSalaryEl.dispatchEvent(new Event('input'));
@@ -871,7 +878,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Card
     const cardTarget = document.getElementById('card-target')?.value || 'a';
-    const cardSalaryEl = document.getElementById('card-salary');
+    
     if (cardSalaryEl) {
       cardSalaryEl.value = cardTarget === 'a' ? spouseASalary : spouseBSalary;
       cardSalaryEl.dispatchEvent(new Event('input'));
@@ -879,7 +886,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Sports
     const sportsTarget = document.getElementById('sports-target')?.value || 'a';
-    const sportsSalaryEl = document.getElementById('sports-salary');
+    
     if (sportsSalaryEl) {
       sportsSalaryEl.value = sportsTarget === 'a' ? spouseASalary : spouseBSalary;
       sportsSalaryEl.dispatchEvent(new Event('input'));
@@ -887,7 +894,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ISA
     const isaTarget = document.getElementById('isa-target')?.value || 'a';
-    const isaSalaryEl = document.getElementById('isa-salary');
+    
     if (isaSalaryEl) {
       isaSalaryEl.value = isaTarget === 'a' ? spouseASalary : spouseBSalary;
       isaSalaryEl.dispatchEvent(new Event('input'));
@@ -918,7 +925,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (nonWageIncome > 20000000) {
       hasWarning = true;
-      warningHtml += `<div>⚠️ <strong>소득월액보험료 부과 대상</strong>: 직장 건강보험 외 근로소득외 소득이 2,000만 원을 초과하여 추가 건강보험료(월액)가 부과될 수 있습니다. (초과분의 7.15% 추가 납부)</div>`;
+      warningHtml += `<div>?�️ <strong>?�득?�액보험�?부�??�??/strong>: 직장 건강보험 ??근로?�득???�득??2,000�??�을 초과?�여 추�? 건강보험�??�액)가 부과될 ???�습?�다. (초과분의 7.15% 추�? ?��?)</div>`;
     }
 
     const isWageOnly = (bizIncome === 0 && pension === 0 && otherIncome === 0 && finIncome === 0);
@@ -926,7 +933,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalIncomeForDep = salary + nonWageIncome;
     if (totalIncomeForDep > depLimit) {
       hasWarning = true;
-      warningHtml += `<div style="margin-top:4px;">❌ <strong>피부양자 자격 상실 위험</strong>: 종합소득 합산액(${totalIncomeForDep.toLocaleString()}원)이 피부양자 소득요건(${depLimit.toLocaleString()}원)을 초과하여 건강보험 피부양자 자격이 상실되고 지역가입자로 전환될 위험이 있습니다.</div>`;
+      warningHtml += `<div style="margin-top:4px;">??<strong>?��??�자 ?�격 ?�실 ?�험</strong>: 종합?�득 ?�산??${totalIncomeForDep.toLocaleString()}?????��??�자 ?�득?�건(${depLimit.toLocaleString()}????초과?�여 건강보험 ?��??�자 ?�격???�실?�고 지????�자�??�환???�험???�습?�다.</div>`;
     }
 
     if (hasWarning) {
@@ -967,7 +974,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 resultContainer.style.display = 'block';
                 document.getElementById('isa-opt-content').innerHTML = `
                   <div style="color:#ff6b6b; font-weight:bold; padding:8px; background:rgba(255,107,107,0.06); border-radius:6px; margin-bottom:8px;">
-                    ⚠️ 총급여 5,000만 원 초과로 서민형 ISA 가입이 불가하여 일반형으로 자동 조정되었습니다. (가족 프로필 연동)
+                    ?�️ 총급??5,000�???초과�??��???ISA 가?�이 불�??�여 ?�반?�으�??�동 조정?�었?�니?? (가�??�로???�동)
                   </div>
                 `;
               }
@@ -983,13 +990,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Sync Target Selectors
   const targetSelectors = [
     { id: 'pension-target', salary: 'pension-salary', amount: 'pension-amount' },
-    { id: 'card-target', salary: 'card-salary', amount: 'card-usage-amount' },
-    { id: 'sports-target', salary: 'sports-salary', amount: 'sports-fee' },
+    { id: 'card-target', salary: amount: 'card-usage-amount' },
+    { id: 'sports-target', salary: amount: 'sports-fee' },
     { id: 'hometown-target', amount: 'hometown-amount' }, // only has amount, no salary
     { id: 'isa-target', salary: 'isa-salary', amount: 'isa-annual' },
-    { id: 'rent-target', salary: 'rent-salary', amount: 'rent-amount' },
+    { id: 'rent-target', salary: amount: 'rent-amount' },
     { id: 'insurance-target', amount: 'insurance-premium' },
-    { id: 'housing-target', salary: 'housing-salary', amount: 'housing-sub-amount' }
+    { id: 'housing-target', salary: amount: 'housing-sub-amount' }
   ];
 
   targetSelectors.forEach(config => {
@@ -1029,41 +1036,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 1. 테마 토글
+  // 1. ?�마 ?��?
   const themeToggleBtn = document.getElementById('themeToggleBtn');
   themeToggleBtn.addEventListener('click', () => {
     document.body.classList.toggle('light-mode');
     const isLight = document.body.classList.contains('light-mode');
-    themeToggleBtn.querySelector('.theme-icon').textContent = isLight ? '☀️' : '🌙';
-    themeToggleBtn.querySelector('.theme-text').textContent = isLight ? '다크 모드로 전환' : '라이트 모드로 전환';
+    themeToggleBtn.querySelector('.theme-icon').textContent = isLight ? '?��? : '?��';
+    themeToggleBtn.querySelector('.theme-text').textContent = isLight ? '?�크 모드�??�환' : '?�이??모드�??�환';
   });
 
-  // 🆕 P2-4: breadcrumb 업데이트
+  // ?�� P2-4: breadcrumb ?�데?�트
   function updateBreadcrumb(tabKey, subKey) {
     var bc = document.getElementById('breadcrumb');
     if (!bc) return;
     var labels = {
-      profile: '내 정보 입력', income: '소득·연말',
-      capital: '상속·증여·양도', report: '종합 리포트',
-      salary: '직장인·연말정산', business: '사업·투자·절세'
+      profile: '???�보 ?�력', income: '?�득·?�말',
+      capital: '?�속·증여·?�도', report: '종합 리포??,
+      salary: '직장?�·연말정??, business: '?�업·?�자·?�세'
     };
     var subLabels = {
-      transfer: '양도소득', holding: '보유세', gift: '증여·상속',
-      'profile-a': '배우자A', 'profile-b': '배우자B', 'profile-dep': '부양가족'
+      transfer: '?�도?�득', holding: '보유??, gift: '증여·?�속',
+      'profile-a': '배우?�A', 'profile-b': '배우?�B', 'profile-dep': '부?��?�?
     };
     var parts = [];
     parts.push('<span class="breadcrumb-item active">TAX NAVI</span>');
-    parts.push('<span class="breadcrumb-sep">›</span>');
+    parts.push('<span class="breadcrumb-sep">??/span>');
     parts.push('<span class="breadcrumb-item active">' + (labels[tabKey] || tabKey) + '</span>');
     if (subKey && subLabels[subKey]) {
-      parts.push('<span class="breadcrumb-sep">›</span>');
+      parts.push('<span class="breadcrumb-sep">??/span>');
       parts.push('<span class="breadcrumb-item active">' + subLabels[subKey] + '</span>');
     }
     bc.innerHTML = parts.join('');
   }
 
-  // 2. 대분류 탭 전환 (종합소득세 / 양도소득세)
-  const tabButtons = document.querySelectorAll('.tab-btn');
+  // 2. ?�분류 ???�환 (종합?�득??/ ?�도?�득??
+  const tabButtons = document.querySelectorAll('.nav-step-btn');
   const panels = document.querySelectorAll('.calculator-panel');
 
   tabButtons.forEach(btn => {
@@ -1084,8 +1091,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 3. 양도소득세 탭 입력 전환 제어 (부동산 vs 주식)
-  // 1-2. 양도/증여/상속 세그먼트 컨트롤 클릭 바인딩
+  // 3. ?�도?�득?????�력 ?�환 ?�어 (부?�산 vs 주식)
+  // 1-2. ?�도/증여/?�속 ?�그먼트 컨트�??�릭 바인??
   // Profile Segment Toggle & Mobile Select Sync
   const profileSegmentBtns = document.querySelectorAll('.profile-segment-wrapper .segment-btn');
   const profileGroups = document.querySelectorAll('.profile-segment-group');
@@ -1120,9 +1127,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (prevBtn) prevBtn.disabled = (currentStep === 1);
     if (nextBtn) {
       if (currentStep === 3) {
-        nextBtn.textContent = '계산하기 🎯';
+        nextBtn.textContent = '계산?�기 ?��';
       } else {
-        nextBtn.textContent = '다음 ▶';
+        nextBtn.textContent = '?�음 ??;
       }
     }
   }
@@ -1148,7 +1155,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Show report tab
-        const reportTabBtn = document.querySelector('.tab-btn[data-tab="report"]');
+        const reportTabBtn = document.querySelector('.nav-step-btn[data-tab="report"]');
         if (reportTabBtn) reportTabBtn.click();
       } else {
         goToStep(currentStep + 1);
@@ -1235,9 +1242,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (prevBtn) prevBtn.disabled = (currentStep === 1);
     if (nextBtn) {
       if (currentStep === 3) {
-        nextBtn.textContent = '계산하기 🎯';
+        nextBtn.textContent = '계산?�기 ?��';
       } else {
-        nextBtn.textContent = '다음 ▶';
+        nextBtn.textContent = '?�음 ??;
       }
     }
 
@@ -1287,7 +1294,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 2-2. 모바일 전용 배우자 내부 탭 스위칭 로직
+  // 2-2. 모바???�용 배우???��? ???�위�?로직
   const spouseTabButtons = document.querySelectorAll('.spouse-tab-btn');
   const spouseContainers = document.querySelectorAll('.spouse-container-box');
 
@@ -1307,7 +1314,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 2-3. 모바일 Bottom Sheet 결과창 노출 및 요약 리포트 복사 동기화
+  // 2-3. 모바??Bottom Sheet 결과�??�출 �??�약 리포??복사 ?�기??
   const floatingBarBtn = document.getElementById('floating-bar-btn');
   const bottomSheetDim = document.getElementById('mobile-result-bottom-sheet-dim');
   const bottomSheet = document.getElementById('mobile-result-bottom-sheet');
@@ -1317,16 +1324,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (floatingBarBtn && bottomSheet && bottomSheetDim && bottomSheetCloseBtn && bottomSheetBody && originResultCard) {
     const openBottomSheet = () => {
-      // 결과 리포트 콘텐츠 복제 및 동기화 (상세 리포트 + 요약 브리핑)
+      // 결과 리포??콘텐�?복제 �??�기??(?�세 리포??+ ?�약 브리??
       const reportMainCard = document.getElementById('report-main-card');
       bottomSheetBody.innerHTML = originResultCard.innerHTML + (reportMainCard ? reportMainCard.innerHTML : '');
       
-      // 복사된 헤더 영역 제거 (Bottom Sheet 자체 헤더가 있으므로)
+      // 복사???�더 ?�역 ?�거 (Bottom Sheet ?�체 ?�더가 ?�으므�?
       bottomSheetBody.querySelectorAll('.card-title').forEach(copiedHeader => {
         if (copiedHeader) copiedHeader.remove();
       });
 
-      // 복사된 리포트 내 공유 버튼 이벤트 재매핑
+      // 복사??리포????공유 버튼 ?�벤???�매??
       const copyBtn = bottomSheetBody.querySelector('#btn-share-report');
       if (copyBtn) {
         copyBtn.addEventListener('click', () => {
@@ -1369,7 +1376,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 4. 부가가치세 의제매입 및 카드발행 세액공제 토글
+  // 4. 부가가치세 ?�제매입 �?카드발행 ?�액공제 ?��?
   const checkUseAgri = document.getElementById('vat-use-agri');
   const groupAgriAmt = document.getElementById('group-agri-amt');
   const checkUseCardSales = document.getElementById('vat-use-cardsales');
@@ -1389,7 +1396,7 @@ document.addEventListener('DOMContentLoaded', () => {
     groupCardSalesAmt.style.display = checkUseCardSales.checked ? 'block' : 'none';
   });
 
-  // 🏛️ 상속세 계산
+  // ?���??�속??계산
   document.getElementById('btn-calc-inheritance').addEventListener('click', () => {
     const totalAsset = parseVal('inherit-total-asset');
     const childCount = parseInt(document.getElementById('inherit-child-count').value) || 0;
@@ -1408,36 +1415,36 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('inherit-result').style.display = 'block';
     const isTaxFree = result.isTaxFree;
     document.getElementById('inherit-result-content').innerHTML = `
-      <div>상속세 과세가액: <strong>${result.grossEstate.toLocaleString()} 원</strong></div>
+      <div>?�속??과세가?? <strong>${result.grossEstate.toLocaleString()} ??/strong></div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div style="color:var(--accent-info);">📋 공제 내역</div>
-      <div>· 인적공제(기초${result.basicDeduction.toLocaleString()} + 자녀${result.childDeduction.toLocaleString()}): <strong>${result.personDeduction.toLocaleString()} 원</strong></div>
-      <div>· 배우자 상속공제: <strong>${result.spouseDeduction.toLocaleString()} 원</strong> ${result.spouseDeduction > 500000000 ? '(법정지분 한도)' : '(최소공제)'}</div>
-      ${result.coResidentDeduction > 0 ? `<div>· 동거주택 상속공제: <strong>${result.coResidentDeduction.toLocaleString()} 원</strong></div>` : ''}
-      ${result.financialDeduction > 0 ? `<div>· 금융재산 상속공제: <strong>${result.financialDeduction.toLocaleString()} 원</strong></div>` : ''}
+      <div style="color:var(--accent-info);">?�� 공제 ?�역</div>
+      <div>· ?�적공제(기초${result.basicDeduction.toLocaleString()} + ?��?${result.childDeduction.toLocaleString()}): <strong>${result.personDeduction.toLocaleString()} ??/strong></div>
+      <div>· 배우???�속공제: <strong>${result.spouseDeduction.toLocaleString()} ??/strong> ${result.spouseDeduction > 500000000 ? '(법정지�??�도)' : '(최소공제)'}</div>
+      ${result.coResidentDeduction > 0 ? `<div>· ?�거주택 ?�속공제: <strong>${result.coResidentDeduction.toLocaleString()} ??/strong></div>` : ''}
+      ${result.financialDeduction > 0 ? `<div>· 금융?�산 ?�속공제: <strong>${result.financialDeduction.toLocaleString()} ??/strong></div>` : ''}
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div>공제 합계: <strong>${result.totalDeductions.toLocaleString()} 원</strong></div>
-      <div>과세표준: <strong>${result.taxableEstate.toLocaleString()} 원</strong></div>
-      <div>세율: ${result.rate}%</div>
+      <div>공제 ?�계: <strong>${result.totalDeductions.toLocaleString()} ??/strong></div>
+      <div>과세?��?: <strong>${result.taxableEstate.toLocaleString()} ??/strong></div>
+      <div>?�율: ${result.rate}%</div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
       ${isTaxFree
-        ? '<div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">✅ 상속세 비과세! (면세한도 ' + result.exemptionLimit.toLocaleString() + '원)</div>'
-        : `<div style="font-size:0.9rem;font-weight:bold;color:var(--accent-primary);">상속세: ${result.tax.toLocaleString()} 원</div>
-           <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-warning);">지방세: ${result.localTax.toLocaleString()} 원</div>
-           <div style="font-size:1rem;font-weight:bold;color:var(--accent-secondary);">💵 총 납부세액: ${result.totalTax.toLocaleString()} 원</div>`
+        ? '<div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">???�속??비과?? (면세?�도 ' + result.exemptionLimit.toLocaleString() + '??</div>'
+        : `<div style="font-size:0.9rem;font-weight:bold;color:var(--accent-primary);">?�속?? ${result.tax.toLocaleString()} ??/div>
+           <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-warning);">지방세: ${result.localTax.toLocaleString()} ??/div>
+           <div style="font-size:1rem;font-weight:bold;color:var(--accent-secondary);">?�� �??��??�액: ${result.totalTax.toLocaleString()} ??/div>`
       }
       <div style="margin-top:8px;padding:8px;background:rgba(0,212,170,0.08);border-radius:6px;font-size:0.75rem;line-height:1.3;">
-        📌 개정 반영: 자녀공제 1인당 5억 원(10배↑) · 최고세율 40%(50% 구간 삭제) · 동거주택 최대 6억 · 금융재산 20%
+        ?�� 개정 반영: ?��?공제 1?�당 5????10배↑) · 최고?�율 40%(50% 구간 ??��) · ?�거주택 최�? 6??· 금융?�산 20%
       </div>
     `;
   });
 
-  // 동거주택 체크박스 토글
+  // ?�거주택 체크박스 ?��?
   document.getElementById('inherit-coresident').addEventListener('change', function() {
     document.getElementById('inherit-coresident-group').style.display = this.checked ? 'block' : 'none';
   });
 
-  // 💍 혼인·출산 증여재산공제
+  // ?�� ?�인·출산 증여?�산공제
   document.getElementById('btn-calc-marriage-gift').addEventListener('click', () => {
     const giftAmount = parseVal('mg-amount');
     const reason = document.getElementById('mg-reason').value;
@@ -1446,30 +1453,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('mg-result').style.display = 'block';
     document.getElementById('mg-result-content').innerHTML = `
-      <div>증여 금액: <strong>${giftAmount.toLocaleString()} 원</strong></div>
-      <div>최근 10년 누계: ${result.cumulative.toLocaleString()} 원</div>
+      <div>증여 금액: <strong>${giftAmount.toLocaleString()} ??/strong></div>
+      <div>최근 10???�계: ${result.cumulative.toLocaleString()} ??/div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div style="color:var(--accent-secondary);">✅ 기본공제: ${result.basicExemption.toLocaleString()} 원</div>
-      <div style="color:var(--accent-gold);">🎉 혼인·출산 특별공제: <strong>${result.specialExemption.toLocaleString()} 원</strong></div>
-      <div>총 공제 한도: <strong>${result.totalExemption.toLocaleString()} 원</strong></div>
+      <div style="color:var(--accent-secondary);">??기본공제: ${result.basicExemption.toLocaleString()} ??/div>
+      <div style="color:var(--accent-gold);">?�� ?�인·출산 ?�별공제: <strong>${result.specialExemption.toLocaleString()} ??/strong></div>
+      <div>�?공제 ?�도: <strong>${result.totalExemption.toLocaleString()} ??/strong></div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
       ${result.isTaxFree
-        ? '<div style="font-weight:bold;color:var(--accent-secondary);font-size:1.05rem;">✅ 증여세 전액 면제!</div>'
-        : `<div>과세표준: ${result.taxableGift.toLocaleString()} 원</div>
-           <div>세율: ${result.rate}%</div>
-           <div style="font-weight:bold;color:var(--accent-primary);">증여세: ${result.tax.toLocaleString()} 원</div>
-           <div style="font-weight:bold;color:var(--accent-warning);">지방세: ${result.localTax.toLocaleString()} 원</div>
-           <div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">💵 총 세액: ${result.totalTax.toLocaleString()} 원</div>`
+        ? '<div style="font-weight:bold;color:var(--accent-secondary);font-size:1.05rem;">??증여???�액 면제!</div>'
+        : `<div>과세?��?: ${result.taxableGift.toLocaleString()} ??/div>
+           <div>?�율: ${result.rate}%</div>
+           <div style="font-weight:bold;color:var(--accent-primary);">증여?? ${result.tax.toLocaleString()} ??/div>
+           <div style="font-weight:bold;color:var(--accent-warning);">지방세: ${result.localTax.toLocaleString()} ??/div>
+           <div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">?�� �??�액: ${result.totalTax.toLocaleString()} ??/div>`
       }
       <div style="margin-top:8px;padding:8px;background:rgba(0,212,170,0.06);border-radius:6px;font-size:0.75rem;">
-        💡 양가(친정+시댁) 각각 1.5억 원씩 총 3억 원까지 증여세 없이 이전 가능합니다.
+        ?�� ?��?(친정+?�댁) 각각 1.5???�씩 �?3???�까지 증여???�이 ?�전 가?�합?�다.
       </div>
     `;
   });
 
-  // 🏟️ 체육시설 이용료 소득공제
+  // ?���?체육?�설 ?�용�??�득공제
   document.getElementById('btn-calc-sports').addEventListener('click', () => {
-    const totalSalary = parseVal('sports-salary');
+    const totalSalary = getTargetSalary('sports-target');
     const facilityFee = parseVal('sports-fee');
     const hasPT = document.getElementById('sports-has-pt').checked;
     const result = TaxCalculator.calculateSportsDeduction({ totalSalary, facilityFee, hasPT });
@@ -1477,24 +1484,24 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('sports-result').style.display = 'block';
     if (!result.isEligible) {
       document.getElementById('sports-result-content').innerHTML = `
-        <div style="color:var(--accent-warning);font-weight:bold;">❌ ${result.reason}</div>
+        <div style="color:var(--accent-warning);font-weight:bold;">??${result.reason}</div>
       `;
       return;
     }
     document.getElementById('sports-result-content').innerHTML = `
-      <div>총급여: ${result.totalSalary.toLocaleString()} 원</div>
-      <div>시설 이용료: ${result.facilityFee.toLocaleString()} 원</div>
-      ${result.hasPT ? `<div>PT 포함 → 50%만 인정: <strong>${result.eligibleAmount.toLocaleString()} 원</strong></div>` : ''}
+      <div>총급?? ${result.totalSalary.toLocaleString()} ??/div>
+      <div>?�설 ?�용�? ${result.facilityFee.toLocaleString()} ??/div>
+      ${result.hasPT ? `<div>PT ?�함 ??50%�??�정: <strong>${result.eligibleAmount.toLocaleString()} ??/strong></div>` : ''}
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div>공제 대상 금액: ${result.eligibleAmount.toLocaleString()} 원 (한도 ${result.deductionLimit.toLocaleString()}원)</div>
+      <div>공제 ?�??금액: ${result.eligibleAmount.toLocaleString()} ??(?�도 ${result.deductionLimit.toLocaleString()}??</div>
       <div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">
-        💰 소득공제액 (30%): <strong>${result.deduction.toLocaleString()} 원</strong>
+        ?�� ?�득공제??(30%): <strong>${result.deduction.toLocaleString()} ??/strong>
       </div>
-      <div style="margin-top:8px;font-size:0.75rem;opacity:0.7;">※ 1:1 PT, 기구 필라테스 등 고가 맞춤형 강습비는 공제 제외</div>
+      <div style="margin-top:8px;font-size:0.75rem;opacity:0.7;">??1:1 PT, 기구 ?�라?�스 ??고�? 맞춤??강습비는 공제 ?�외</div>
     `;
   });
 
-  // 🎁 고향사랑기부제 최적화
+  // ?�� 고향?�랑기�???최적??
   document.getElementById('btn-calc-hometown').addEventListener('click', () => {
     const donationAmount = parseVal('hometown-amount');
     const isDisasterArea = document.getElementById('hometown-disaster').checked;
@@ -1502,33 +1509,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('hometown-result').style.display = 'block';
     document.getElementById('hometown-result-content').innerHTML = `
-      <div>기부 금액: <strong>${result.donationAmount.toLocaleString()} 원</strong></div>
+      <div>기�? 금액: <strong>${result.donationAmount.toLocaleString()} ??/strong></div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div>· 10만 원까지 100%: <strong>${result.creditFirst100k.toLocaleString()} 원</strong></div>
-      ${result.donationAmount > 100000 ? `<div>· 10~20만 원 44%: <strong>${result.creditSecondBracket.toLocaleString()} 원</strong></div>` : ''}
-      ${result.donationAmount > 200000 ? `<div>· 20만 초과 ${isDisasterArea ? '33%' : '16.5%'}: <strong>${(result.creditThirdBracket || 0).toLocaleString()} 원</strong></div>` : ''}
+      <div>· 10�??�까지 100%: <strong>${result.creditFirst100k.toLocaleString()} ??/strong></div>
+      ${result.donationAmount > 100000 ? `<div>· 10~20�???44%: <strong>${result.creditSecondBracket.toLocaleString()} ??/strong></div>` : ''}
+      ${result.donationAmount > 200000 ? `<div>· 20�?초과 ${isDisasterArea ? '33%' : '16.5%'}: <strong>${(result.creditThirdBracket || 0).toLocaleString()} ??/strong></div>` : ''}
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div>총 세액공제액: <strong>${result.totalCredit.toLocaleString()} 원</strong></div>
-      <div>답례품 가치(30%): <strong>${result.giftValue.toLocaleString()} 원</strong></div>
+      <div>�??�액공제?? <strong>${result.totalCredit.toLocaleString()} ??/strong></div>
+      <div>?��???가�?30%): <strong>${result.giftValue.toLocaleString()} ??/strong></div>
       <div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">
-        🎁 총 체감 혜택: <strong>${result.totalBenefit.toLocaleString()} 원</strong>
-        (실질 환원율 ${result.effectiveReturnRate}%)
+        ?�� �?체감 ?�택: <strong>${result.totalBenefit.toLocaleString()} ??/strong>
+        (?�질 ?�원??${result.effectiveReturnRate}%)
       </div>
       <div style="margin-top:8px;padding:8px;background:rgba(0,212,170,0.1);border-radius:6px;font-size:0.8rem;">
-        💡 <strong>최적 전략:</strong> 20만 원 기부 시 14.4만 원 환급 + 6만 원 답례품 = <strong>20.4만 원 혜택</strong> (원금 상회!)<br>
-        <span style="font-size:0.7rem;">상/하반기 10만 원씩 분할 기부하여 시즌별 답례품 2회 수령 가능</span>
+        ?�� <strong>최적 ?�략:</strong> 20�???기�? ??14.4�????�급 + 6�????��???= <strong>20.4�????�택</strong> (?�금 ?�회!)<br>
+        <span style="font-size:0.7rem;">???�반�?10�??�씩 분할 기�??�여 ?�즌�??��???2???�령 가??/span>
       </div>
     `;
   });
 
-  // 💰 ISA 최적화
+  // ?�� ISA 최적??
   document.getElementById('isa-matured').addEventListener('change', function() {
     document.getElementById('isa-pension-group').style.display = this.checked ? 'block' : 'none';
   });
   document.getElementById('btn-calc-isa-opt').addEventListener('click', () => {
     const annualIncome = parseVal('isa-annual');
     const isaType = document.getElementById('isa-type-select').value;
-    const totalIncome = parseVal('isa-salary');
+    const totalIncome = getTargetSalary('isa-target');
     const isFinancialCompTax = document.getElementById('isa-financial-comp-tax').checked;
     const isMatured = document.getElementById('isa-matured').checked;
     const pensionTransfer = parseVal('isa-pension-transfer');
@@ -1542,32 +1549,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('isa-opt-result').style.display = 'block';
     document.getElementById('isa-opt-content').innerHTML = `
-      <div>📌 ISA 유형: <strong>${result.isaType === 'sub' ? '서민형' : result.isaType === 'domestic' ? '국내투자형' : '일반형'}</strong></div>
-      <div>연 납입 한도: <strong>${result.annualLimit.toLocaleString()} 원</strong> (2026년 개편: 2배↑)</div>
-      <div>비과세 한도: <strong>${result.taxfreeLimit.toLocaleString()} 원</strong></div>
+      <div>?�� ISA ?�형: <strong>${result.isaType === 'sub' ? '?��??? : result.isaType === 'domestic' ? '�?��?�자?? : '?�반??}</strong></div>
+      <div>???�입 ?�도: <strong>${result.annualLimit.toLocaleString()} ??/strong> (2026??개편: 2배↑)</div>
+      <div>비과???�도: <strong>${result.taxfreeLimit.toLocaleString()} ??/strong></div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
       ${result.isDomesticType
-        ? `<div style="color:var(--accent-info);">국내투자형 ISA → ${result.domesticSeparatedRate}% 분리과세 (종합과세 회피)</div>
-           <div style="font-weight:bold;color:var(--accent-secondary);">분리과세 세액: ${result.domesticTax.toLocaleString()} 원</div>`
-        : `<div>비과세 적용: <strong>${result.normalTaxfree.toLocaleString()} 원</strong></div>
-           <div>초과분 분리과세(9.9%): ${result.normalSeparatedTax.toLocaleString()} 원</div>`
+        ? `<div style="color:var(--accent-info);">�?��?�자??ISA ??${result.domesticSeparatedRate}% 분리과세 (종합과세 ?�피)</div>
+           <div style="font-weight:bold;color:var(--accent-secondary);">분리과세 ?�액: ${result.domesticTax.toLocaleString()} ??/div>`
+        : `<div>비과???�용: <strong>${result.normalTaxfree.toLocaleString()} ??/strong></div>
+           <div>초과�?분리과세(9.9%): ${result.normalSeparatedTax.toLocaleString()} ??/div>`
       }
       ${result.pensionTransferCredit > 0
         ? `<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-           <div style="color:var(--accent-gold);">🔄 ISA→연금 전환 세액공제: <strong>${result.pensionTransferCredit.toLocaleString()} 원</strong></div>`
+           <div style="color:var(--accent-gold);">?�� ISA?�연�??�환 ?�액공제: <strong>${result.pensionTransferCredit.toLocaleString()} ??/strong></div>`
         : ''}
+      <hr style=\"border:none;border-top:1px solid rgba(255,255,255,0.06);margin:8px 0;\">
+      <div style=\"font-size:1.05rem;font-weight:900;color:var(--accent-primary);margin-top:4px;\">
+        🏆 세후 실현 수익금액: <strong> 원</strong>
+      </div>
       <div style="margin-top:8px;padding:8px;background:rgba(56,189,248,0.08);border-radius:6px;font-size:0.75rem;">
         ${result.summary}
       </div>
     `;
   });
 
-  // 🏠 간주임대료 계산
+  // ?�� 간주?��?�?계산
   document.getElementById('deemed-house-count').addEventListener('change', function() {
     const show = this.value >= '2';
     document.getElementById('deemed-highprice-group').style.display = show ? 'block' : 'none';
   });
-  // 초기 상태 (2주택 기본)
+  // 초기 ?�태 (2주택 기본)
   document.getElementById('deemed-highprice-group').style.display = 'block';
   document.getElementById('btn-calc-deemed-rent').addEventListener('click', () => {
     const houseCount = parseInt(document.getElementById('deemed-house-count').value) || 0;
@@ -1580,28 +1591,28 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('deemed-result').style.display = 'block';
     if (!result.isTaxable) {
       document.getElementById('deemed-result-content').innerHTML = `
-        <div style="color:var(--accent-secondary);font-weight:bold;">✅ ${result.reason}</div>
+        <div style="color:var(--accent-secondary);font-weight:bold;">??${result.reason}</div>
       `;
       return;
     }
     document.getElementById('deemed-result-content').innerHTML = `
-      <div>보유 주택 수: <strong>${result.houseCount}주택</strong></div>
-      <div>전세보증금 합계: ${result.jeonseDeposits.toLocaleString()} 원</div>
-      ${result.warningMsg ? `<div style="color:var(--accent-warning);">⚠️ ${result.warningMsg}</div>` : ''}
+      <div>보유 주택 ?? <strong>${result.houseCount}주택</strong></div>
+      <div>?�세보증�??�계: ${result.jeonseDeposits.toLocaleString()} ??/div>
+      ${result.warningMsg ? `<div style="color:var(--accent-warning);">?�️ ${result.warningMsg}</div>` : ''}
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div>공제 기준: ${result.deductionBase.toLocaleString()} 원</div>
-      <div>초과 보증금: ${result.excessDeposit.toLocaleString()} 원</div>
-      <div>간주임대료: <strong>${result.deemedRent.toLocaleString()} 원</strong></div>
+      <div>공제 기�?: ${result.deductionBase.toLocaleString()} ??/div>
+      <div>초과 보증�? ${result.excessDeposit.toLocaleString()} ??/div>
+      <div>간주?��?�? <strong>${result.deemedRent.toLocaleString()} ??/strong></div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div style="color:var(--accent-warning);">예상 종합소득세: ${result.incomeTax.toLocaleString()} 원</div>
-      <div style="color:var(--accent-warning);">지방소득세: ${result.localTax.toLocaleString()} 원</div>
+      <div style="color:var(--accent-warning);">?�상 종합?�득?? ${result.incomeTax.toLocaleString()} ??/div>
+      <div style="color:var(--accent-warning);">지방소?�세: ${result.localTax.toLocaleString()} ??/div>
       <div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">
-        💵 연간 추가 세액: <strong>${result.totalTax.toLocaleString()} 원</strong>
+        ?�� ?�간 추�? ?�액: <strong>${result.totalTax.toLocaleString()} ??/strong>
       </div>
     `;
   });
 
-  // 5. 부양가족 동적 추가/삭제
+  // 5. 부?��?�??�적 추�?/??��
   const optCoupleYePeople = document.getElementById('inc-couple-ye-people');
   const btnAddCoupleDep = document.getElementById('btn-add-couple-dep');
 
@@ -1620,7 +1631,7 @@ document.addEventListener('DOMContentLoaded', () => {
   btnAddCoupleDep.addEventListener('click', () => {
     const currentCount = optCoupleYePeople.querySelectorAll('.person-card').length;
     if (currentCount >= 5) {
-      showInlineError("income-form-error", "부양가족은 최대 5명까지 설정할 수 있습니다.");
+      showInlineError("income-form-error", "부?��?족�? 최�? 5명까지 ?�정?????�습?�다.");
       return;
     }
     const nextId = currentCount + 1;
@@ -1630,43 +1641,43 @@ document.addEventListener('DOMContentLoaded', () => {
     card.innerHTML = `
       <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span class="person-name">부양가족 ${nextId}</span>
-          <button class="btn-remove-person">✖</button>
+          <span class="person-name">부?��?�?${nextId}</span>
+          <button class="btn-remove-person">??/button>
         </div>
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
           <div class="form-group" style="margin-bottom:0;">
-            <label>가족 이름</label>
-            <input type="text" class="form-input opt-dep-name" value="" placeholder="예: 홍길동">
+            <label>가�??�름</label>
+            <input type="text" class="form-input opt-dep-name" value="" placeholder="?? ?�길??>
           </div>
           <div class="form-group" style="margin-bottom:0;">
-            <label>관계 설정</label>
+            <label>관�??�정</label>
             <select class="form-input opt-dep-relation">
-              <option value="child">자녀 (8세 이상)</option>
-              <option value="parent">부모 (기본공제)</option>
-              <option value="other">기타</option>
+              <option value="child">?��? (8???�상)</option>
+              <option value="parent">부�?(기본공제)</option>
+              <option value="other">기�?</option>
             </select>
           </div>
           <div class="form-group" style="margin-bottom:0;">
-            <label>가족 카드사용액 <span class="tooltip-icon" data-tooltip="부양가족 명의의 신용카드/체크카드 사용액입니다. 기본공제를 받는 배우자에게 자동으로 합산되어 한도 내 소득공제됩니다.">?</span></label>
-            <input type="text" inputmode="numeric" class="form-input money-input opt-dep-card" value="0" placeholder="연간 합계(원)">
+            <label>가�?카드?�용??<span class="tooltip-icon" data-tooltip="부?��?�?명의???�용카드/체크카드 ?�용?�입?�다. 기본공제�?받는 배우?�에�??�동?�로 ?�산?�어 ?�도 ???�득공제?�니??">?</span></label>
+            <input type="text" inputmode="numeric" class="form-input money-input opt-dep-card" value="0" placeholder="?�간 ?�계(??">
           </div>
           <div class="form-group" style="margin-bottom:0;">
-            <label>가족 의료비 <span class="tooltip-icon" data-tooltip="해당 가족을 위해 지출한 연간 의료비입니다. 의료비 세액공제는 총급여의 3% 초과 지출액부터 15% 공제 혜택이 적용됩니다.">?</span></label>
-            <input type="text" inputmode="numeric" class="form-input money-input opt-dep-medical" value="0" placeholder="연간 합계(원)">
+            <label>가�??�료�?<span class="tooltip-icon" data-tooltip="?�당 가족을 ?�해 지출한 ?�간 ?�료비입?�다. ?�료�??�액공제??총급?�의 3% 초과 지출액부??15% 공제 ?�택???�용?�니??">?</span></label>
+            <input type="text" inputmode="numeric" class="form-input money-input opt-dep-medical" value="0" placeholder="?�간 ?�계(??">
           </div>
           <div class="form-group" style="margin-bottom:0;">
-            <label>가족 교육비 <span class="tooltip-icon" data-tooltip="가족의 학원비, 학교 등록금 등 교육 비용입니다. 취학전아동/초중고생 1인당 연 300만원, 대학생 연 900만원 한도로 15% 공제됩니다.">?</span></label>
-            <input type="text" inputmode="numeric" class="form-input money-input opt-dep-edu" value="0" placeholder="연간 합계(원)">
+            <label>가�?교육�?<span class="tooltip-icon" data-tooltip="가족의 ?�원�? ?�교 ?�록�???교육 비용?�니?? 취학?�아??초중고생 1?�당 ??300만원, ?�?�생 ??900만원 ?�도�?15% 공제?�니??">?</span></label>
+            <input type="text" inputmode="numeric" class="form-input money-input opt-dep-edu" value="0" placeholder="?�간 ?�계(??">
           </div>
           <div class="form-group" style="margin-bottom:0;">
-            <label>학자금 대출 상환 <span class="tooltip-icon" data-tooltip="본인 또는 부양가족 명의의 학자금 대출 상환 원리금입니다. 연 한도 없이 15% 세액공제를 받습니다.">?</span></label>
-            <input type="text" inputmode="numeric" class="form-input money-input opt-dep-student-loan" value="0" placeholder="연간 합계(원)">
+            <label>?�자�??��??�환 <span class="tooltip-icon" data-tooltip="본인 ?�는 부?��?�?명의???�자�??��??�환 ?�리금입?�다. ???�도 ?�이 15% ?�액공제�?받습?�다.">?</span></label>
+            <input type="text" inputmode="numeric" class="form-input money-input opt-dep-student-loan" value="0" placeholder="?�간 ?�계(??">
           </div>
         </div>
         <div style="display:flex; gap:15px; margin-top:5px; font-size:0.8rem;">
-          <label><input type="checkbox" class="opt-dep-senior"> 경로우대(70세+)</label>
-          <label><input type="checkbox" class="opt-dep-disabled"> 장애인 공제</label>
-          <label><input type="checkbox" class="opt-dep-birth"> 출산/입양</label>
+          <label><input type="checkbox" class="opt-dep-senior"> 경로?��?(70??)</label>
+          <label><input type="checkbox" class="opt-dep-disabled"> ?�애??공제</label>
+          <label><input type="checkbox" class="opt-dep-birth"> 출산/?�양</label>
         </div>
       </div>
     `;
@@ -1685,10 +1696,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ==========================================
-     버튼 이벤트 바인딩 및 원스톱 최적화
+     버튼 ?�벤??바인??�??�스??최적??
      ========================================== */
 
-  // ── Helper functions for income integrated calculation ──
+  // ?�?� Helper functions for income integrated calculation ?�?�
 
   function parseIncomeInputs() {
     var aBizRev = parseVal("inc-a-business-revenue");
@@ -1791,15 +1802,15 @@ document.addEventListener('DOMContentLoaded', () => {
     clearInlineErrors();
     const isSpouseBEnabled = document.getElementById('enable-spouse-b')?.checked;
     
-    if (d.aSalary < 0 || (isSpouseBEnabled && d.bSalary < 0)) { showInlineError("income-form-error", "소득금액은 0원 이상이어야 합니다."); return false; }
-    if (d.aIsaType === "sub" && d.aSalary > 50000000) { showInlineError("income-form-error", "배우자 A ISA 서민형 자격 없음 (급여 5,000만 초과)"); return false; }
-    if (isSpouseBEnabled && d.bIsaType === "sub" && d.bSalary > 50000000) { showInlineError("income-form-error", "배우자 B ISA 서민형 자격 없음 (급여 5,000만 초과)"); return false; }
+    if (d.aSalary < 0 || (isSpouseBEnabled && d.bSalary < 0)) { showInlineError("income-form-error", "?�득금액?� 0???�상?�어???�니??"); return false; }
+    if (d.aIsaType === "sub" && d.aSalary > 50000000) { showInlineError("income-form-error", "배우??A ISA ?��????�격 ?�음 (급여 5,000�?초과)"); return false; }
+    if (isSpouseBEnabled && d.bIsaType === "sub" && d.bSalary > 50000000) { showInlineError("income-form-error", "배우??B ISA ?��????�격 ?�음 (급여 5,000�?초과)"); return false; }
     const allNonNeg = [d.aCard, d.bCard, d.aYellow, d.bYellow, d.aPension, d.bPension,
       d.aFinancialGen, d.aFinancialOverseas, d.aIsaIncome, d.aBondSeparated,
       d.bFinancialGen, d.bFinancialOverseas, d.bIsaIncome, d.bBondSeparated,
       d.aVentureInvestment, d.aHousingSubscription, d.aHousingLoanRepay,
       d.bVentureInvestment, d.bHousingSubscription, d.bHousingLoanRepay];
-    if (allNonNeg.some(v => v < 0)) { showInlineError("income-form-error", "모든 입력금액은 0원 이상이어야 합니다."); return false; }
+    if (allNonNeg.some(v => v < 0)) { showInlineError("income-form-error", "모든 ?�력금액?� 0???�상?�어???�니??"); return false; }
     return true;
   }
 
@@ -1810,15 +1821,15 @@ document.addEventListener('DOMContentLoaded', () => {
     for (const card of cards) {
       let name = (card.querySelector(".opt-dep-name").value || "").trim();
       if (!name) {
-        name = card.querySelector(".person-name")?.textContent || "부양가족";
+        name = card.querySelector(".person-name")?.textContent || "부?��?�?;
       }
-      if (depNames.includes(name)) { showInlineError("income-form-error", "중복된 부양가족 이름: " + name); return null; }
+      if (depNames.includes(name)) { showInlineError("income-form-error", "중복??부?��?�??�름: " + name); return null; }
       depNames.push(name);
       const cardVal = parseVal(card.querySelector(".opt-dep-card"));
       const medicalVal = parseVal(card.querySelector(".opt-dep-medical"));
       const eduVal = parseVal(card.querySelector(".opt-dep-edu"));
       const studentLoanRepayVal = parseVal(card.querySelector(".opt-dep-student-loan"));
-      if (cardVal < 0 || medicalVal < 0 || eduVal < 0 || studentLoanRepayVal < 0) { showInlineError("income-form-error", "부양가족 지출액은 0원 이상이어야 합니다."); return null; }
+      if (cardVal < 0 || medicalVal < 0 || eduVal < 0 || studentLoanRepayVal < 0) { showInlineError("income-form-error", "부?��?�?지출액?� 0???�상?�어???�니??"); return null; }
       dependents.push({
         name, relation: card.querySelector(".opt-dep-relation").value,
         card: cardVal, medical: medicalVal, edu: eduVal,
@@ -1856,18 +1867,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderSpouseResults(id, result) {
-    updateResultWithHighlight("res-" + id + "-expense", (result.salaryDeduction || result.expense || 0).toLocaleString() + " 원");
-    updateResultWithHighlight("res-" + id + "-person", (result.personDeduction || 0).toLocaleString() + " 원");
-    updateResultWithHighlight("res-" + id + "-taxable", result.taxableIncome.toLocaleString() + " 원");
+    updateResultWithHighlight("res-" + id + "-expense", (result.salaryDeduction || result.expense || 0).toLocaleString() + " ??);
+    updateResultWithHighlight("res-" + id + "-person", (result.personDeduction || 0).toLocaleString() + " ??);
+    updateResultWithHighlight("res-" + id + "-taxable", result.taxableIncome.toLocaleString() + " ??);
     updateResultWithHighlight("res-" + id + "-rate", result.bracketRate + "%");
-    updateResultWithHighlight("res-" + id + "-total", result.totalTax.toLocaleString() + " 원");
+    updateResultWithHighlight("res-" + id + "-total", result.totalTax.toLocaleString() + " ??);
   }
 
   function renderFinancialDetails(id, result) {
-    updateResultWithHighlight("res-" + id + "-isa-free", (result.isaTaxfreeAmount || 0).toLocaleString() + " 원");
-    updateResultWithHighlight("res-" + id + "-isa-tax", (result.isaSeparatedTax || 0).toLocaleString() + " 원");
-    updateResultWithHighlight("res-" + id + "-bond-tax", (result.bondSeparatedTax || 0).toLocaleString() + " 원");
-    updateResultWithHighlight("res-" + id + "-financial-comp", (result.financialCompAmount || 0).toLocaleString() + " 원");
+    updateResultWithHighlight("res-" + id + "-isa-free", (result.isaTaxfreeAmount || 0).toLocaleString() + " ??);
+    updateResultWithHighlight("res-" + id + "-isa-tax", (result.isaSeparatedTax || 0).toLocaleString() + " ??);
+    updateResultWithHighlight("res-" + id + "-bond-tax", (result.bondSeparatedTax || 0).toLocaleString() + " ??);
+    updateResultWithHighlight("res-" + id + "-financial-comp", (result.financialCompAmount || 0).toLocaleString() + " ??);
   }
 
   let currentCustomAssignment = null;
@@ -1908,9 +1919,9 @@ document.addEventListener('DOMContentLoaded', () => {
       html += `
         <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; background:rgba(255,255,255,0.01); border-bottom:1px solid rgba(255,255,255,0.03);">
           <div>
-            <strong>👥 ${dep.name}</strong> <span style="font-size:0.75rem; opacity:0.6;">(${dep.relation === 'child' ? '자녀' : dep.relation === 'parent' ? '부모' : '기타'})</span>
+            <strong>?�� ${dep.name}</strong> <span style="font-size:0.75rem; opacity:0.6;">(${dep.relation === 'child' ? '?��?' : dep.relation === 'parent' ? '부�? : '기�?'})</span>
             <div style="font-size:0.7rem; opacity:0.7; margin-top:2px;">
-              인적공제 150만 ${dep.medical > 0 ? ` · 의료비 ${dep.medical.toLocaleString()}원` : ''} ${dep.edu > 0 ? ` · 교육비 ${dep.edu.toLocaleString()}원` : ''}
+              ?�적공제 150�?${dep.medical > 0 ? ` · ?�료�?${dep.medical.toLocaleString()}?? : ''} ${dep.edu > 0 ? ` · 교육�?${dep.edu.toLocaleString()}?? : ''}
             </div>
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
@@ -1918,8 +1929,8 @@ document.addEventListener('DOMContentLoaded', () => {
               ${recommendedValue === 'a' ? 'A 권장' : 'B 권장'}
             </span>
             <select class="form-input custom-dep-assign" data-dep-name="${dep.name}" style="padding:4px 8px; font-size:0.8rem; width:auto; margin-bottom:0;">
-              <option value="a" ${selectedValue === 'a' ? 'selected' : ''}>배우자 A</option>
-              <option value="b" ${selectedValue === 'b' ? 'selected' : ''}>배우자 B</option>
+              <option value="a" ${selectedValue === 'a' ? 'selected' : ''}>배우??A</option>
+              <option value="b" ${selectedValue === 'b' ? 'selected' : ''}>배우??B</option>
             </select>
           </div>
         </div>
@@ -1933,9 +1944,9 @@ document.addEventListener('DOMContentLoaded', () => {
       html += `
         <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; background:rgba(255,255,255,0.01); border-bottom:1px solid rgba(255,255,255,0.03);">
           <div>
-            <strong>🏥 의료비 몰아주기 (합계: ${totalMedical.toLocaleString()}원)</strong>
+            <strong>?�� ?�료�?몰아주기 (?�계: ${totalMedical.toLocaleString()}??</strong>
             <div style="font-size:0.7rem; opacity:0.7; margin-top:2px;">
-              의료비 세액공제는 부부 중 한 사람에게 몰아주는 것이 유리합니다.
+              ?�료�??�액공제??부부 �????�람?�게 몰아주는 것이 ?�리?�니??
             </div>
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
@@ -1943,8 +1954,8 @@ document.addEventListener('DOMContentLoaded', () => {
               ${recommendedMed === 'a' ? 'A 권장' : 'B 권장'}
             </span>
             <select class="form-input" id="custom-medical-assign" style="padding:4px 8px; font-size:0.8rem; width:auto; margin-bottom:0;">
-              <option value="a" ${selectedMed === 'a' ? 'selected' : ''}>배우자 A</option>
-              <option value="b" ${selectedMed === 'b' ? 'selected' : ''}>배우자 B</option>
+              <option value="a" ${selectedMed === 'a' ? 'selected' : ''}>배우??A</option>
+              <option value="b" ${selectedMed === 'b' ? 'selected' : ''}>배우??B</option>
             </select>
           </div>
         </div>
@@ -2080,11 +2091,11 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       document.getElementById("res-couple-ye-desc").innerHTML = [
-        "<div style='background:rgba(255,217,61,0.06); padding:8px 12px; border-radius:6px; border:1px solid rgba(255,217,61,0.2); margin-bottom:10px; font-size:0.78rem; color:var(--accent-gold);'>⚠️ <strong>사용자 지정 배정</strong>이 적용된 상태입니다.</div>",
-        "배우자 A 배정 부양가족: <strong>[" + (activeAssignment.aDeps.join(", ") || "없음") + "]</strong><br>",
-        "배우자 B 배정 부양가족: <strong>[" + (activeAssignment.bDeps.join(", ") || "없음") + "]</strong><br>",
-        "사용자 지정 시 부부 합산 세액: <strong style='color:var(--accent-secondary); font-size:1.05rem;'>" + activeAssignment.totalTax.toLocaleString() + " 원</strong><br>",
-        "<span style='font-size:0.8rem; opacity:0.8;'>* 의료비 공제는 <strong>" + (activeAssignment.medicalTarget === "a" ? "배우자 A" : "배우자 B") + "</strong> 밑으로 청구됩니다.</span>"
+        "<div style='background:rgba(255,217,61,0.06); padding:8px 12px; border-radius:6px; border:1px solid rgba(255,217,61,0.2); margin-bottom:10px; font-size:0.78rem; color:var(--accent-gold);'>?�️ <strong>?�용??지??배정</strong>???�용???�태?�니??</div>",
+        "배우??A 배정 부?��?�? <strong>[" + (activeAssignment.aDeps.join(", ") || "?�음") + "]</strong><br>",
+        "배우??B 배정 부?��?�? <strong>[" + (activeAssignment.bDeps.join(", ") || "?�음") + "]</strong><br>",
+        "?�용??지????부부 ?�산 ?�액: <strong style='color:var(--accent-secondary); font-size:1.05rem;'>" + activeAssignment.totalTax.toLocaleString() + " ??/strong><br>",
+        "<span style='font-size:0.8rem; opacity:0.8;'>* ?�료�?공제??<strong>" + (activeAssignment.medicalTarget === "a" ? "배우??A" : "배우??B") + "</strong> 밑으�?�?��?�니??</span>"
       ].join("");
 
       renderSpouseResults("a", activeAssignment.aResult);
@@ -2093,9 +2104,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const worstTax = Math.max(optResult.allATax, optResult.allBTax);
       const customTax = activeAssignment.totalTax;
       const savings = Math.max(0, worstTax - customTax);
-      document.getElementById("comp-worst-val").textContent = worstTax.toLocaleString() + " 원";
-      document.getElementById("comp-opt-val").textContent = customTax.toLocaleString() + " 원";
-      document.getElementById("comp-savings-val").textContent = savings.toLocaleString() + " 원";
+      document.getElementById("comp-worst-val").textContent = worstTax.toLocaleString() + " ??;
+      document.getElementById("comp-opt-val").textContent = customTax.toLocaleString() + " ??;
+      document.getElementById("comp-savings-val").textContent = savings.toLocaleString() + " ??;
       if (worstTax > 0) {
         document.getElementById("comp-worst-bar").style.width = "100%";
         document.getElementById("comp-opt-bar").style.width = Math.max(5, Math.min(100, Math.round((customTax / worstTax) * 100))) + "%";
@@ -2103,19 +2114,19 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       if (best) {
         document.getElementById("res-couple-ye-desc").innerHTML = [
-          "배우자 A 배정 부양가족: <strong>[" + (best.aDeps.join(", ") || "없음") + "]</strong><br>",
-          "배우자 B 배정 부양가족: <strong>[" + (best.bDeps.join(", ") || "없음") + "]</strong><br>",
-          "최적 배정 시 부부 합산 세액: <strong style='color:var(--accent-secondary); font-size:1.05rem;'>" + best.totalTax.toLocaleString() + " 원</strong> (단독 몰아주기 대비 <strong style='color:var(--accent-secondary);'>약 " + optResult.savings.toLocaleString() + " 원 절약</strong>)<br>",
-          "<span style='font-size:0.8rem; opacity:0.8;'>* 의료비 공제는 <strong>" + (best.medicalTarget === "a" ? "배우자 A" : "배우자 B") + "</strong> 밑으로 수렴하는 것이 절세에 최적입니다.</span>"
+          "배우??A 배정 부?��?�? <strong>[" + (best.aDeps.join(", ") || "?�음") + "]</strong><br>",
+          "배우??B 배정 부?��?�? <strong>[" + (best.bDeps.join(", ") || "?�음") + "]</strong><br>",
+          "최적 배정 ??부부 ?�산 ?�액: <strong style='color:var(--accent-secondary); font-size:1.05rem;'>" + best.totalTax.toLocaleString() + " ??/strong> (?�독 몰아주기 ?��?<strong style='color:var(--accent-secondary);'>??" + optResult.savings.toLocaleString() + " ???�약</strong>)<br>",
+          "<span style='font-size:0.8rem; opacity:0.8;'>* ?�료�?공제??<strong>" + (best.medicalTarget === "a" ? "배우??A" : "배우??B") + "</strong> 밑으�??�렴?�는 것이 ?�세??최적?�니??</span>"
         ].join("");
         renderSpouseResults("a", best.aResult);
         renderSpouseResults("b", best.bResult);
         const worstTax = Math.max(optResult.allATax, optResult.allBTax);
         const bestTax = best.totalTax;
         const savings = Math.max(0, worstTax - bestTax);
-        document.getElementById("comp-worst-val").textContent = worstTax.toLocaleString() + " 원";
-        document.getElementById("comp-opt-val").textContent = bestTax.toLocaleString() + " 원";
-        document.getElementById("comp-savings-val").textContent = savings.toLocaleString() + " 원";
+        document.getElementById("comp-worst-val").textContent = worstTax.toLocaleString() + " ??;
+        document.getElementById("comp-opt-val").textContent = bestTax.toLocaleString() + " ??;
+        document.getElementById("comp-savings-val").textContent = savings.toLocaleString() + " ??;
         if (worstTax > 0) {
           document.getElementById("comp-worst-bar").style.width = "100%";
           document.getElementById("comp-opt-bar").style.width = Math.max(5, Math.min(100, Math.round((bestTax / worstTax) * 100))) + "%";
@@ -2135,9 +2146,10 @@ document.addEventListener('DOMContentLoaded', () => {
       financialOverseas: d.aFinancialOverseas, isaIncome: d.aIsaIncome, isaType: d.aIsaType, bondSeparated: d.aBondSeparated, ventureInvestment: d.aVentureInvestment
     }, aResult);
     const yearEndAdvice = TaxAdvisor.getYearEndAdvice({
-      totalSalary: d.aSalary, pensionSavings: d.aPension, irpSavings: 0,
-      monthlyRent: 0, studentLoanRepay: 0, localDonation: 0, ventureInvestment: d.aVentureInvestment
-    }, { finalTax: aResult.totalTax });
+        totalSalary: d.aSalary, pensionSavings: d.aPension, irpSavings: 0,
+        monthlyRent: 0, studentLoanRepay: 0, localDonation: 0, ventureInvestment: d.aVentureInvestment,
+        creditCard: d.aCard || 0, cashReceipt: d.aCash || 0
+      }, { finalTax: aResult.totalTax, bracketRate: aResult.bracketRate, totalTaxCalculated: aResult.totalTax });
     renderAdvice("income-advice-list", [...incomeAdvice, ...yearEndAdvice], (id, val) => {
       let targetElement = null;
       let targetTab = "profile"; // Default target tab
@@ -2165,7 +2177,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Switch to the appropriate tab
-      const tabBtn = document.querySelector(`.tab-btn[data-tab="${targetTab}"]`);
+      const tabBtn = document.querySelector(`.nav-step-btn[data-tab="${targetTab}"]`);
       if (tabBtn) tabBtn.click();
       
       // Expand advanced fields wrapper if the target element is inside one
@@ -2175,7 +2187,7 @@ document.addEventListener('DOMContentLoaded', () => {
           wrapper.style.display = 'block';
           const toggleBtn = wrapper.previousElementSibling;
           if (toggleBtn && toggleBtn.classList.contains('btn-toggle-advanced')) {
-            toggleBtn.innerHTML = '➖ 사업/금융/기타 소득 및 추가 공제 접기 ▲';
+            toggleBtn.innerHTML = '???�업/금융/기�? ?�득 �?추�? 공제 ?�기 ??;
           }
         }
         targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -2205,17 +2217,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let html = `
       <div style="margin-bottom: 12px; padding: 10px; background: rgba(56,189,248,0.06); border-radius: 8px;">
-        <h5 style="margin: 0 0 6px 0; color: var(--accent-primary); font-size: 0.88rem;">👤 배우자 A 카드 소비 최적화 가이드</h5>
-        <div>문턱(25%): <strong>${aMix.threshold.toLocaleString()}원</strong> | 현재 사용액: <strong>${aMix.totalUsage.toLocaleString()}원</strong></div>
+        <h5 style="margin: 0 0 6px 0; color: var(--accent-primary); font-size: 0.88rem;">?�� 배우??A 카드 ?�비 최적??가?�드</h5>
+        <div>문턱(25%): <strong>${aMix.threshold.toLocaleString()}??/strong> | ?�재 ?�용?? <strong>${aMix.totalUsage.toLocaleString()}??/strong></div>
         <div style="margin-top: 4px; font-size: 0.8rem; line-height: 1.4;">
     `;
     
     if (aMix.remainingToThreshold > 0) {
-      html += `🚩 배우자 A 카드 사용액이 문턱까지 <strong>${aMix.remainingToThreshold.toLocaleString()}원</strong> 부족합니다. 이 금액만큼은 혜택이 많은 <strong>신용카드</strong>를 우선 사용하세요.`;
+      html += `?�� 배우??A 카드 ?�용?�이 문턱까�? <strong>${aMix.remainingToThreshold.toLocaleString()}??/strong> 부족합?�다. ??금액만큼?� ?�택??많�? <strong>?�용카드</strong>�??�선 ?�용?�세??`;
     } else if (!aMix.isLimitReached) {
-      html += `✅ 배우자 A 카드공제 문턱 달성! 남은 한도(${aMix.limit.toLocaleString()}원)를 채우기 위해 <strong>체크카드/현금</strong>으로 <strong>${aMix.additionalCashNeeded.toLocaleString()}원</strong>을 더 사용하시는 것이 유리합니다 (공제율 30% 적용).`;
+      html += `??배우??A 카드공제 문턱 ?�성! ?��? ?�도(${aMix.limit.toLocaleString()}??�?채우�??�해 <strong>체크카드/?�금</strong>?�로 <strong>${aMix.additionalCashNeeded.toLocaleString()}??/strong>?????�용?�시??것이 ?�리?�니??(공제??30% ?�용).`;
     } else {
-      html += `🎉 배우자 A 카드공제 한도 도달! 기본 공제 한도(<strong>${aMix.limit.toLocaleString()}원</strong>)에 도달했습니다. 추가 한도(전통시장, 대중교통 등)를 적극 활용하세요.`;
+      html += `?�� 배우??A 카드공제 ?�도 ?�달! 기본 공제 ?�도(<strong>${aMix.limit.toLocaleString()}??/strong>)???�달?�습?�다. 추�? ?�도(?�통?�장, ?�중교????�??�극 ?�용?�세??`;
     }
     html += `</div></div>`;
     
@@ -2230,16 +2242,16 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       html += `
         <div style="padding: 10px; background: rgba(0, 212, 170, 0.06); border-radius: 8px;">
-          <h5 style="margin: 0 0 6px 0; color: var(--accent-secondary); font-size: 0.88rem;">👤 배우자 B 카드 소비 최적화 가이드</h5>
-          <div>문턱(25%): <strong>${bMix.threshold.toLocaleString()}원</strong> | 현재 사용액: <strong>${bMix.totalUsage.toLocaleString()}원</strong></div>
+          <h5 style="margin: 0 0 6px 0; color: var(--accent-secondary); font-size: 0.88rem;">?�� 배우??B 카드 ?�비 최적??가?�드</h5>
+          <div>문턱(25%): <strong>${bMix.threshold.toLocaleString()}??/strong> | ?�재 ?�용?? <strong>${bMix.totalUsage.toLocaleString()}??/strong></div>
           <div style="margin-top: 4px; font-size: 0.8rem; line-height: 1.4;">
       `;
       if (bMix.remainingToThreshold > 0) {
-        html += `🚩 배우자 B 카드 사용액이 문턱까지 <strong>${bMix.remainingToThreshold.toLocaleString()}원</strong> 부족합니다. 이 금액만큼은 혜택이 많은 <strong>신용카드</strong>를 우선 사용하세요.`;
+        html += `?�� 배우??B 카드 ?�용?�이 문턱까�? <strong>${bMix.remainingToThreshold.toLocaleString()}??/strong> 부족합?�다. ??금액만큼?� ?�택??많�? <strong>?�용카드</strong>�??�선 ?�용?�세??`;
       } else if (!bMix.isLimitReached) {
-        html += `✅ 배우자 B 카드공제 문턱 달성! 남은 한도(${bMix.limit.toLocaleString()}원)를 채우기 위해 <strong>체크카드/현금</strong>으로 <strong>${bMix.additionalCashNeeded.toLocaleString()}원</strong>을 더 사용하시는 것이 유리합니다 (공제율 30% 적용).`;
+        html += `??배우??B 카드공제 문턱 ?�성! ?��? ?�도(${bMix.limit.toLocaleString()}??�?채우�??�해 <strong>체크카드/?�금</strong>?�로 <strong>${bMix.additionalCashNeeded.toLocaleString()}??/strong>?????�용?�시??것이 ?�리?�니??(공제??30% ?�용).`;
       } else {
-        html += `🎉 배우자 B 카드공제 한도 도달! 기본 공제 한도(<strong>${bMix.limit.toLocaleString()}원</strong>)에 도달했습니다. 추가 한도(전통시장, 대중교통 등)를 적극 활용하세요.`;
+        html += `?�� 배우??B 카드공제 ?�도 ?�달! 기본 공제 ?�도(<strong>${bMix.limit.toLocaleString()}??/strong>)???�달?�습?�다. 추�? ?�도(?�통?�장, ?�중교????�??�극 ?�용?�세??`;
       }
       html += `</div></div>`;
     }
@@ -2264,9 +2276,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const maxMed = Math.max(aMed, bMed, 1);
     document.getElementById("med-bar-a").style.width = (aMed / maxMed * 100) + "%";
     document.getElementById("med-bar-b").style.width = (bMed / maxMed * 100) + "%";
-    document.getElementById("med-tax-a").textContent = aMed.toLocaleString() + " 원";
-    document.getElementById("med-tax-b").textContent = bMed.toLocaleString() + " 원";
-    document.getElementById("res-medical-desc").textContent = aMed > bMed ? "배우자 A 청구 유리" : bMed > aMed ? "배우자 B 청구 유리" : "차이 없음";
+    document.getElementById("med-tax-a").textContent = aMed.toLocaleString() + " ??;
+    document.getElementById("med-tax-b").textContent = bMed.toLocaleString() + " ??;
+    document.getElementById("res-medical-desc").textContent = aMed > bMed ? "배우??A �?�� ?�리" : bMed > aMed ? "배우??B �?�� ?�리" : "차이 ?�음";
     showAccordionSection("acc-medical");
   }
 
@@ -2278,20 +2290,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById("res-family-summary-content").innerHTML =
       '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; text-align:center; margin:8px 0;">' +
       '<div style="background:rgba(255,255,255,0.05); padding:8px; border-radius:6px;">' +
-      '<div style="font-size:0.7rem; opacity:0.7;">부부 합산 총급여</div>' +
-      '<div style="font-weight:bold; font-size:1rem;">' + (d.aSalary + d.bSalary).toLocaleString() + ' 원</div></div>' +
+      '<div style="font-size:0.7rem; opacity:0.7;">부부 ?�산 총급??/div>' +
+      '<div style="font-weight:bold; font-size:1rem;">' + (d.aSalary + d.bSalary).toLocaleString() + ' ??/div></div>' +
       '<div style="background:rgba(255,255,255,0.05); padding:8px; border-radius:6px;">' +
-      '<div style="font-size:0.7rem; opacity:0.7;">최적화 합산 세액</div>' +
-      '<div style="font-weight:bold; font-size:1rem; color:var(--accent-secondary);">' + totalTax.toLocaleString() + ' 원</div></div>' +
+      '<div style="font-size:0.7rem; opacity:0.7;">최적???�산 ?�액</div>' +
+      '<div style="font-weight:bold; font-size:1rem; color:var(--accent-secondary);">' + totalTax.toLocaleString() + ' ??/div></div>' +
       '<div style="background:rgba(255,255,255,0.05); padding:8px; border-radius:6px;">' +
-      '<div style="font-size:0.7rem; opacity:0.7;">예상 절감액</div>' +
-      '<div style="font-weight:bold; font-size:1rem; color:var(--accent-gold);">' + savings.toLocaleString() + ' 원</div></div></div>' +
-      '<div style="font-size:0.78rem; opacity:0.7; line-height:1.5;">부양가족 ' + dependents.length + '명 · 배우자 A 세율 ' + aResult.bracketRate + '% · 배우자 B 세율 ' + bResult.bracketRate + '%<br>' +
-      '소득공제 합계: ' + (aDed + bDed).toLocaleString() + '원 · 결정세액 합계: ' + (best ? best.aResult.totalTax + best.bResult.totalTax : aResult.totalTax + bResult.totalTax).toLocaleString() + '원</div>';
+      '<div style="font-size:0.7rem; opacity:0.7;">?�상 ?�감??/div>' +
+      '<div style="font-weight:bold; font-size:1rem; color:var(--accent-gold);">' + savings.toLocaleString() + ' ??/div></div></div>' +
+      '<div style="font-size:0.78rem; opacity:0.7; line-height:1.5;">부?��?�?' + dependents.length + '�?· 배우??A ?�율 ' + aResult.bracketRate + '% · 배우??B ?�율 ' + bResult.bracketRate + '%<br>' +
+      '?�득공제 ?�계: ' + (aDed + bDed).toLocaleString() + '??· 결정?�액 ?�계: ' + (best ? best.aResult.totalTax + best.bResult.totalTax : aResult.totalTax + bResult.totalTax).toLocaleString() + '??/div>';
     showAccordionSection("acc-family");
   }
 
-  // 1. 종합소득세 & 연말정산 원스톱 대통합 계산
+  // 1. 종합?�득??& ?�말?�산 ?�스???�?�합 계산
   const btnCalcIncomeIntegrated = document.getElementById("btn-calc-income-integrated");
   btnCalcIncomeIntegrated.addEventListener("click", () => {
     const d = parseIncomeInputs();
@@ -2372,7 +2384,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!bar || !amtEl) return;
     const totalTax = best ? best.totalTax : 0;
     if (totalTax > 0) {
-      amtEl.textContent = totalTax.toLocaleString() + ' 원';
+      amtEl.textContent = totalTax.toLocaleString() + ' ??;
       bar.classList.add('active');
       document.body.classList.add('floating-bar-visible');
     } else {
@@ -2381,7 +2393,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 🆕 P0: 플로팅 바 "결과 보기" → 스크롤
+  // ?�� P0: ?�로??�?"결과 보기" ???�크�?
   document.getElementById('floating-bar-btn').addEventListener('click', () => {
     const resultCard = document.getElementById('inc-result-card');
     if (resultCard) {
@@ -2389,42 +2401,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 📤 리포트 복사하기
+  // ?�� 리포??복사?�기
   document.getElementById('btn-share-report').addEventListener('click', () => {
     const summaryText = document.getElementById('res-family-summary-content').innerText;
     const navText = document.getElementById('res-card-nav-content').innerText;
-    const totalText = `[TAX NAVI 가족 절세 리포트]\n\n${summaryText}\n\n[소비 네비게이션]\n${navText}\n\n👉 https://kthur.github.io/tax_calculator/`;
+    const totalText = `[TAX NAVI 가�??�세 리포??\n\n${summaryText}\n\n[?�비 ?�비게이??\n${navText}\n\n?�� https://kthur.github.io/tax_calculator/`;
     navigator.clipboard.writeText(totalText).then(() => {
-      showToast('✅ 리포트가 클립보드에 복사되었습니다');
-    }).catch(() => { showToast('❌ 복사 실패. 직접 복사해 주세요.', 3000); });
+      showToast('??리포?��? ?�립보드??복사?�었?�니??);
+    }).catch(() => { showToast('??복사 ?�패. 직접 복사??주세??', 3000); });
   });
 
-  // 📅 10년 주기 증여 타임라인
+  // ?�� 10??주기 증여 ?�?�라??
   document.getElementById('btn-calc-gift-timeline').addEventListener('click', () => {
-    const childName = document.getElementById('gift-child-name').value || '자녀';
+    const childName = document.getElementById('gift-child-name').value || '?��?';
     const childAge = parseInt(document.getElementById('gift-child-age').value) || 0;
     const timeline = [];
     let age = childAge;
     const limits = [
-      { maxAge: 19, limit: 20000000, label: '미성년자 증여한도' },
-      { maxAge: Infinity, limit: 50000000, label: '성인 증여한도' }
+      { maxAge: 19, limit: 20000000, label: '미성?�자 증여?�도' },
+      { maxAge: Infinity, limit: 50000000, label: '?�인 증여?�도' }
     ];
     while (age < 60) {
       const bracket = limits.find(l => age < l.maxAge) || limits[1];
       timeline.push({ age, limit: bracket.limit, label: bracket.label });
       age += 10;
     }
-    let html = `<strong>${childName}</strong> 님 비과세 증여 플랜 (10년 주기 리셋)<br><br>`;
+    let html = `<strong>${childName}</strong> ??비과??증여 ?�랜 (10??주기 리셋)<br><br>`;
     timeline.forEach((item, i) => {
       html += `<span style="display:inline-block; width:20px; height:20px; border-radius:50%; background:var(--accent-secondary); text-align:center; line-height:20px; font-size:0.7rem; color:#0f172a; margin-right:6px;">${i + 1}</span>`;
-      html += `<strong>만 ${item.age}세</strong> → ${item.limit.toLocaleString()}원 ${item.label} <br>`;
+      html += `<strong>�?${item.age}??/strong> ??${item.limit.toLocaleString()}??${item.label} <br>`;
     });
-    html += `<br>💰 <strong>총 비과세 증여 가능액: ${timeline.reduce((s, t) => s + t.limit, 0).toLocaleString()}원</strong>`;
+    html += `<br>?�� <strong>�?비과??증여 가?�액: ${timeline.reduce((s, t) => s + t.limit, 0).toLocaleString()}??/strong>`;
     document.getElementById('gift-timeline-content').innerHTML = html;
     document.getElementById('gift-timeline-result').style.display = 'block';
   });
 
-  // 🧾 증여세 실계산
+  // ?�� 증여???�계??
   document.getElementById('btn-calc-gift-tax').addEventListener('click', () => {
     const giftAmount = parseVal('gift-amount');
     const recipient = document.getElementById('gift-recipient').value;
@@ -2433,33 +2445,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const result = TaxCalculator.calculateGiftTax({ giftAmount, recipient, giftPast10Years });
     document.getElementById('gift-tax-result').style.display = 'block';
     let html = `
-      <div>증여 금액: <strong>${giftAmount.toLocaleString()} 원</strong></div>
-      <div>과거 10년 증여: ${giftPast10Years.toLocaleString()} 원</div>
-      <div>10년 누계: <strong>${result.cumulative.toLocaleString()} 원</strong></div>
-      <div>면제 한도: ${result.exemption.toLocaleString()} 원</div>
+      <div>증여 금액: <strong>${giftAmount.toLocaleString()} ??/strong></div>
+      <div>과거 10??증여: ${giftPast10Years.toLocaleString()} ??/div>
+      <div>10???�계: <strong>${result.cumulative.toLocaleString()} ??/strong></div>
+      <div>면제 ?�도: ${result.exemption.toLocaleString()} ??/div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div>과세표준: <strong>${result.taxableGift.toLocaleString()} 원</strong></div>
-      <div>세율: <strong>${result.rate}%</strong></div>
-      <div style="font-size:0.9rem;font-weight:bold;margin-top:6px;color:var(--accent-primary);">증여세: ${result.tax.toLocaleString()} 원</div>
-      <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-warning);">지방교육세: ${result.localTax.toLocaleString()} 원</div>
-      <div style="font-size:1rem;font-weight:bold;margin-top:6px;color:var(--accent-secondary);">💵 총 납부세액: ${result.totalTax.toLocaleString()} 원</div>
+      <div>과세?��?: <strong>${result.taxableGift.toLocaleString()} ??/strong></div>
+      <div>?�율: <strong>${result.rate}%</strong></div>
+      <div style="font-size:0.9rem;font-weight:bold;margin-top:6px;color:var(--accent-primary);">증여?? ${result.tax.toLocaleString()} ??/div>
+      <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-warning);">지방교?�세: ${result.localTax.toLocaleString()} ??/div>
+      <div style="font-size:1rem;font-weight:bold;margin-top:6px;color:var(--accent-secondary);">?�� �??��??�액: ${result.totalTax.toLocaleString()} ??/div>
     `;
     if (result.totalTax === 0) {
-      html += `<div style="margin-top:8px;padding:6px;background:rgba(0,212,170,0.1);border-radius:6px;font-weight:bold;">✅ 비과세 증여 가능!</div>`;
+      html += `<div style="margin-top:8px;padding:6px;background:rgba(0,212,170,0.1);border-radius:6px;font-weight:bold;">??비과??증여 가??</div>`;
     }
     if (assetType === 'etf' && recipient === 'adult_child') {
       html += `<div style="margin-top:8px;padding:6px;background:rgba(56,189,248,0.08);border-radius:6px;font-size:0.78rem;">
-        💡 미국 ETF 증여 시: 수증자가 증여받은 ETF를 매도할 때 <strong>해외주식 양도소득세(22%)</strong>가 발생할 수 있습니다.
-        증여 당시 평가액을 취득가액으로 인정받아 양도차익을 줄일 수 있어 현금 증여 대비 절세 효과가 있습니다.
+        ?�� 미국 ETF 증여 ?? ?�증?��? 증여받�? ETF�?매도????<strong>?�외주식 ?�도?�득??22%)</strong>가 발생?????�습?�다.
+        증여 ?�시 ?��??�을 취득가?�으�??�정받아 ?�도차익??줄일 ???�어 ?�금 증여 ?��??�세 ?�과가 ?�습?�다.
       </div>`;
     }
     document.getElementById('gift-tax-content').innerHTML = html;
   });
 
-  // 💰 연금저축/IRP 세액공제 최적화
+  // ?�� ?�금?��?IRP ?�액공제 최적??
   document.getElementById('btn-calc-pension-opt').addEventListener('click', function () {
     var target = document.getElementById('pension-target').value;
-    var salary = parseVal('pension-salary');
+    var salary = getTargetSalary('pension-target');
     var pension = parseVal('pension-amount');
     var irp = parseVal('pension-irp-amount');
     var result = TaxCalculator.calculatePensionOptimization({
@@ -2468,28 +2480,28 @@ document.addEventListener('DOMContentLoaded', () => {
       currentIrp: irp
     });
     document.getElementById('pension-opt-result').style.display = 'block';
-    var statusIcon = result.reachedLimit ? '✅' : '📌';
-    var statusText = result.reachedLimit ? '연250만 한도 도달!' : '추가 납입 가능';
+    var statusIcon = result.reachedLimit ? '?? : '?��';
+    var statusText = result.reachedLimit ? '??50�??�도 ?�달!' : '추�? ?�입 가??;
     var recommendationHtml = '';
     if (!result.reachedLimit) {
       recommendationHtml = '<div style="margin-top:8px;padding:10px;background:rgba(0,212,170,0.12);border-radius:8px;border-left:3px solid var(--accent-secondary);">' +
-        '💡 <strong>IRP 계좌</strong>를 개설(또는 추가 납입)하여 <strong>' + result.remaining.toLocaleString() + '원</strong>을 더 채우면<br>' +
-        '연말정산 때 <strong style="color:var(--accent-secondary);font-size:1rem;">' + result.additionalCredit.toLocaleString() + '원</strong>을 추가 환급받습니다!' +
+        '?�� <strong>IRP 계좌</strong>�?개설(?�는 추�? ?�입)?�여 <strong>' + result.remaining.toLocaleString() + '??/strong>????채우�?br>' +
+        '?�말?�산 ??<strong style="color:var(--accent-secondary);font-size:1rem;">' + result.additionalCredit.toLocaleString() + '??/strong>??추�? ?�급받습?�다!' +
         '</div>';
     }
     document.getElementById('pension-opt-content').innerHTML =
-      '<div>' + statusIcon + ' 현재 합계: <strong>' + result.currentTotal.toLocaleString() + '원</strong> / ' + result.maxLimit.toLocaleString() + '원 (' + statusText + ')</div>' +
-      '<div>연금저축: ' + result.currentPension.toLocaleString() + '원 | IRP: ' + result.currentIrp.toLocaleString() + '원</div>' +
-      '<div>세액공제율: <strong>' + result.rate.toFixed(1) + '%</strong> (총급여 ' + salary.toLocaleString() + '원 기준)</div>' +
+      '<div>' + statusIcon + ' ?�재 ?�계: <strong>' + result.currentTotal.toLocaleString() + '??/strong> / ' + result.maxLimit.toLocaleString() + '??(' + statusText + ')</div>' +
+      '<div>?�금?��? ' + result.currentPension.toLocaleString() + '??| IRP: ' + result.currentIrp.toLocaleString() + '??/div>' +
+      '<div>?�액공제?? <strong>' + result.rate.toFixed(1) + '%</strong> (총급??' + salary.toLocaleString() + '??기�?)</div>' +
       '<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">' +
-      '<div>현재 세액공제액: ' + result.currentCredit.toLocaleString() + '원</div>' +
-      '<div style="font-weight:bold;color:var(--accent-secondary);font-size:0.95rem;">최대 세액공제액: ' + result.potentialCredit.toLocaleString() + '원</div>' +
+      '<div>?�재 ?�액공제?? ' + result.currentCredit.toLocaleString() + '??/div>' +
+      '<div style="font-weight:bold;color:var(--accent-secondary);font-size:0.95rem;">최�? ?�액공제?? ' + result.potentialCredit.toLocaleString() + '??/div>' +
       recommendationHtml;
   });
 
-  // 💳 신용카드 vs 체크카드 황금비율 계산기
+  // ?�� ?�용카드 vs 체크카드 ?�금비율 계산�?
   document.getElementById('btn-calc-card-ratio').addEventListener('click', function () {
-    var salary = parseVal('card-salary');
+    var salary = getTargetSalary('card-target');
     var card = parseVal('card-usage-amount');
     var cash = parseVal('card-cash-amount');
     var traditional = parseVal('card-traditional');
@@ -2509,76 +2521,76 @@ document.addEventListener('DOMContentLoaded', () => {
     var progressToThreshold = Math.min(100, Math.round(result.totalUsage / result.threshold * 100));
     var progressBar = '<div style="background:rgba(255,255,255,0.06);height:8px;border-radius:4px;overflow:hidden;margin:6px 0;">' +
       '<div style="background:var(--accent-info);width:' + progressToThreshold + '%;height:100%;transition:width 0.3s;"></div></div>';
-    var html = '<div>📊 총급여: <strong>' + salary.toLocaleString() + '원</strong></div>' +
-      '<div>공제 문턱(' + thresholdPct + '%): <strong>' + result.threshold.toLocaleString() + '원</strong>' +
-      (result.remainingToThreshold > 0 ? ' (🚩 <strong>' + result.remainingToThreshold.toLocaleString() + '원</strong> 부족)' : '') + '</div>' +
+    var html = '<div>?�� 총급?? <strong>' + salary.toLocaleString() + '??/strong></div>' +
+      '<div>공제 문턱(' + thresholdPct + '%): <strong>' + result.threshold.toLocaleString() + '??/strong>' +
+      (result.remainingToThreshold > 0 ? ' (?�� <strong>' + result.remainingToThreshold.toLocaleString() + '??/strong> 부�?' : '') + '</div>' +
       progressBar +
-      '<div>신용카드: ' + card.toLocaleString() + '원 | 체크/현금: ' + cash.toLocaleString() + '원</div>' +
-      '<div>합계 사용액: <strong>' + result.totalUsage.toLocaleString() + '원</strong></div>';
+      '<div>?�용카드: ' + card.toLocaleString() + '??| 체크/?�금: ' + cash.toLocaleString() + '??/div>' +
+      '<div>?�계 ?�용?? <strong>' + result.totalUsage.toLocaleString() + '??/strong></div>';
     if (result.overThreshold) {
-      html += '<div>공제 대상 초과분: <strong>' + (result.totalUsage - result.threshold).toLocaleString() + '원</strong></div>';
-      html += '<div>기본 공제 예상액: <strong>' + result.baseDeduction.toLocaleString() + '원</strong> / 한도 ' + result.limit.toLocaleString() + '원</div>';
+      html += '<div>공제 ?�??초과�? <strong>' + (result.totalUsage - result.threshold).toLocaleString() + '??/strong></div>';
+      html += '<div>기본 공제 ?�상?? <strong>' + result.baseDeduction.toLocaleString() + '??/strong> / ?�도 ' + result.limit.toLocaleString() + '??/div>';
     }
-    // 추가 공제 내역
+    // 추�? 공제 ?�역
     if (result.tradDeduction > 0 || result.transitDeduction > 0 || result.bookDeduction > 0) {
       html += '<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">';
-      html += '<div style="font-size:0.8rem;color:var(--accent-info);font-weight:bold;">➕ 추가 공제 내역 (별도 한도)</div>';
-      if (result.tradDeduction > 0) html += '<div>🏪 전통시장(30%): <strong>' + result.tradDeduction.toLocaleString() + '원</strong></div>';
-      if (result.transitDeduction > 0) html += '<div>🚌 대중교통(40%): <strong>' + result.transitDeduction.toLocaleString() + '원</strong></div>';
-      if (result.bookDeduction > 0) html += '<div>📚 도서·공연(30%): <strong>' + result.bookDeduction.toLocaleString() + '원</strong></div>';
+      html += '<div style="font-size:0.8rem;color:var(--accent-info);font-weight:bold;">??추�? 공제 ?�역 (별도 ?�도)</div>';
+      if (result.tradDeduction > 0) html += '<div>?�� ?�통?�장(30%): <strong>' + result.tradDeduction.toLocaleString() + '??/strong></div>';
+      if (result.transitDeduction > 0) html += '<div>?�� ?�중교??40%): <strong>' + result.transitDeduction.toLocaleString() + '??/strong></div>';
+      if (result.bookDeduction > 0) html += '<div>?�� ?�서·공연(30%): <strong>' + result.bookDeduction.toLocaleString() + '??/strong></div>';
     }
     var totalDed = result.baseDeduction + result.tradDeduction + result.transitDeduction + result.bookDeduction;
     html += '<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">' +
-      '<div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">💰 총 카드 공제액: <strong>' + totalDed.toLocaleString() + '원</strong></div>';
+      '<div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">?�� �?카드 공제?? <strong>' + totalDed.toLocaleString() + '??/strong></div>';
     html += '<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:8px 0;">';
     // 추천 메시지
     if (result.remainingToThreshold > 0) {
       html += '<div style="padding:8px;background:rgba(56,189,248,0.12);border-radius:6px;">' +
-        '📌 현재 총급여의 25%인 <strong>' + result.threshold.toLocaleString() + '원</strong>까지,<br>' +
-        '앞으로 <strong>' + result.remainingToThreshold.toLocaleString() + '원</strong>만 <strong>신용카드</strong>(포인트 혜택)로 더 쓰세요.<br>' +
-        '문턱을 넘은 후에는 <strong>체크카드/현금영수증</strong>으로 전환해야 30% 공제율을 받을 수 있습니다.<br>' +
-        '<span style="font-size:0.75rem;opacity:0.7;">문턱 이하 구간은 카드 종류와 무관하게 세액공제 혜택이 없으므로, 신용카드 포인트를 받는 것이 유리합니다.</span></div>';
+        '?�� ?�재 총급?�의 25%??<strong>' + result.threshold.toLocaleString() + '??/strong>까�?,<br>' +
+        '?�으�?<strong>' + result.remainingToThreshold.toLocaleString() + '??/strong>�?<strong>?�용카드</strong>(?�인???�택)�????�세??<br>' +
+        '문턱???��? ?�에??<strong>체크카드/?�금?�수�?/strong>?�로 ?�환?�야 30% 공제?�을 받을 ???�습?�다.<br>' +
+        '<span style="font-size:0.75rem;opacity:0.7;">문턱 ?�하 구간?� 카드 종류?� 무�??�게 ?�액공제 ?�택???�으므�? ?�용카드 ?�인?��? 받는 것이 ?�리?�니??</span></div>';
     } else if (!result.isLimitReached) {
       html += '<div style="padding:8px;background:rgba(0,212,170,0.12);border-radius:6px;border-left:3px solid var(--accent-secondary);">' +
-        '✅ 문턱(25%) 도달! 앞으로 <strong>체크카드/현금</strong>으로 <strong>' + result.additionalCashNeeded.toLocaleString() + '원</strong>을 더 사용하면<br>' +
-        '최대 한도 ' + result.limit.toLocaleString() + '원까지 추가 공제 가능합니다.<br>' +
-        '<span style="font-size:0.75rem;opacity:0.7;">신용카드는 15% 공제율이므로, 초과분은 체크카드(30%)가 2배 효과적입니다.</span></div>';
+        '??문턱(25%) ?�달! ?�으�?<strong>체크카드/?�금</strong>?�로 <strong>' + result.additionalCashNeeded.toLocaleString() + '??/strong>?????�용?�면<br>' +
+        '최�? ?�도 ' + result.limit.toLocaleString() + '?�까지 추�? 공제 가?�합?�다.<br>' +
+        '<span style="font-size:0.75rem;opacity:0.7;">?�용카드??15% 공제?�이므�? 초과분�? 체크카드(30%)가 2�??�과?�입?�다.</span></div>';
     } else {
       html += '<div style="padding:8px;background:rgba(255,217,61,0.1);border-radius:6px;">' +
-        '✅ 기본 공제 한도(<strong>' + result.limit.toLocaleString() + '원</strong>)에 이미 도달했습니다.<br>' +
-        '<span style="font-size:0.75rem;opacity:0.7;">추가로 전통시장(30%), 대중교통(40%), 도서공연(30%)도 별도 한도 내에서 공제 가능합니다.</span></div>';
+        '??기본 공제 ?�도(<strong>' + result.limit.toLocaleString() + '??/strong>)???��? ?�달?�습?�다.<br>' +
+        '<span style="font-size:0.75rem;opacity:0.7;">추�?�??�통?�장(30%), ?�중교??40%), ?�서공연(30%)??별도 ?�도 ?�에??공제 가?�합?�다.</span></div>';
     }
-    // 추가 공제 활용 팁
+    // 추�? 공제 ?�용 ??
     if (result.tradDeduction < result.addLimitTraditional && result.tradDeduction < Math.floor(traditional * 0.3)) {
       html += '<div style="margin-top:6px;padding:6px;background:rgba(56,189,248,0.06);border-radius:6px;font-size:0.75rem;">' +
-        '💡 전통시장 추가 사용 시 최대 ' + (result.addLimitTraditional - result.tradDeduction).toLocaleString() + '원까지 30% 추가 공제 가능</div>';
+        '?�� ?�통?�장 추�? ?�용 ??최�? ' + (result.addLimitTraditional - result.tradDeduction).toLocaleString() + '?�까지 30% 추�? 공제 가??/div>';
     }
     document.getElementById('card-ratio-content').innerHTML = html;
   });
 
-  // 🧮 N잡러 경비율 비교
+  // ?�� N?�러 경비??비교
   document.getElementById('btn-calc-expense-ratio').addEventListener('click', () => {
     const bizCode = document.getElementById('expense-biz-code').value;
     const revenue = parseVal('expense-revenue');
     const declaredType = document.getElementById('expense-declared-type').value;
     const result = TaxCalculator.compareExpenseRatios(bizCode, revenue, declaredType);
     document.getElementById('expense-ratio-result').style.display = 'block';
-    var rec = result.recommended === 'simple' ? '단순경비율 (추계신고)' : '기준경비율 (장부 작성)';
+    var rec = result.recommended === 'simple' ? '?�순경비??(추계?�고)' : '기�?경비??(?��? ?�성)';
     var recColor = result.recommended === declaredType ? 'var(--accent-secondary)' : 'var(--accent-warning)';
     document.getElementById('expense-ratio-content').innerHTML = `
-      <div>업종: <strong>${result.bizName}</strong></div>
-      <div style="margin-top:6px;"><strong>단순경비율</strong>: ${(result.simpleRate * 100).toFixed(1)}% → 경비 ${result.simpleExpense.toLocaleString()}원</div>
-      <div><strong>기준경비율</strong>: ${(result.standardRate * 100).toFixed(1)}% → 경비 ${result.standardExpense.toLocaleString()}원</div>
+      <div>?�종: <strong>${result.bizName}</strong></div>
+      <div style="margin-top:6px;"><strong>?�순경비??/strong>: ${(result.simpleRate * 100).toFixed(1)}% ??경비 ${result.simpleExpense.toLocaleString()}??/div>
+      <div><strong>기�?경비??/strong>: ${(result.standardRate * 100).toFixed(1)}% ??경비 ${result.standardExpense.toLocaleString()}??/div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div style="font-weight:bold;color:${recColor};">🏆 추천: <strong>${rec}</strong></div>
+      <div style="font-weight:bold;color:${recColor};">?�� 추천: <strong>${rec}</strong></div>
       <div style="font-size:0.78rem;opacity:0.7;margin-top:4px;">
-        ${result.isSimpleBetter ? '단순경비율 적용 시 경비가 더 많이 인정됩니다. 별도 장부 미작성 가능.' : '기준경비율(장부 작성) 시 추가 경비 인정으로 절세 효과가 있습니다.'}
-        (세액 차이는 과세표준 구간에 따라 달라집니다)
+        ${result.isSimpleBetter ? '?�순경비???�용 ??경비가 ??많이 ?�정?�니?? 별도 ?��? 미작??가??' : '기�?경비???��? ?�성) ??추�? 경비 ?�정?�로 ?�세 ?�과가 ?�습?�다.'}
+        (?�액 차이??과세?��? 구간???�라 ?�라집니??
       </div>
     `;
   });
 
-  // 🏥 건강보험료 시뮬레이터
+  // ?�� 건강보험�??��??�이??
   const hiTypeEl = document.getElementById('hi-type');
   if (hiTypeEl) {
     hiTypeEl.addEventListener('change', function () {
@@ -2590,51 +2602,51 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 🛡️ 보장성 보험료 세액공제
+  // ?���?보장??보험�??�액공제
   document.getElementById('btn-calc-insurance-credit').addEventListener('click', () => {
     const premium = parseVal('insurance-premium');
     const result = TaxCalculator.calculateInsuranceCredit({ totalPremium: premium });
     document.getElementById('insurance-result').style.display = 'block';
     document.getElementById('insurance-result-content').innerHTML = `
-      <div>연간 보험료 납입액: <strong>${result.totalPremium.toLocaleString()} 원</strong></div>
-      <div>공제 한도: ${result.limit.toLocaleString()} 원</div>
-      <div>공제 대상 금액: <strong>${result.eligibleAmount.toLocaleString()} 원</strong></div>
+      <div>?�간 보험�??�입?? <strong>${result.totalPremium.toLocaleString()} ??/strong></div>
+      <div>공제 ?�도: ${result.limit.toLocaleString()} ??/div>
+      <div>공제 ?�??금액: <strong>${result.eligibleAmount.toLocaleString()} ??/strong></div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div>세액공제율: ${result.creditRate}%</div>
-      <div style="font-weight:bold;color:var(--accent-primary);font-size:0.95rem;">세액공제액: <strong>${result.credit.toLocaleString()} 원</strong></div>
-      <div style="color:var(--accent-warning);">지방소득세: ${result.localTax.toLocaleString()} 원</div>
-      <div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">💰 총 혜택: <strong>${result.totalBenefit.toLocaleString()} 원</strong></div>
-      ${result.isMaxed ? '<div style="margin-top:6px;padding:6px;background:rgba(0,212,170,0.08);border-radius:6px;font-size:0.78rem;">✅ 보험료 한도(100만 원)에 도달했습니다. 추가 납입 시 세액공제 혜택이 없습니다.</div>' : `<div style="margin-top:6px;font-size:0.78rem;opacity:0.7;">📌 한도까지 ${Math.max(0, result.limit - result.totalPremium).toLocaleString()} 원 추가 가능</div>`}
+      <div>?�액공제?? ${result.creditRate}%</div>
+      <div style="font-weight:bold;color:var(--accent-primary);font-size:0.95rem;">?�액공제?? <strong>${result.credit.toLocaleString()} ??/strong></div>
+      <div style="color:var(--accent-warning);">지방소?�세: ${result.localTax.toLocaleString()} ??/div>
+      <div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">?�� �??�택: <strong>${result.totalBenefit.toLocaleString()} ??/strong></div>
+      ${result.isMaxed ? '<div style="margin-top:6px;padding:6px;background:rgba(0,212,170,0.08);border-radius:6px;font-size:0.78rem;">??보험�??�도(100�??????�달?�습?�다. 추�? ?�입 ???�액공제 ?�택???�습?�다.</div>' : `<div style="margin-top:6px;font-size:0.78rem;opacity:0.7;">?�� ?�도까�? ${Math.max(0, result.limit - result.totalPremium).toLocaleString()} ??추�? 가??/div>`}
     `;
   });
 
-  // 🏠 월세 세액공제
+  // ?�� ?�세 ?�액공제
   document.getElementById('btn-calc-rent-credit').addEventListener('click', () => {
-    const totalSalary = parseVal('rent-salary');
+    const totalSalary = getTargetSalary('rent-target');
     const annualRent = parseVal('rent-amount');
     const result = TaxCalculator.calculateRentCredit({ totalSalary, annualRent });
     document.getElementById('rent-result').style.display = 'block';
     if (!result.isEligible) {
       document.getElementById('rent-result-content').innerHTML = `
-        <div style="color:var(--accent-warning);font-weight:bold;">❌ ${result.reason}</div>
+        <div style="color:var(--accent-warning);font-weight:bold;">??${result.reason}</div>
       `;
       return;
     }
     document.getElementById('rent-result-content').innerHTML = `
-      <div>총급여: ${result.totalSalary.toLocaleString()} 원</div>
-      <div>연간 월세 납입액: <strong>${result.annualRent.toLocaleString()} 원</strong></div>
-      <div>공제 한도: ${result.limit.toLocaleString()} 원</div>
-      <div>공제 대상 금액: <strong>${result.eligibleAmount.toLocaleString()} 원</strong></div>
+      <div>총급?? ${result.totalSalary.toLocaleString()} ??/div>
+      <div>?�간 ?�세 ?�입?? <strong>${result.annualRent.toLocaleString()} ??/strong></div>
+      <div>공제 ?�도: ${result.limit.toLocaleString()} ??/div>
+      <div>공제 ?�??금액: <strong>${result.eligibleAmount.toLocaleString()} ??/strong></div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div>세액공제율: ${result.creditRate}%${result.totalSalary <= 55000000 ? ' (총급여 5,500만 이하 15%)' : ' (총급여 5,500만 초과 12%)'}</div>
-      <div style="font-weight:bold;color:var(--accent-primary);font-size:0.95rem;">세액공제액: <strong>${result.credit.toLocaleString()} 원</strong></div>
-      <div style="color:var(--accent-warning);">지방소득세: ${result.localTax.toLocaleString()} 원</div>
-      <div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">💰 총 혜택: <strong>${result.totalBenefit.toLocaleString()} 원</strong></div>
-      ${result.isMaxed ? '<div style="margin-top:6px;padding:6px;background:rgba(0,212,170,0.08);border-radius:6px;font-size:0.78rem;">✅ 월세 한도(750만 원)에 도달했습니다.</div>' : ''}
+      <div>?�액공제?? ${result.creditRate}%${result.totalSalary <= 55000000 ? ' (총급??5,500�??�하 15%)' : ' (총급??5,500�?초과 12%)'}</div>
+      <div style="font-weight:bold;color:var(--accent-primary);font-size:0.95rem;">?�액공제?? <strong>${result.credit.toLocaleString()} ??/strong></div>
+      <div style="color:var(--accent-warning);">지방소?�세: ${result.localTax.toLocaleString()} ??/div>
+      <div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">?�� �??�택: <strong>${result.totalBenefit.toLocaleString()} ??/strong></div>
+      ${result.isMaxed ? '<div style="margin-top:6px;padding:6px;background:rgba(0,212,170,0.08);border-radius:6px;font-size:0.78rem;">???�세 ?�도(750�??????�달?�습?�다.</div>' : ''}
     `;
   });
 
-  // 💝 일반 기부금 세액공제
+  // ?�� ?�반 기�?�??�액공제
   document.getElementById('btn-calc-donation-credit').addEventListener('click', () => {
     const totalIncome = parseVal('donation-income');
     const statutoryDonation = parseVal('donation-statutory');
@@ -2643,33 +2655,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const result = TaxCalculator.calculateDonationCredit({ totalIncome, statutoryDonation, designatedDonation, religiousDonation });
     document.getElementById('donation-result').style.display = 'block';
     document.getElementById('donation-result-content').innerHTML = `
-      <div>연간 총소득: <strong>${result.totalIncome.toLocaleString()} 원</strong></div>
+      <div>?�간 총소?? <strong>${result.totalIncome.toLocaleString()} ??/strong></div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div>📌 기부 내역</div>
-      <div>· 법정기부금: ${result.statutoryDonation.toLocaleString()} 원</div>
-      <div>· 지정기부금: ${result.designatedDonation.toLocaleString()} 원</div>
-      <div>· 종교단체 기부금: ${result.religiousDonation.toLocaleString()} 원</div>
-      <div>· 기부 합계: <strong>${result.totalDonation.toLocaleString()} 원</strong></div>
+      <div>?�� 기�? ?�역</div>
+      <div>· 법정기�?�? ${result.statutoryDonation.toLocaleString()} ??/div>
+      <div>· 지?�기부�? ${result.designatedDonation.toLocaleString()} ??/div>
+      <div>· 종교?�체 기�?�? ${result.religiousDonation.toLocaleString()} ??/div>
+      <div>· 기�? ?�계: <strong>${result.totalDonation.toLocaleString()} ??/strong></div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div style="color:var(--accent-info);">📋 공제 명세</div>
-      <div>· 지정기부금 한도(소득의 30%): ${result.incomeLimit.toLocaleString()} 원</div>
-      <div>· 법정기부금 세액공제(100%): <strong>${result.statutoryCredit.toLocaleString()} 원</strong></div>
-      <div>· 지정기부금 세액공제(30%): <strong>${result.designatedCredit.toLocaleString()} 원</strong> (대상 ${result.designatedEligible.toLocaleString()}원)</div>
+      <div style="color:var(--accent-info);">?�� 공제 명세</div>
+      <div>· 지?�기부�??�도(?�득??30%): ${result.incomeLimit.toLocaleString()} ??/div>
+      <div>· 법정기�?�??�액공제(100%): <strong>${result.statutoryCredit.toLocaleString()} ??/strong></div>
+      <div>· 지?�기부�??�액공제(30%): <strong>${result.designatedCredit.toLocaleString()} ??/strong> (?�??${result.designatedEligible.toLocaleString()}??</div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div style="font-weight:bold;color:var(--accent-primary);font-size:0.95rem;">총 세액공제액: <strong>${result.totalCredit.toLocaleString()} 원</strong></div>
-      <div style="color:var(--accent-warning);">지방소득세: ${result.localTax.toLocaleString()} 원</div>
-      <div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">💰 총 혜택: <strong>${result.totalBenefit.toLocaleString()} 원</strong></div>
+      <div style="font-weight:bold;color:var(--accent-primary);font-size:0.95rem;">�??�액공제?? <strong>${result.totalCredit.toLocaleString()} ??/strong></div>
+      <div style="color:var(--accent-warning);">지방소?�세: ${result.localTax.toLocaleString()} ??/div>
+      <div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">?�� �??�택: <strong>${result.totalBenefit.toLocaleString()} ??/strong></div>
     `;
   });
 
-  // 🏥 건강보험료 계산
+  // ?�� 건강보험�?계산
   const btnCalcHi = document.getElementById('btn-calc-health-insurance');
   if (btnCalcHi) {
     btnCalcHi.addEventListener('click', () => {
       const isEmployee = (document.getElementById('hi-type')?.value || 'employee') === 'employee';
       let opts = { isEmployee };
       if (isEmployee) {
-        opts.earnedIncome = parseVal('hi-earned-income');
+        opts.earnedIncome = parseVal('inc-a-salary');
         opts.otherIncome = parseVal('hi-other-income');
       } else {
         opts.regionalIncome = parseVal('hi-regional-income');
@@ -2681,102 +2693,102 @@ document.addEventListener('DOMContentLoaded', () => {
       let html = '';
       if (hi.type === 'employee') {
         html = `
-          <div>월평균 근로소득: ${hi.earnedMonthly.toLocaleString()} 원</div>
-          <div>직장 건강보험료 (월): <strong>${hi.workedPremium.toLocaleString()} 원</strong></div>
-          <div>장기요양보험료 (월): <strong>${hi.longTermCare.toLocaleString()} 원</strong></div>
-          ${hi.incomeMonthlyPremium > 0 ? `<div style="color:var(--accent-warning);">⚠️ 소득월액보험료 (월): <strong>${hi.incomeMonthlyPremium.toLocaleString()} 원</strong> (기타소득 2,000만 초과)</div>` : '<div>소득월액보험료: 없음 (기타소득 2,000만 이하)</div>'}
+          <div>?�평�?근로?�득: ${hi.earnedMonthly.toLocaleString()} ??/div>
+          <div>직장 건강보험�?(??: <strong>${hi.workedPremium.toLocaleString()} ??/strong></div>
+          <div>?�기?�양보험�?(??: <strong>${hi.longTermCare.toLocaleString()} ??/strong></div>
+          ${hi.incomeMonthlyPremium > 0 ? `<div style="color:var(--accent-warning);">?�️ ?�득?�액보험�?(??: <strong>${hi.incomeMonthlyPremium.toLocaleString()} ??/strong> (기�??�득 2,000�?초과)</div>` : '<div>?�득?�액보험�? ?�음 (기�??�득 2,000�??�하)</div>'}
           <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-          <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-secondary);">월 보험료 합계: ${hi.monthlyPremium.toLocaleString()} 원</div>
-          <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-primary);">연 보험료 합계: <strong>${hi.annualPremium.toLocaleString()} 원</strong></div>
+          <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-secondary);">??보험�??�계: ${hi.monthlyPremium.toLocaleString()} ??/div>
+          <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-primary);">??보험�??�계: <strong>${hi.annualPremium.toLocaleString()} ??/strong></div>
         `;
       } else {
         html = `
-          <div>소득점수: ${hi.details.incomeScore.toLocaleString()}</div>
-          <div>재산점수: ${hi.details.propertyScore.toLocaleString()}</div>
+          <div>?�득?�수: ${hi.details.incomeScore.toLocaleString()}</div>
+          <div>?�산?�수: ${hi.details.propertyScore.toLocaleString()}</div>
           <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-          <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-secondary);">월 보험료 합계: ${hi.monthlyPremium.toLocaleString()} 원</div>
-          <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-primary);">연 보험료 합계: <strong>${hi.annualPremium.toLocaleString()} 원</strong></div>
+          <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-secondary);">??보험�??�계: ${hi.monthlyPremium.toLocaleString()} ??/div>
+          <div style="font-size:0.9rem;font-weight:bold;color:var(--accent-primary);">??보험�??�계: <strong>${hi.annualPremium.toLocaleString()} ??/strong></div>
         `;
       }
       const checkDependentEl = document.getElementById('hi-dependent-check');
       const checkDependent = checkDependentEl ? checkDependentEl.checked : false;
       if (checkDependent && isEmployee) {
         const depResult = TaxCalculator.checkDependentStatus({ otherIncome: opts.otherIncome, isWageOnly: true, isPropertyOwner: false });
-        html += `<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;"><div style="font-weight:bold;">🔍 피부양자 자격: ${depResult.isEligible ? '✅ 유지' : '❌ 상실'}</div><div style="font-size:0.78rem;opacity:0.7;">${depResult.reason}</div>`;
+        html += `<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;"><div style="font-weight:bold;">?�� ?��??�자 ?�격: ${depResult.isEligible ? '???��?' : '???�실'}</div><div style="font-size:0.78rem;opacity:0.7;">${depResult.reason}</div>`;
       }
       const hiResultContent = document.getElementById('hi-result-content');
       if (hiResultContent) hiResultContent.innerHTML = html;
     });
   }
 
-  // 📋 표준세액공제
+  // ?�� ?��??�액공제
   document.getElementById('btn-calc-standard-credit').addEventListener('click', () => {
     const itemizedTotal = parseVal('standard-itemized');
     const result = TaxCalculator.calculateStandardCredit({ itemizedTotal });
     document.getElementById('standard-result').style.display = 'block';
     document.getElementById('standard-result-content').innerHTML = `
-      <div>항목별 세액공제 합계: <strong>${result.itemizedTotal.toLocaleString()} 원</strong></div>
-      <div>표준세액공제: <strong>${result.standardCredit.toLocaleString()} 원</strong></div>
+      <div>??���??�액공제 ?�계: <strong>${result.itemizedTotal.toLocaleString()} ??/strong></div>
+      <div>?��??�액공제: <strong>${result.standardCredit.toLocaleString()} ??/strong></div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
       <div style="font-size:0.95rem;font-weight:bold;color:${result.isStandardBetter ? 'var(--accent-secondary)' : 'var(--accent-info)'};">
-        ${result.isStandardBetter ? '✅ 표준세액공제(13만 원) 선택!' : 'ℹ️ 항목별 공제 선택 (표준공제보다 ' + result.difference.toLocaleString() + '원 큼)'}
+        ${result.isStandardBetter ? '???��??�액공제(13�??? ?�택!' : '?�️ ??���?공제 ?�택 (?��?공제보다 ' + result.difference.toLocaleString() + '????'}
       </div>
       <div style="margin-top:6px;padding:8px;background:rgba(0,212,170,0.06);border-radius:6px;font-size:0.78rem;">
-        💡 ${result.recommendation}
+        ?�� ${result.recommendation}
       </div>
     `;
   });
 
-  // 🚗 전기차·친환경차 세액공제
+  // ?�� ?�기차·친?�경�??�액공제
   document.getElementById('btn-calc-ecocar').addEventListener('click', () => {
     const carPrice = parseVal('ecocar-price');
     const carType = document.getElementById('ecocar-type').value;
     const result = TaxCalculator.calculateEcoCarCredit({ carPrice, carType });
     document.getElementById('ecocar-result').style.display = 'block';
     document.getElementById('ecocar-result-content').innerHTML = `
-      <div>차량 유형: <strong>${result.carTypeLabel}</strong></div>
-      <div>차량 가격: ${result.carPrice.toLocaleString()} 원</div>
+      <div>차량 ?�형: <strong>${result.carTypeLabel}</strong></div>
+      <div>차량 가�? ${result.carPrice.toLocaleString()} ??/div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div style="color:var(--accent-info);">개별소비세 감면: <strong>${result.individualConsumeTax.toLocaleString()} 원</strong></div>
-      <div style="color:var(--accent-info);">취득세 감면: <strong>${result.acquisitionTax.toLocaleString()} 원</strong></div>
-      <div style="color:var(--accent-warning);">교육세 감면: ${result.eduTax.toLocaleString()} 원</div>
+      <div style="color:var(--accent-info);">개별?�비??감면: <strong>${result.individualConsumeTax.toLocaleString()} ??/strong></div>
+      <div style="color:var(--accent-info);">취득??감면: <strong>${result.acquisitionTax.toLocaleString()} ??/strong></div>
+      <div style="color:var(--accent-warning);">교육??감면: ${result.eduTax.toLocaleString()} ??/div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div style="font-size:1rem;font-weight:bold;color:var(--accent-secondary);">💰 총 세제 혜택: <strong>${result.totalBenefit.toLocaleString()} 원</strong></div>
+      <div style="font-size:1rem;font-weight:bold;color:var(--accent-secondary);">?�� �??�제 ?�택: <strong>${result.totalBenefit.toLocaleString()} ??/strong></div>
       <div style="margin-top:6px;padding:6px;background:rgba(0,212,170,0.06);border-radius:6px;font-size:0.75rem;">
-        📌 2025~2026년 기준 감면 한도 적용. 국고보조금·지방보조금은 별도입니다.
+        ?�� 2025~2026??기�? 감면 ?�도 ?�용. �?��보조금·�?방보조금?� 별도?�니??
       </div>
     `;
   });
 
-  // 🏠 주택자금 공제
+  // ?�� 주택?�금 공제
   document.getElementById('btn-calc-housing-fund').addEventListener('click', () => {
-    const totalSalary = parseVal('housing-salary');
+    const totalSalary = getTargetSalary('housing-target');
     const subscriptionAmount = parseVal('housing-sub-amount');
     const jeonseLoanRepay = parseVal('housing-jeonse-repay');
     const mortgageInterest = parseVal('housing-mortgage-interest');
     const result = TaxCalculator.calculateHousingFundDeduction({ totalSalary, subscriptionAmount, jeonseLoanRepay, mortgageInterest });
     document.getElementById('housing-result').style.display = 'block';
     document.getElementById('housing-result-content').innerHTML = `
-      <div>총급여: <strong>${result.totalSalary.toLocaleString()} 원</strong></div>
+      <div>총급?? <strong>${result.totalSalary.toLocaleString()} ??/strong></div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div>📌 주택청약종합저축</div>
-      <div>· 납입액: ${result.subscriptionAmount.toLocaleString()} 원</div>
-      ${result.subscriptionLimit > 0 ? `<div>· 공제 한도: ${result.subscriptionLimit.toLocaleString()} 원</div><div>· 소득공제: <strong>${result.subscriptionDeduction.toLocaleString()} 원</strong></div>` : '<div style="color:var(--accent-warning);">· 총급여 7,000만 초과로 공제 불가</div>'}
+      <div>?�� 주택�?��종합?��?/div>
+      <div>· ?�입?? ${result.subscriptionAmount.toLocaleString()} ??/div>
+      ${result.subscriptionLimit > 0 ? `<div>· 공제 ?�도: ${result.subscriptionLimit.toLocaleString()} ??/div><div>· ?�득공제: <strong>${result.subscriptionDeduction.toLocaleString()} ??/strong></div>` : '<div style="color:var(--accent-warning);">· 총급??7,000�?초과�?공제 불�?</div>'}
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04);margin:6px 0;">
-      <div>📌 전세자금대출 원리금</div>
-      <div>· 상환액: ${result.jeonseLoanRepay.toLocaleString()} 원</div>
-      <div>· 소득공제: <strong>${result.jeonseDeduction.toLocaleString()} 원</strong> (한도 ${result.jeonseLimit.toLocaleString()}원)</div>
+      <div>?�� ?�세?�금?��??�리�?/div>
+      <div>· ?�환?? ${result.jeonseLoanRepay.toLocaleString()} ??/div>
+      <div>· ?�득공제: <strong>${result.jeonseDeduction.toLocaleString()} ??/strong> (?�도 ${result.jeonseLimit.toLocaleString()}??</div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04);margin:6px 0;">
-      <div>📌 장기주택저당차입금 이자</div>
-      <div>· 이자액: ${result.mortgageInterest.toLocaleString()} 원</div>
-      <div>· 소득공제: <strong>${result.mortgageDeduction.toLocaleString()} 원</strong> (한도 ${result.mortgageLimit.toLocaleString()}원)</div>
+      <div>?�� ?�기주택?�?�차?�금 ?�자</div>
+      <div>· ?�자?? ${result.mortgageInterest.toLocaleString()} ??/div>
+      <div>· ?�득공제: <strong>${result.mortgageDeduction.toLocaleString()} ??/strong> (?�도 ${result.mortgageLimit.toLocaleString()}??</div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div style="font-size:0.95rem;font-weight:bold;color:var(--accent-primary);">총 소득공제액: <strong>${result.totalDeduction.toLocaleString()} 원</strong></div>
-      <div style="font-size:0.95rem;font-weight:bold;color:var(--accent-secondary);">💰 예상 절세액: <strong>${result.estimatedTaxSavings.toLocaleString()} 원</strong> (세율 ${(result.taxRate * 100).toFixed(0)}% 적용)</div>
+      <div style="font-size:0.95rem;font-weight:bold;color:var(--accent-primary);">�??�득공제?? <strong>${result.totalDeduction.toLocaleString()} ??/strong></div>
+      <div style="font-size:0.95rem;font-weight:bold;color:var(--accent-secondary);">?�� ?�상 ?�세?? <strong>${result.estimatedTaxSavings.toLocaleString()} ??/strong> (?�율 ${(result.taxRate * 100).toFixed(0)}% ?�용)</div>
     `;
   });
 
-  // 🧮 개인사업자 종합소득세 간편 계산
+  // ?�� 개인?�업??종합?�득??간편 계산
   document.getElementById('btn-calc-self-employed-tax').addEventListener('click', () => {
     const totalRevenue = parseVal('se-revenue');
     const bizCode = document.getElementById('se-biz-code').value;
@@ -2786,31 +2798,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const result = TaxCalculator.calculateSelfEmployedTax({ totalRevenue, bizCode, declaredType, otherIncome, financialIncome });
     document.getElementById('se-result').style.display = 'block';
     document.getElementById('se-result-content').innerHTML = `
-      <div>업종: <strong>${result.bizCodeLabel}</strong></div>
-      <div>연간 매출: ${result.totalRevenue.toLocaleString()} 원</div>
-      <div>경비율: ${(result.expenseRate * 100).toFixed(0)}% (${result.declaredType === 'simple' ? '단순경비율' : '기준경비율'})</div>
+      <div>?�종: <strong>${result.bizCodeLabel}</strong></div>
+      <div>?�간 매출: ${result.totalRevenue.toLocaleString()} ??/div>
+      <div>경비?? ${(result.expenseRate * 100).toFixed(0)}% (${result.declaredType === 'simple' ? '?�순경비?? : '기�?경비??})</div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div>사업소득: <strong>${result.bizIncome.toLocaleString()} 원</strong> (매출 ${result.totalRevenue.toLocaleString()} × ${((1 - result.expenseRate) * 100).toFixed(0)}%)</div>
-      <div>기타소득: ${result.otherIncome.toLocaleString()} 원</div>
-      <div>금융소득: ${result.financialIncome.toLocaleString()} 원</div>
-      <div>종합소득 합계: <strong>${result.totalIncome.toLocaleString()} 원</strong></div>
+      <div>?�업?�득: <strong>${result.bizIncome.toLocaleString()} ??/strong> (매출 ${result.totalRevenue.toLocaleString()} × ${((1 - result.expenseRate) * 100).toFixed(0)}%)</div>
+      <div>기�??�득: ${result.otherIncome.toLocaleString()} ??/div>
+      <div>금융?�득: ${result.financialIncome.toLocaleString()} ??/div>
+      <div>종합?�득 ?�계: <strong>${result.totalIncome.toLocaleString()} ??/strong></div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div>근로소득공제: ${result.salaryDeduction.toLocaleString()} 원</div>
-      <div>기본공제: ${result.basicDeduction.toLocaleString()} 원</div>
-      <div>과세표준: <strong>${result.taxableIncome.toLocaleString()} 원</strong></div>
-      <div>세율: ${(result.taxRate * 100).toFixed(0)}%</div>
+      <div>근로?�득공제: ${result.salaryDeduction.toLocaleString()} ??/div>
+      <div>기본공제: ${result.basicDeduction.toLocaleString()} ??/div>
+      <div>과세?��?: <strong>${result.taxableIncome.toLocaleString()} ??/strong></div>
+      <div>?�율: ${(result.taxRate * 100).toFixed(0)}%</div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div style="font-size:0.9rem;color:var(--accent-primary);">소득세: <strong>${result.incomeTax.toLocaleString()} 원</strong></div>
-      <div style="color:var(--accent-warning);">지방소득세: ${result.localTax.toLocaleString()} 원</div>
-      <div style="font-size:1rem;font-weight:bold;color:var(--accent-secondary);">💰 총 예상 세액: <strong>${result.totalTax.toLocaleString()} 원</strong></div>
-      <div style="font-size:0.78rem;opacity:0.7;">실효세율: ${result.effectiveRate}% (종합소득 대비)</div>
+      <div style="font-size:0.9rem;color:var(--accent-primary);">?�득?? <strong>${result.incomeTax.toLocaleString()} ??/strong></div>
+      <div style="color:var(--accent-warning);">지방소?�세: ${result.localTax.toLocaleString()} ??/div>
+      <div style="font-size:1rem;font-weight:bold;color:var(--accent-secondary);">?�� �??�상 ?�액: <strong>${result.totalTax.toLocaleString()} ??/strong></div>
+      <div style="font-size:0.78rem;opacity:0.7;">?�효?�율: ${result.effectiveRate}% (종합?�득 ?��?</div>
       <div style="margin-top:6px;padding:6px;background:rgba(0,212,170,0.06);border-radius:6px;font-size:0.75rem;">
-        📌 실제 세액은 부양가족·기부금·연금 등 추가 공제에 따라 달라집니다.
+        ?�� ?�제 ?�액?� 부?��?족·기부금·연�???추�? 공제???�라 ?�라집니??
       </div>
     `;
   });
 
-  // 📈 장기채권 분리과세 절세 계산기
+  // ?�� ?�기채권 분리과세 ?�세 계산�?
   document.getElementById('btn-calc-bond').addEventListener('click', () => {
     const investment = parseVal('bond-investment');
     const bondType = document.getElementById('bond-type').value;
@@ -2819,80 +2831,80 @@ document.addEventListener('DOMContentLoaded', () => {
     const result = TaxCalculator.calculateBondDeduction({ investment, bondType, userTaxRate, isFinancialCompTax });
     document.getElementById('bond-result').style.display = 'block';
     document.getElementById('bond-result-content').innerHTML = `
-      <div>채권 유형: <strong>${result.bondTypeLabel}</strong></div>
-      <div>투자 금액: ${result.investment.toLocaleString()} 원</div>
-      <div>추정 연이자 (4%): <strong>${result.estimatedInterest.toLocaleString()} 원</strong></div>
+      <div>채권 ?�형: <strong>${result.bondTypeLabel}</strong></div>
+      <div>?�자 금액: ${result.investment.toLocaleString()} ??/div>
+      <div>추정 ?�이??(4%): <strong>${result.estimatedInterest.toLocaleString()} ??/strong></div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div style="color:var(--accent-primary);">📌 분리과세</div>
-      <div>· 원천세: ${result.separatedTax.toLocaleString()} 원</div>
-      <div>· 지방소득세: ${result.separatedLocalTax.toLocaleString()} 원</div>
-      <div style="font-weight:bold;">· 합계: <strong>${result.separatedTotal.toLocaleString()} 원</strong></div>
+      <div style="color:var(--accent-primary);">?�� 분리과세</div>
+      <div>· ?�천?? ${result.separatedTax.toLocaleString()} ??/div>
+      <div>· 지방소?�세: ${result.separatedLocalTax.toLocaleString()} ??/div>
+      <div style="font-weight:bold;">· ?�계: <strong>${result.separatedTotal.toLocaleString()} ??/strong></div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04);margin:6px 0;">
-      <div style="color:var(--accent-secondary);">📌 종합과세 (가정, 세율 ${(result.comprehensiveTotal > 0 ? Math.round(result.comprehensiveTotal / result.estimatedInterest * 10000) / 100 : 0)}%)</div>
-      <div>· 소득세: ${result.comprehensiveTax.toLocaleString()} 원</div>
-      <div>· 지방소득세: ${result.comprehensiveLocalTax.toLocaleString()} 원</div>
-      <div style="font-weight:bold;">· 합계: <strong>${result.comprehensiveTotal.toLocaleString()} 원</strong></div>
+      <div style="color:var(--accent-secondary);">?�� 종합과세 (가?? ?�율 ${(result.comprehensiveTotal > 0 ? Math.round(result.comprehensiveTotal / result.estimatedInterest * 10000) / 100 : 0)}%)</div>
+      <div>· ?�득?? ${result.comprehensiveTax.toLocaleString()} ??/div>
+      <div>· 지방소?�세: ${result.comprehensiveLocalTax.toLocaleString()} ??/div>
+      <div style="font-weight:bold;">· ?�계: <strong>${result.comprehensiveTotal.toLocaleString()} ??/strong></div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
       <div style="font-size:0.95rem;font-weight:bold;color:${result.isSeparatedBetter ? 'var(--accent-secondary)' : 'var(--accent-info)'};">
-        ${result.isSeparatedBetter ? '✅ 분리과세(30%)가 유리합니다' : 'ℹ️ 종합과세가 유리합니다'}
+        ${result.isSeparatedBetter ? '??분리과세(30%)가 ?�리?�니?? : '?�️ 종합과세가 ?�리?�니??}
       </div>
-      ${result.savings > 0 ? `<div style="font-size:0.85rem;margin-top:4px;">절세 차이: <strong>${result.savings.toLocaleString()} 원</strong></div>` : ''}
+      ${result.savings > 0 ? `<div style="font-size:0.85rem;margin-top:4px;">?�세 차이: <strong>${result.savings.toLocaleString()} ??/strong></div>` : ''}
       <div style="margin-top:6px;padding:6px;background:rgba(108,99,255,0.06);border-radius:6px;font-size:0.75rem;">
-        💡 ${result.recommendation}
+        ?�� ${result.recommendation}
       </div>
     `;
   });
 
-  // 🚀 벤처투자 소득공제 시뮬레이터
+  // ?? 벤처?�자 ?�득공제 ?��??�이??
   document.getElementById('btn-calc-venture').addEventListener('click', () => {
     const ventureAmount = parseVal('venture-amount');
     const annualIncome = parseVal('venture-income');
     const result = TaxCalculator.calculateVentureSimulation({ ventureAmount, annualIncome });
     document.getElementById('venture-result').style.display = 'block';
     document.getElementById('venture-result-content').innerHTML = `
-      <div>벤처투자 금액: <strong>${result.ventureAmount.toLocaleString()} 원</strong></div>
-      <div>연간 소득: ${result.annualIncome.toLocaleString()} 원</div>
+      <div>벤처?�자 금액: <strong>${result.ventureAmount.toLocaleString()} ??/strong></div>
+      <div>?�간 ?�득: ${result.annualIncome.toLocaleString()} ??/div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div>소득공제액: <strong>${result.deduction.toLocaleString()} 원</strong></div>
-      ${result.hasLimitExceeded ? '<div style="color:var(--accent-warning);font-size:0.78rem;">⚠️ 3,000만 원 초과분은 70%만 공제됩니다.</div>' : ''}
-      <div>공제 후 소득: ${result.incomeAfterDeduction.toLocaleString()} 원</div>
+      <div>?�득공제?? <strong>${result.deduction.toLocaleString()} ??/strong></div>
+      ${result.hasLimitExceeded ? '<div style="color:var(--accent-warning);font-size:0.78rem;">?�️ 3,000�???초과분�? 70%�?공제?�니??</div>' : ''}
+      <div>공제 ???�득: ${result.incomeAfterDeduction.toLocaleString()} ??/div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div>공제 전 세율: ${(result.rateBefore * 100).toFixed(0)}%</div>
-      <div>공제 후 세율: ${(result.rateAfter * 100).toFixed(0)}%</div>
-      <div>소득세 절감: <strong>${result.taxSavings.toLocaleString()} 원</strong></div>
-      <div>지방소득세 절감: ${result.localTaxSavings.toLocaleString()} 원</div>
+      <div>공제 ???�율: ${(result.rateBefore * 100).toFixed(0)}%</div>
+      <div>공제 ???�율: ${(result.rateAfter * 100).toFixed(0)}%</div>
+      <div>?�득???�감: <strong>${result.taxSavings.toLocaleString()} ??/strong></div>
+      <div>지방소?�세 ?�감: ${result.localTaxSavings.toLocaleString()} ??/div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div style="font-size:1rem;font-weight:bold;color:var(--accent-secondary);">💰 총 절세 효과: <strong>${result.totalSavings.toLocaleString()} 원</strong></div>
-      <div style="font-size:0.82rem;">투자 대비 절세율: ${result.effectiveSavingsRate}%</div>
+      <div style="font-size:1rem;font-weight:bold;color:var(--accent-secondary);">?�� �??�세 ?�과: <strong>${result.totalSavings.toLocaleString()} ??/strong></div>
+      <div style="font-size:0.82rem;">?�자 ?��??�세?? ${result.effectiveSavingsRate}%</div>
       <div style="margin-top:6px;padding:6px;background:rgba(0,212,170,0.06);border-radius:6px;font-size:0.75rem;">
-        📌 ${result.recommendation}
+        ?�� ${result.recommendation}
       </div>
     `;
   });
 
-  // 🟡 노란우산공제 계산기
+  // ?�� ?��??�산공제 계산�?
   document.getElementById('btn-calc-yellow').addEventListener('click', () => {
     const businessIncome = parseVal('yellow-business-income');
     const payment = parseVal('yellow-payment');
     const result = TaxCalculator.calculateYellowUmbrellaSimulation({ businessIncome, payment });
     document.getElementById('yellow-result').style.display = 'block';
     document.getElementById('yellow-result-content').innerHTML = `
-      <div>연간 사업소득: <strong>${result.businessIncome.toLocaleString()} 원</strong></div>
-      <div>연간 납입액: ${result.payment.toLocaleString()} 원</div>
+      <div>?�간 ?�업?�득: <strong>${result.businessIncome.toLocaleString()} ??/strong></div>
+      <div>?�간 ?�입?? ${result.payment.toLocaleString()} ??/div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div>공제 한도: <strong>${result.limit.toLocaleString()} 원</strong></div>
-      <div>소득공제액: <strong>${result.deduction.toLocaleString()} 원</strong></div>
-      ${!result.isFullDeduction ? `<div style="color:var(--accent-warning);font-size:0.78rem;">⚠️ 초과분 ${result.unusedAmount.toLocaleString()}원은 공제되지 않습니다.</div>` : ''}
+      <div>공제 ?�도: <strong>${result.limit.toLocaleString()} ??/strong></div>
+      <div>?�득공제?? <strong>${result.deduction.toLocaleString()} ??/strong></div>
+      ${!result.isFullDeduction ? `<div style="color:var(--accent-warning);font-size:0.78rem;">?�️ 초과�?${result.unusedAmount.toLocaleString()}?��? 공제?��? ?�습?�다.</div>` : ''}
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div>적용 세율: ${(result.taxRate * 100).toFixed(0)}%</div>
-      <div style="font-size:1rem;font-weight:bold;color:var(--accent-secondary);">💰 예상 절세액: <strong>${result.estimatedTaxSavings.toLocaleString()} 원</strong></div>
+      <div>?�용 ?�율: ${(result.taxRate * 100).toFixed(0)}%</div>
+      <div style="font-size:1rem;font-weight:bold;color:var(--accent-secondary);">?�� ?�상 ?�세?? <strong>${result.estimatedTaxSavings.toLocaleString()} ??/strong></div>
       <div style="margin-top:6px;padding:6px;background:rgba(255,217,61,0.06);border-radius:6px;font-size:0.75rem;">
-        📌 ${result.recommendation}
+        ?�� ${result.recommendation}
       </div>
     `;
   });
 
-  // 🏠 부동산 보유세
+  // ?�� 부?�산 보유??
   document.getElementById('prop-house-count').addEventListener('input', function () {
     document.getElementById('prop-one-house').checked = parseInt(this.value) === 1;
   });
@@ -2904,15 +2916,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const result = TaxCalculator.calculatePropertyTax({ publicPrice, marketPrice, houseCount, isOneHouse });
     document.getElementById('prop-result').style.display = 'block';
     document.getElementById('prop-result-content').innerHTML = `
-      <div>공시가격: ${publicPrice.toLocaleString()} 원</div>
-      <div>과세표준 (공시×60%): ${result.taxableProperty.toLocaleString()} 원</div>
+      <div>공시가�? ${publicPrice.toLocaleString()} ??/div>
+      <div>과세?��? (공시×60%): ${result.taxableProperty.toLocaleString()} ??/div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div style="color:var(--accent-info);">🏠 재산세: <strong>${result.propertyTax.toLocaleString()} 원</strong></div>
-      <div style="color:var(--accent-warning);">🏢 종합부동산세: <strong>${result.comprehensiveTax.toLocaleString()} 원</strong></div>
-      <div style="font-size:0.78rem;opacity:0.7;">종부세 공제: ${isOneHouse ? '12억 (1주택자)' : '9억 (다주택자)'} · 과표 ${result.compTaxable.toLocaleString()}원</div>
-      <div style="color:var(--accent-warning);font-size:0.78rem;">농어촌특별세: ${result.specialTax.toLocaleString()} 원</div>
+      <div style="color:var(--accent-info);">?�� ?�산?? <strong>${result.propertyTax.toLocaleString()} ??/strong></div>
+      <div style="color:var(--accent-warning);">?�� 종합부?�산?? <strong>${result.comprehensiveTax.toLocaleString()} ??/strong></div>
+      <div style="font-size:0.78rem;opacity:0.7;">종�???공제: ${isOneHouse ? '12??(1주택??' : '9??(?�주?�자)'} · 과표 ${result.compTaxable.toLocaleString()}??/div>
+      <div style="color:var(--accent-warning);font-size:0.78rem;">?�어촌특별세: ${result.specialTax.toLocaleString()} ??/div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div style="font-size:1rem;font-weight:bold;color:var(--accent-secondary);">💰 연간 보유세 합계: <strong>${result.totalTax.toLocaleString()} 원</strong></div>
+      <div style="font-size:1rem;font-weight:bold;color:var(--accent-secondary);">?�� ?�간 보유???�계: <strong>${result.totalTax.toLocaleString()} ??/strong></div>
     `;
   });
 
@@ -2932,10 +2944,10 @@ document.addEventListener('DOMContentLoaded', () => {
       type, sales, purchases, businessType, useAgriPurchase, agriPurchaseAmount, hasCardSales, cardSalesAmount 
     });
 
-    document.getElementById('vat-res-sales').textContent = results.salesTax.toLocaleString() + ' 원';
-    document.getElementById('vat-res-purchases').textContent = results.purchaseTax.toLocaleString() + ' 원';
-    document.getElementById('vat-res-card-credit').textContent = (results.cardCredit || 0).toLocaleString() + ' 원';
-    document.getElementById('vat-res-total').textContent = results.totalPayable.toLocaleString() + ' 원';
+    document.getElementById('vat-res-sales').textContent = results.salesTax.toLocaleString() + ' ??;
+    document.getElementById('vat-res-purchases').textContent = results.purchaseTax.toLocaleString() + ' ??;
+    document.getElementById('vat-res-card-credit').textContent = (results.cardCredit || 0).toLocaleString() + ' ??;
+    document.getElementById('vat-res-total').textContent = results.totalPayable.toLocaleString() + ' ??;
 
     const advice = TaxAdvisor.getVATAdvice({ 
       type, sales, purchases, businessType, useAgriPurchase, agriPurchaseAmount, hasCardSales, cardSalesAmount 
@@ -2958,7 +2970,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 3. 양도소득세 계산
+  // 3. ?�도?�득??계산
   const btnCalcCapital = document.getElementById('btn-calc-capital');
   btnCalcCapital.addEventListener('click', () => {
     const type = capitalTypeSelect.value;
@@ -2982,11 +2994,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const results = TaxCalculator.calculateCapitalGains(inputs);
 
-    document.getElementById('cap-res-gain').textContent = results.gain.toLocaleString() + ' 원';
-    document.getElementById('cap-res-special').textContent = (results.specialDeduction || 0).toLocaleString() + ' 원';
-    document.getElementById('cap-res-base').textContent = (results.baseDeduction || 0).toLocaleString() + ' 원';
-    document.getElementById('cap-res-taxable').textContent = results.taxableIncome.toLocaleString() + ' 원';
-    document.getElementById('cap-res-total').textContent = results.totalTax.toLocaleString() + ' 원';
+    document.getElementById('cap-res-gain').textContent = results.gain.toLocaleString() + ' ??;
+    document.getElementById('cap-res-special').textContent = (results.specialDeduction || 0).toLocaleString() + ' ??;
+    document.getElementById('cap-res-base').textContent = (results.baseDeduction || 0).toLocaleString() + ' ??;
+    document.getElementById('cap-res-taxable').textContent = results.taxableIncome.toLocaleString() + ' ??;
+    document.getElementById('cap-res-total').textContent = results.totalTax.toLocaleString() + ' ??;
     document.getElementById('cap-res-warning').textContent = results.warningMsg || '';
 
     const advice = TaxAdvisor.getCapitalGainsAdvice(inputs, results);
@@ -2998,16 +3010,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 증여 대상 자산 변경 시 주식 경고문 토글
+  // 증여 ?�???�산 변�???주식 경고�??��?
   document.getElementById('opt-gs-type').addEventListener('change', function() {
     document.getElementById('gs-stock-warning').style.display = this.value === 'stock' ? 'block' : 'none';
   });
-  // 초기 상태
+  // 초기 ?�태
   if (document.getElementById('opt-gs-type').value === 'stock') {
     document.getElementById('gs-stock-warning').style.display = 'block';
   }
 
-  // 4. 자산 이전 절세 시뮬레이션
+  // 4. ?�산 ?�전 ?�세 ?��??�이??
   const btnCalcOptGs = document.getElementById('btn-calc-opt-gs');
   btnCalcOptGs.addEventListener('click', () => {
     const type = document.getElementById('opt-gs-type').value;
@@ -3024,29 +3036,29 @@ document.addEventListener('DOMContentLoaded', () => {
     let warningDetail = '';
     if (result.isCarryoverTaxApplied) {
       if (type === 'stock') {
-        warningDetail = '<br><span style="color:var(--accent-warning); font-weight:bold;">🚨 [경고] 배우자 증여 후 1년 미만 매도로 인해 이월과세(취득가액 이월)가 적용됩니다. 이에 따라 취득가액이 최초 본인의 취득 가격으로 계산되므로 절세 효과가 발생하지 않습니다. 최소 1년 이상 보유 후 매도하십시오.</span>';
+        warningDetail = '<br><span style="color:var(--accent-warning); font-weight:bold;">?�� [경고] 배우??증여 ??1??미만 매도�??�해 ?�월과세(취득가???�월)가 ?�용?�니?? ?�에 ?�라 취득가?�이 최초 본인??취득 가격으�?계산?��?�??�세 ?�과가 발생?��? ?�습?�다. 최소 1???�상 보유 ??매도?�십?�오.</span>';
       } else {
-        warningDetail = '<br><span style="color:var(--accent-warning); font-weight:bold;">🚨 [경고] 부동산 증여 후 10년 미만 매도로 인해 이월과세가 적용됩니다. 이에 따라 취득가액이 최초 본인의 취득 가격으로 계산되므로 절세 효과가 발생하지 않습니다. 최소 10년 이상 보유 후 매도하십시오.</span>';
+        warningDetail = '<br><span style="color:var(--accent-warning); font-weight:bold;">?�� [경고] 부?�산 증여 ??10??미만 매도�??�해 ?�월과세가 ?�용?�니?? ?�에 ?�라 취득가?�이 최초 본인??취득 가격으�?계산?��?�??�세 ?�과가 발생?��? ?�습?�다. 최소 10???�상 보유 ??매도?�십?�오.</span>';
       }
     } else {
       if (type === 'stock') {
-        warningDetail = '<br><span style="color:var(--accent-secondary); font-weight:bold;">✅ 보유 기간 1년 이상으로 이월과세 미적용 요건을 충족합니다. 배우자 증여 6억 한도로 세액 절감이 극대화됩니다.</span>';
+        warningDetail = '<br><span style="color:var(--accent-secondary); font-weight:bold;">??보유 기간 1???�상?�로 ?�월과세 미적???�건??충족?�니?? 배우??증여 6???�도�??�액 ?�감??극�??�됩?�다.</span>';
       } else {
-        warningDetail = '<br><span style="color:var(--accent-secondary); font-weight:bold;">✅ 보유 기간 10년 이상으로 이월과세 미적용 요건을 충족합니다. 배우자 증여 6억 한도로 세액 절감이 극대화됩니다.</span>';
+        warningDetail = '<br><span style="color:var(--accent-secondary); font-weight:bold;">??보유 기간 10???�상?�로 ?�월과세 미적???�건??충족?�니?? 배우??증여 6???�도�??�액 ?�감??극�??�됩?�다.</span>';
       }
     }
 
     resultDetails.innerHTML = `
-      <p style="margin-bottom:8px;">최초 양도차익: ${result.originalGain.toLocaleString()} 원</p>
-      <p style="margin-bottom:8px;">이전 전 예상 양도세: ${result.originalTax.toLocaleString()} 원</p>
-      <p style="margin-bottom:8px; font-weight:bold; color:var(--accent-secondary);">배우자 증여 후 예상 세금: ${result.afterGiftTax.toLocaleString()} 원</p>
+      <p style="margin-bottom:8px;">최초 ?�도차익: ${result.originalGain.toLocaleString()} ??/p>
+      <p style="margin-bottom:8px;">?�전 ???�상 ?�도?? ${result.originalTax.toLocaleString()} ??/p>
+      <p style="margin-bottom:8px; font-weight:bold; color:var(--accent-secondary);">배우??증여 ???�상 ?�금: ${result.afterGiftTax.toLocaleString()} ??/p>
       <p style="font-weight:bold; font-size:1.05rem; margin-top:12px; color:${result.savings > 0 ? 'var(--accent-secondary)' : 'var(--accent-warning)'};">
-        🎯 총 예상 절세 금액: 약 +${result.savings.toLocaleString()} 원
+        ?�� �??�상 ?�세 금액: ??+${result.savings.toLocaleString()} ??
       </p>
       <p style="font-size:0.75rem; opacity:0.7; margin-top:8px; line-height:1.3;">
-        * 증여재산가액 한도 6억 원을 적용한 취득가액 갱신 시뮬레이션입니다. ${warningDetail}
+        * 증여?�산가???�도 6???�을 ?�용??취득가??갱신 ?��??�이?�입?�다. ${warningDetail}
       </p>
-      ${type === 'stock' ? '<p style="font-size:0.7rem; margin-top:6px; padding:6px 8px; background:rgba(255,107,107,0.08); border-radius:4px; line-height:1.4; color:var(--accent-warning);">⚠️ 해외주식 증여 후 <strong>1년 이내 매도</strong>하고 양도소득이 실질적으로 증여자에게 귀속되면 <strong>부당행위계산부인</strong>이 적용될 수 있습니다. 증여 후 자금이 증여자 계좌로 환류되지 않도록 주의하세요.</p>' : ''}
+      ${type === 'stock' ? '<p style="font-size:0.7rem; margin-top:6px; padding:6px 8px; background:rgba(255,107,107,0.08); border-radius:4px; line-height:1.4; color:var(--accent-warning);">?�️ ?�외주식 증여 ??<strong>1???�내 매도</strong>?�고 ?�도?�득???�질?�으�?증여?�에�?귀?�되�?<strong>부?�행?�계?��???/strong>???�용?????�습?�다. 증여 ???�금??증여??계좌�??�류?��? ?�도�?주의?�세??</p>' : ''}
     `;
   });
 
@@ -3056,8 +3068,51 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load state from local storage (if any)
   loadStateFromLocalStorage();
 
-  // Bind auto-save listeners on all inputs/selects (디바운스 500ms로 중복 저장 방지)
-  const debouncedSave = debounce(function () { if (!isLoadingState) saveStateToLocalStorage(); }, 500);
+  // Bind auto-save listeners on all inputs/selects (?�바?�스 500ms�?중복 ?�??방�?)
+  function updateStickyBar() {
+      const aSalary = parseVal('inc-a-salary') || getTargetSalary();
+      if (aSalary <= 0) {
+        document.getElementById('sticky-tax-bar').style.display = 'none';
+        return;
+      }
+      const currentTab = document.querySelector('.stepper-step[aria-selected=\"true\"]');
+      if (currentTab && currentTab.dataset.tab === 'report') {
+        document.getElementById('sticky-tax-bar').style.display = 'none';
+        return;
+      }
+      document.getElementById('sticky-tax-bar').style.display = 'flex';
+      
+      const aDeps = Array.from(optCoupleYePeople.querySelectorAll('.person-card')).filter(c => c.dataset.assigned === 'a' || !c.dataset.assigned);
+      const aOptData = {
+        totalSalary: aSalary,
+        dependents: aDeps.length,
+        cardUsage: parseVal('card-usage-amount'),
+        cashUsage: parseVal('card-cash-amount'),
+        traditionalMarket: parseVal('card-traditional'),
+        publicTransit: parseVal('card-transit'),
+        bookPerformance: parseVal('card-book'),
+        pensionSavings: parseVal('inc-a-pension'),
+        irpSavings: parseVal('inc-a-irp'),
+        medicalExpense: parseVal('expense-revenue'),
+        educationExpense: 0,
+        monthlyRent: 0,
+        ventureInvestment: parseVal('venture-amount')
+      };
+      const aResult = TaxCalculator.calculateYearEndTax(aOptData);
+      const bar = document.getElementById('sticky-tax-amount');
+      if (aResult.totalTax > 0) {
+        bar.textContent = formatNumberWithCommas(aResult.totalTax) + '원 (납부)';
+        bar.style.color = '#ff6b6b';
+      } else {
+        bar.textContent = formatNumberWithCommas(Math.abs(aResult.totalTax)) + '원 (환급)';
+        bar.style.color = 'var(--accent-primary)';
+      }
+    }
+
+    const debouncedSave = debounce(function () { if (!isLoadingState) saveStateToLocalStorage(); }, 500);
+    const debouncedStickyUpdate = debounce(function() { if (!isLoadingState) updateStickyBar(); }, 300);
+    document.addEventListener('input', debouncedStickyUpdate);
+    document.addEventListener('change', debouncedStickyUpdate);
   document.addEventListener('input', debouncedSave);
   document.addEventListener('change', debouncedSave);
 
@@ -3068,12 +3123,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 새 섹션 input 초기화 (money-input 포맷 적용)
+  // ???�션 input 초기??(money-input ?�맷 ?�용)
   var newMoneyFields = [
       'expense-revenue','hi-earned-income','hi-other-income','hi-regional-income','hi-regional-property','bond-investment','venture-amount','venture-income','yellow-business-income','yellow-payment',
       'prop-public-price','prop-market-price','gift-amount','gift-past','stock-exchange-rate',
       'inc-a-irp','inc-b-irp','pension-salary','pension-amount','pension-irp-amount',
-      'card-salary','card-usage-amount','card-cash-amount',
+      'card-usage-amount','card-cash-amount',
       'card-traditional','card-transit','card-book'
     ];
   newMoneyFields.forEach(function (id) {
@@ -3085,14 +3140,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================
-  // ⚡ 실시간 계산 - 입력값 변경 시 자동 재계산 (디바운스 400ms)
+  // ???�시�?계산 - ?�력�?변�????�동 ?�계??(?�바?�스 400ms)
   // ==========================================
   const debouncedIncome   = debounce(() => { if (!isLoadingState) btnCalcIncomeIntegrated.click(); });
   const debouncedVat      = debounce(() => { if (!isLoadingState) btnCalcVat.click(); });
   const debouncedCapital  = debounce(() => { if (!isLoadingState) btnCalcCapital.click(); });
   const debouncedGiftSell = debounce(() => { if (!isLoadingState) btnCalcOptGs.click(); });
 
-  // 종합소득세 실시간
+  // 종합?�득???�시�?
   [
     'inc-a-salary','inc-a-card','inc-a-yellow','inc-a-pension','inc-a-irp',
     'inc-a-financial-gen','inc-a-financial-overseas','inc-a-isa','inc-a-isa-type','inc-a-bond',
@@ -3106,11 +3161,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('input', debouncedIncome); el.addEventListener('change', debouncedIncome); }
   });
-  // 부양가족 카드 실시간 (동적 추가 포함)
+  // 부?��?�?카드 ?�시�?(?�적 추�? ?�함)
   optCoupleYePeople.addEventListener('input', debouncedIncome);
   optCoupleYePeople.addEventListener('change', debouncedIncome);
 
-  // 부가가치세 실시간
+  // 부가가치세 ?�시�?
   [
     'vat-type','vat-sales','vat-purchases','vat-business-type',
     'vat-use-agri','vat-agri-amt','vat-use-cardsales','vat-cardsales-amt'
@@ -3119,7 +3174,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) { el.addEventListener('input', debouncedVat); el.addEventListener('change', debouncedVat); }
   });
 
-  // 양도소득세 실시간
+  // ?�도?�득???�시�?
   [
     'capital-type','capital-purchase','capital-sell','capital-period','capital-houses',
     'stock-type','stock-gain','stock-exchange-rate'
@@ -3128,13 +3183,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) { el.addEventListener('input', debouncedCapital); el.addEventListener('change', debouncedCapital); }
   });
 
-  // 자산이전 시뮬레이터 실시간
+  // ?�산?�전 ?��??�이???�시�?
   ['opt-gs-type','opt-gs-purchase','opt-gs-current','opt-gs-years'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('input', debouncedGiftSell); el.addEventListener('change', debouncedGiftSell); }
   });
 
-  // 🏠 간주임대료 실시간
+  // ?�� 간주?��?�??�시�?
   const debouncedDeemedRent = debounce(() => {
     if (!isLoadingState) {
       const btn = document.getElementById('btn-calc-deemed-rent');
@@ -3146,7 +3201,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) { el.addEventListener('input', debouncedDeemedRent); el.addEventListener('change', debouncedDeemedRent); }
   });
 
-  // 🏥 건강보험료 실시간
+  // ?�� 건강보험�??�시�?
   const debouncedHealthIns = debounce(() => {
     if (!isLoadingState) {
       const btn = document.getElementById('btn-calc-health-insurance');
@@ -3158,7 +3213,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) { el.addEventListener('input', debouncedHealthIns); el.addEventListener('change', debouncedHealthIns); }
   });
 
-  // 🏠 부동산 보유세 실시간
+  // ?�� 부?�산 보유???�시�?
   const debouncedPropertyTax = debounce(() => {
     if (!isLoadingState) {
       const btn = document.getElementById('btn-calc-property-tax');
@@ -3170,19 +3225,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) { el.addEventListener('input', debouncedPropertyTax); el.addEventListener('change', debouncedPropertyTax); }
   });
 
-  // 🏟️ 체육시설 공제 실시간
+  // ?���?체육?�설 공제 ?�시�?
   const debouncedSports = debounce(() => {
     if (!isLoadingState) {
       const btn = document.getElementById('btn-calc-sports');
       if (btn) btn.click();
     }
   });
-  ['sports-salary','sports-fee','sports-has-pt'].forEach(id => {
+  ['sports-fee','sports-has-pt'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('input', debouncedSports); el.addEventListener('change', debouncedSports); }
   });
 
-  // 🎁 고향사랑기부제 실시간
+  // ?�� 고향?�랑기�????�시�?
   const debouncedHometown = debounce(() => {
     if (!isLoadingState) {
       const btn = document.getElementById('btn-calc-hometown');
@@ -3194,56 +3249,56 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) { el.addEventListener('input', debouncedHometown); el.addEventListener('change', debouncedHometown); }
   });
 
-  // 💰 ISA 최적화 실시간
+  // ?�� ISA 최적???�시�?
   const debouncedISA = debounce(() => { if (!isLoadingState) document.getElementById('btn-calc-isa-opt').click(); });
   ['isa-annual','isa-type-select','isa-salary','isa-financial-comp-tax','isa-matured','isa-pension-transfer'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('input', debouncedISA); el.addEventListener('change', debouncedISA); }
   });
 
-  // 🧮 경비율 비교 실시간
+  // ?�� 경비??비교 ?�시�?
   const debouncedExpense = debounce(() => { if (!isLoadingState) document.getElementById('btn-calc-expense-ratio').click(); });
   ['expense-biz-code','expense-revenue','expense-declared-type'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('input', debouncedExpense); el.addEventListener('change', debouncedExpense); }
   });
 
-  // 💰 연금저축 최적화 실시간
+  // ?�� ?�금?��?최적???�시�?
   const debouncedPension = debounce(() => { if (!isLoadingState) document.getElementById('btn-calc-pension-opt').click(); });
   ['pension-target','pension-salary','pension-amount','pension-irp-amount'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('input', debouncedPension); el.addEventListener('change', debouncedPension); }
   });
 
-  // 💳 카드 황금비율 실시간
+  // ?�� 카드 ?�금비율 ?�시�?
   const debouncedCardRatio = debounce(() => { if (!isLoadingState) document.getElementById('btn-calc-card-ratio').click(); });
-  ['card-target','card-salary','card-usage-amount','card-cash-amount','card-traditional','card-transit','card-book'].forEach(id => {
+  ['card-target','card-usage-amount','card-cash-amount','card-traditional','card-transit','card-book'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('input', debouncedCardRatio); el.addEventListener('change', debouncedCardRatio); }
   });
 
-  // 💍 혼인·출산 증여 실시간
+  // ?�� ?�인·출산 증여 ?�시�?
   const debouncedMarriageGift = debounce(() => { if (!isLoadingState) document.getElementById('btn-calc-marriage-gift').click(); });
   ['mg-reason','mg-amount','mg-past'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('input', debouncedMarriageGift); el.addEventListener('change', debouncedMarriageGift); }
   });
 
-  // 🏛️ 상속세 실시간
+  // ?���??�속???�시�?
   const debouncedInherit = debounce(() => { if (!isLoadingState) document.getElementById('btn-calc-inheritance').click(); });
   ['inherit-total-asset','inherit-child-count','inherit-has-spouse','inherit-spouse-share','inherit-coresident','inherit-coresident-value','inherit-financial','inherit-gift-past'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('input', debouncedInherit); el.addEventListener('change', debouncedInherit); }
   });
 
-  // 🎁 증여세 실시간
+  // ?�� 증여???�시�?
   const debouncedGiftTax = debounce(() => { if (!isLoadingState) document.getElementById('btn-calc-gift-tax').click(); });
   ['gift-recipient','gift-amount','gift-past','gift-asset-type'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('input', debouncedGiftTax); el.addEventListener('change', debouncedGiftTax); }
   });
 
-  // 📅 증여 타임라인 실시간
+  // ?�� 증여 ?�?�라???�시�?
   const debouncedGiftTimeline = debounce(() => { if (!isLoadingState) document.getElementById('btn-calc-gift-timeline').click(); });
   ['gift-child-name','gift-child-age'].forEach(id => {
     const el = document.getElementById(id);
@@ -3303,7 +3358,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         
         // Go to tab-profile
-        const profileTabBtn = document.querySelector('.tab-btn[data-tab="profile"]');
+        const profileTabBtn = document.querySelector('.nav-step-btn[data-tab="profile"]');
         if (profileTabBtn) profileTabBtn.click();
         
         // Get target spouse ('a' or 'b')
@@ -3328,13 +3383,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 아코디언 초기화
+  // ?�코?�언 초기??
   initAccordion();
 
-  // 단계형 섹션 초기화
+  // ?�계???�션 초기??
   initStepSections();
   
-  // 초기 배우자 B 탭 버튼 가시성 설정 (체크박스 상태에 따라)
+  // 초기 배우??B ??버튼 가?�성 ?�정 (체크박스 ?�태???�라)
   (function initSpouseBVisibility() {
     const chk = document.getElementById('enable-spouse-b');
     const isEnabled = chk ? chk.checked : true;
@@ -3352,7 +3407,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateInputProgress();
   initRealtimeWarningsAndSync();
 
-  // 접근성: 툴팁에 role/tabindex 부여 및 aria-describedby 연결
+  // ?�근?? ?�팁??role/tabindex 부??�?aria-describedby ?�결
   document.querySelectorAll('.tooltip-icon').forEach((tip, idx) => {
     tip.setAttribute('role', 'tooltip');
     tip.setAttribute('tabindex', '0');
@@ -3365,7 +3420,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 진행률 업데이트를 인컴 입력 변경에 연결
+  // 진행�??�데?�트�??�컴 ?�력 변경에 ?�결
   const progressInputs = [
     'inc-a-salary','inc-b-salary','inc-a-card','inc-b-card',
     'inc-a-yellow','inc-b-yellow','inc-a-pension','inc-b-pension','inc-a-irp','inc-b-irp',
@@ -3378,7 +3433,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) { el.addEventListener('input', updateInputProgress); el.addEventListener('change', updateInputProgress); }
   });
 
-  // 초기 실행 - use setTimeout to ensure DOM is fully settled after localStorage restore
+  // 초기 ?�행 - use setTimeout to ensure DOM is fully settled after localStorage restore
   setTimeout(() => {
     btnCalcIncomeIntegrated.click();
     btnCalcVat.click();
@@ -3410,10 +3465,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 0);
 
   // ==========================================
-  // 🔗 배우자 연동 센터 (Spouse Sync Center) 로직
+  // ?�� 배우???�동 ?�터 (Spouse Sync Center) 로직
   // ==========================================
 
-  // XOR 기반의 대칭형 키 암호화/복호화 헬퍼 (개인정보 보호용)
+  // XOR 기반???��?�� ???�호??복호???�퍼 (개인?�보 보호??
   function encryptDecrypt(input, key) {
     let output = "";
     for (let i = 0; i < input.length; i++) {
@@ -3437,18 +3492,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 1. 내보내기용 상태 직렬화
+  // 1. ?�보?�기???�태 직렬??
   function serializeState() {
     saveStateToLocalStorage();
     return localStorage.getItem('tax_calculator_state');
   }
 
-  // 2. 상태 역직렬화 및 UI 반영
+  // 2. ?�태 ??��?�화 �?UI 반영
   function deserializeAndLoad(jsonStr, mode) {
     try {
       const importedState = JSON.parse(jsonStr);
       if (!importedState || !importedState.statics) {
-        showToast('❌ 올바르지 않은 데이터 형식입니다.');
+        showToast('???�바르�? ?��? ?�이???�식?�니??');
         return false;
       }
 
@@ -3500,22 +3555,22 @@ document.addEventListener('DOMContentLoaded', () => {
       
       if (btnCalcIncomeIntegrated) btnCalcIncomeIntegrated.click();
       
-      showToast('✅ 배우자 데이터 연동 및 동기화 완료!');
+      showToast('??배우???�이???�동 �??�기???�료!');
       
       const badge = document.getElementById('sync-status');
       if (badge) {
-        badge.textContent = '연동됨';
+        badge.textContent = '?�동??;
         badge.className = 'sync-status-badge connected';
       }
       return true;
     } catch (e) {
       console.error(e);
-      showToast('❌ 데이터 동기화 도중 오류가 발생했습니다.');
+      showToast('???�이???�기???�중 ?�류가 발생?�습?�다.');
       return false;
     }
   }
 
-  // 3. UI 버튼 이벤트 리스너 연결
+  // 3. UI 버튼 ?�벤??리스???�결
   const btnSyncGenerate = document.getElementById('btn-sync-generate');
   const btnSyncCopyCode = document.getElementById('btn-sync-copy-code');
   const btnSyncShowQr = document.getElementById('btn-sync-show-qr');
@@ -3535,26 +3590,26 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!stateStr) return;
       const compressed = btoa(encodeURIComponent(stateStr));
       navigator.clipboard.writeText(compressed).then(() => {
-        showToast('🔒 연동 데이터 복사 완료 (클립보드)');
+        showToast('?�� ?�동 ?�이??복사 ?�료 (?�립보드)');
       }).catch(() => {
-        alert('복사 실패. 아래 텍스트를 직접 복사하세요:\n\n' + compressed);
+        alert('복사 ?�패. ?�래 ?�스?��? 직접 복사?�세??\n\n' + compressed);
       });
     });
   }
 
   if (btnOfflineImport) {
     btnOfflineImport.addEventListener('click', () => {
-      const inputCode = prompt('복사한 연동 데이터를 입력해 주세요:');
+      const inputCode = prompt('복사???�동 ?�이?��? ?�력??주세??');
       if (!inputCode) return;
       try {
         const decoded = decodeURIComponent(atob(inputCode.trim()));
-        if (confirm('수신된 데이터로 기존 데이터를 연동하시겠습니까?\n[확인]: 배우자 데이터만 머지\n[취소]: 전체 덮어쓰기')) {
+        if (confirm('?�신???�이?�로 기존 ?�이?��? ?�동?�시겠습?�까?\n[?�인]: 배우???�이?�만 머�?\n[취소]: ?�체 ??��?�기')) {
           deserializeAndLoad(decoded, 'merge');
         } else {
           deserializeAndLoad(decoded, 'replace');
         }
       } catch (e) {
-        showToast('❌ 잘못된 코드 형식입니다.');
+        showToast('???�못??코드 ?�식?�니??');
       }
     });
   }
@@ -3584,19 +3639,19 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       .then(res => {
         if (res.ok) {
-          showToast('📡 연동 코드가 생성되었습니다.');
+          showToast('?�� ?�동 코드가 ?�성?�었?�니??');
           const badge = document.getElementById('sync-status');
           if (badge) {
-            badge.textContent = '코드 대기중';
+            badge.textContent = '코드 ?�기중';
             badge.className = 'sync-status-badge connected';
           }
         } else {
-          showToast('❌ 연동 서버 통신 실패 (오프라인 연동 권장)');
+          showToast('???�동 ?�버 ?�신 ?�패 (?�프?�인 ?�동 권장)');
         }
       })
       .catch(err => {
         console.error(err);
-        showToast('❌ 연동 실패 (인터넷 연결을 확인하세요)');
+        showToast('???�동 ?�패 (?�터???�결???�인?�세??');
       });
     });
   }
@@ -3605,7 +3660,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnSyncCopyCode.addEventListener('click', () => {
       const code = syncCodeVal.textContent;
       navigator.clipboard.writeText(code).then(() => {
-        showToast('✅ 연동 코드가 복사되었습니다.');
+        showToast('???�동 코드가 복사?�었?�니??');
       });
     });
   }
@@ -3614,7 +3669,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnSyncShowQr.addEventListener('click', () => {
       const isHidden = syncQrWrapper.style.display === 'none';
       syncQrWrapper.style.display = isHidden ? 'block' : 'none';
-      btnSyncShowQr.textContent = isHidden ? 'QR 접기' : 'QR 보기';
+      btnSyncShowQr.textContent = isHidden ? 'QR ?�기' : 'QR 보기';
     });
   }
 
@@ -3622,11 +3677,11 @@ document.addEventListener('DOMContentLoaded', () => {
     btnSyncConnect.addEventListener('click', () => {
       const code = syncCodeInput.value.trim();
       if (code.length !== 6 || isNaN(code)) {
-        showToast('❌ 올바른 6자리 숫자를 입력하세요.');
+        showToast('???�바�?6?�리 ?�자�??�력?�세??');
         return;
       }
 
-      showToast('📡 데이터 가져오는 중...');
+      showToast('?�� ?�이??가?�오??�?..');
       fetch(`https://ntfy.sh/tax_sync_${code}/json?poll=1`)
       .then(res => res.text())
       .then(text => {
@@ -3642,17 +3697,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (!latestMsg) {
-          showToast('❌ 해당 연동 코드로 등록된 데이터를 찾을 수 없습니다.');
+          showToast('???�당 ?�동 코드�??�록???�이?��? 찾을 ???�습?�다.');
           return;
         }
 
         const decryptedJson = decrypt(latestMsg, code);
         if (!decryptedJson) {
-          showToast('❌ 데이터 복호화 실패. 올바른 코드인지 확인해 주세요.');
+          showToast('???�이??복호???�패. ?�바�?코드?��? ?�인??주세??');
           return;
         }
 
-        if (confirm('가져온 배우자 데이터를 연동하시겠습니까?\n[확인]: 배우자 데이터만 머지\n[취소]: 전체 덮어쓰기')) {
+        if (confirm('가?�온 배우???�이?��? ?�동?�시겠습?�까?\n[?�인]: 배우???�이?�만 머�?\n[취소]: ?�체 ??��?�기')) {
           deserializeAndLoad(decryptedJson, 'merge');
         } else {
           deserializeAndLoad(decryptedJson, 'replace');
@@ -3660,7 +3715,7 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       .catch(err => {
         console.error(err);
-        showToast('❌ 연동 실패 (인터넷 연결 또는 코드가 만료되었을 수 있습니다)');
+        showToast('???�동 ?�패 (?�터???�결 ?�는 코드가 만료?�었?????�습?�다)');
       });
     });
   }
@@ -3673,7 +3728,7 @@ function renderAdvice(containerId, adviceList, actionCallback) {
   if (adviceList.length === 0) {
     container.innerHTML = `
       <div style="text-align:center; padding: 1.5rem; opacity:0.6; font-size:0.85rem;">
-        🎉 이미 스마트한 절세 비율을 만족하고 계십니다!
+        ?�� ?��? ?�마?�한 ?�세 비율??만족?�고 계십?�다!
       </div>
     `;
     return;
@@ -3681,16 +3736,16 @@ function renderAdvice(containerId, adviceList, actionCallback) {
 
   adviceList.sort((a, b) => b.saving - a.saving);
 
-  // 🆕 P1: 총 절감액 배지
+  // ?�� P1: �??�감??배�?
   var totalSavings = adviceList.reduce(function(sum, item) { return sum + (item.saving || 0); }, 0);
   if (totalSavings > 0) {
     var badge = document.createElement('div');
     badge.className = 'advice-total-savings-badge';
-    badge.innerHTML = '<span class="savings-label">📊 모두 적용 시 예상 추가 절감</span><span class="savings-amount">+ ' + totalSavings.toLocaleString() + ' 원</span>';
+    badge.innerHTML = '<span class="savings-label">?�� 모두 ?�용 ???�상 추�? ?�감</span><span class="savings-amount">+ ' + totalSavings.toLocaleString() + ' ??/span>';
     container.appendChild(badge);
   }
 
-  // 🆕 P1: 상위 3개 스마트 피드 (태그 포함)
+  // ?�� P1: ?�위 3�??�마???�드 (?�그 ?�함)
   var topN = Math.min(3, adviceList.length);
   var feed = document.createElement('div');
   feed.className = 'advice-smart-feed';
@@ -3698,15 +3753,15 @@ function renderAdvice(containerId, adviceList, actionCallback) {
     var item = adviceList[i];
     var tagHtml = '';
     if (item.saving >= 1000000) {
-      tagHtml = '<span class="advice-tag high-value">💰 고수익</span>';
+      tagHtml = '<span class="advice-tag high-value">?�� 고수??/span>';
     } else if (item.saving >= 500000) {
-      tagHtml = '<span class="advice-tag high-value">💰 중수익</span>';
+      tagHtml = '<span class="advice-tag high-value">?�� 중수??/span>';
     }
     if (item.type === 'warning' && item.saving > 0) {
-      tagHtml += '<span class="advice-tag urgent">⚠️ 긴급</span>';
+      tagHtml += '<span class="advice-tag urgent">?�️ 긴급</span>';
     }
     if (!tagHtml && item.actionText) {
-      tagHtml = '<span class="advice-tag easy">✅ 간편</span>';
+      tagHtml = '<span class="advice-tag easy">??간편</span>';
     }
 
     var card = document.createElement('div');
@@ -3714,16 +3769,16 @@ function renderAdvice(containerId, adviceList, actionCallback) {
     card.innerHTML = [
       '<div class="advice-header">',
         '<span class="advice-title" style="font-size:0.9rem;">' + (i + 1) + '. ' + item.title + tagHtml + '</span>',
-        item.saving > 0 ? '<span class="advice-saving" style="font-size:0.75rem;">약 +' + item.saving.toLocaleString() + '원</span>' : '',
+        item.saving > 0 ? '<span class="advice-saving" style="font-size:0.75rem;">??+' + item.saving.toLocaleString() + '??/span>' : '',
       '</div>',
       '<p class="advice-desc" style="font-size:0.8rem; line-height:1.4; margin-bottom:8px;">' + item.desc + '</p>',
-      item.actionText ? '<button class="advice-action-btn" style="padding:6px 10px; font-size:0.75rem;">' + item.actionText + ' ➔</button>' : ''
+      item.actionText ? '<button class="advice-action-btn" style="padding:6px 10px; font-size:0.75rem;">' + item.actionText + ' ??/button>' : ''
     ].join('');
 
     if (item.actionText) {
       card.querySelector('.advice-action-btn').addEventListener('click', function() {
         actionCallback(item.id, item.actionValue);
-        // 🆕 딥링크 스크롤: 해당 입력 필드로 포커스
+        // ?�� ?�링???�크�? ?�당 ?�력 ?�드�??�커??
         var fieldId = item.fieldId || '';
         if (fieldId) {
           var el = document.getElementById(fieldId);
@@ -3736,7 +3791,7 @@ function renderAdvice(containerId, adviceList, actionCallback) {
   }
   container.appendChild(feed);
 
-  // 남은 항목은 기존 캐러셀로
+  // ?��? ??��?� 기존 캐러?��?
   var remaining = adviceList.slice(topN);
   if (remaining.length === 0) return;
 
@@ -3745,7 +3800,7 @@ function renderAdvice(containerId, adviceList, actionCallback) {
 
   var expandToggle = document.createElement('button');
   expandToggle.style.cssText = 'background:none; border:none; color:var(--accent-info); font-weight:700; font-size:0.78rem; cursor:pointer; padding:8px 0; width:100%; text-align:center;';
-  expandToggle.textContent = '▼ 추가 가이드 ' + remaining.length + '개 더 보기';
+  expandToggle.textContent = '??추�? 가?�드 ' + remaining.length + '�???보기';
   container.appendChild(expandToggle);
 
   var carousel = document.createElement('div');
@@ -3765,10 +3820,10 @@ function renderAdvice(containerId, adviceList, actionCallback) {
     card.innerHTML = [
       '<div class="advice-header">',
         '<span class="advice-title" style="font-size:0.9rem;">' + item.title + '</span>',
-        item.saving > 0 ? '<span class="advice-saving" style="font-size:0.75rem;">약 +' + item.saving.toLocaleString() + '원 절감</span>' : '',
+        item.saving > 0 ? '<span class="advice-saving" style="font-size:0.75rem;">??+' + item.saving.toLocaleString() + '???�감</span>' : '',
       '</div>',
       '<p class="advice-desc" style="font-size:0.8rem; line-height:1.4; margin-bottom:8px;">' + item.desc + '</p>',
-      item.actionText ? '<button class="advice-action-btn" style="padding:6px 10px; font-size:0.75rem;">' + item.actionText + ' ➔</button>' : ''
+      item.actionText ? '<button class="advice-action-btn" style="padding:6px 10px; font-size:0.75rem;">' + item.actionText + ' ??/button>' : ''
     ].join('');
 
     if (item.actionText) {
@@ -3797,7 +3852,7 @@ function renderAdvice(containerId, adviceList, actionCallback) {
   expandToggle.addEventListener('click', function() {
     var isHidden = carousel.style.display === 'none';
     carousel.style.display = isHidden ? 'block' : 'none';
-    expandToggle.textContent = isHidden ? '▲ 접기' : '▼ 추가 가이드 ' + remaining.length + '개 더 보기';
+    expandToggle.textContent = isHidden ? '???�기' : '??추�? 가?�드 ' + remaining.length + '�???보기';
   });
 
   var nav = document.createElement('div');
@@ -3806,7 +3861,7 @@ function renderAdvice(containerId, adviceList, actionCallback) {
   var prevBtn = document.createElement('button');
   prevBtn.className = 'advice-carousel-btn';
   prevBtn.innerHTML = '&#9664;';
-  prevBtn.setAttribute('aria-label', '이전 가이드');
+  prevBtn.setAttribute('aria-label', '?�전 가?�드');
   prevBtn.addEventListener('click', function() { showSlide(currentSlide - 1); });
 
   var dotsContainer = document.createElement('div');
@@ -3825,7 +3880,7 @@ function renderAdvice(containerId, adviceList, actionCallback) {
   var nextBtn = document.createElement('button');
   nextBtn.className = 'advice-carousel-btn';
   nextBtn.innerHTML = '&#9654;';
-  nextBtn.setAttribute('aria-label', '다음 가이드');
+  nextBtn.setAttribute('aria-label', '?�음 가?�드');
   nextBtn.addEventListener('click', function() { showSlide(currentSlide + 1); });
 
   nav.appendChild(prevBtn);
@@ -3836,13 +3891,13 @@ function renderAdvice(containerId, adviceList, actionCallback) {
 
   container.appendChild(carousel);
 
-  // 🆕 브레드크럼 초기화
-  const activeTab = document.querySelector('.tab-btn.active');
+  // ?�� 브레?�크??초기??
+  const activeTab = document.querySelector('.nav-step-btn.active');
   if (activeTab) {
     updateBreadcrumb(activeTab.dataset.tab);
   }
 
-  // 🆕 Profiling modal (첫 방문 시)
+  // ?�� Profiling modal (�?방문 ??
   function initProfilingModal() {
     var modal = document.getElementById('profiling-modal');
     if (!modal) return;
@@ -3863,15 +3918,15 @@ function renderAdvice(containerId, adviceList, actionCallback) {
       modal.style.display = 'none';
 
       var msg = [];
-      if (sel.indexOf('salary') >= 0) msg.push('💼 직장인 탭에서 연말정산·카드·월세 최적화');
-      if (sel.indexOf('business') >= 0) msg.push('🏭 사업·투자 탭에서 부가세·경비율·노란우산');
-      if (sel.indexOf('invest') >= 0) msg.push('💰 사업·투자 탭에서 ISA·채권·벤처투자');
-      if (sel.indexOf('property') >= 0) msg.push('🏠 상속·증여 탭에서 보유세·양도세');
-      if (sel.indexOf('estate') >= 0) msg.push('🎁 상속·증여 탭에서 증여·상속 플랜');
+      if (sel.indexOf('salary') >= 0) msg.push('?�� 직장????��???�말?�산·카드·?�세 최적??);
+      if (sel.indexOf('business') >= 0) msg.push('?�� ?�업·?�자 ??��??부가?�·경비율·?��??�산');
+      if (sel.indexOf('invest') >= 0) msg.push('?�� ?�업·?�자 ??��??ISA·채권·벤처?�자');
+      if (sel.indexOf('property') >= 0) msg.push('?�� ?�속·증여 ??��??보유?�·양?�세');
+      if (sel.indexOf('estate') >= 0) msg.push('?�� ?�속·증여 ??��??증여·?�속 ?�랜');
 
       var resultEl = document.getElementById('profiling-result');
       resultEl.style.display = 'block';
-      resultEl.innerHTML = '✅ 선택 완료! 아래 탭을 추천합니다:<br>• ' + msg.join('<br>• ');
+      resultEl.innerHTML = '???�택 ?�료! ?�래 ??�� 추천?�니??<br>??' + msg.join('<br>??');
       setTimeout(function() { resultEl.style.display = 'none'; }, 5000);
     });
 
@@ -3880,6 +3935,249 @@ function renderAdvice(containerId, adviceList, actionCallback) {
       modal.style.display = 'none';
     });
   }
+    // 벤처투자 치트키 시뮬레이션
+    const toggleVentureSim = document.getElementById('toggle-venture-sim');
+    if (toggleVentureSim) {
+      toggleVentureSim.addEventListener('change', (e) => {
+        const ventureResultDiv = document.getElementById('venture-sim-result');
+        if (!ventureResultDiv) return;
+        
+        if (e.target.checked) {
+          // 기존 데이터 가져오기
+          const aSalary = parseVal('inc-a-salary') || 0;
+          const aPension = parseVal('inc-a-pension') || 0;
+          const aCard = parseVal('inc-a-card') || 0;
+          const aCash = parseVal('inc-a-cash') || 0;
+          
+          if (aSalary === 0) {
+            alert("총급여를 먼저 입력해주세요.");
+            e.target.checked = false;
+            return;
+          }
+          
+          // 벤처투자 전 세금
+          const beforeResult = TaxCalculator.calculateYearEndTax({
+            totalSalary: aSalary,
+            creditCard: aCard,
+            cashReceipt: aCash,
+            pensionSavings: aPension,
+            ventureInvestment: 0
+          });
+          
+          // 벤처투자 후 세금 (3천만원 가정)
+          const afterResult = TaxCalculator.calculateYearEndTax({
+            totalSalary: aSalary,
+            creditCard: aCard,
+            cashReceipt: aCash,
+            pensionSavings: aPension,
+            ventureInvestment: 30000000
+          });
+          
+          const saving = beforeResult.totalTax - afterResult.totalTax;
+          
+          document.getElementById('venture-before-tax').innerText = formatNumberWithCommas(beforeResult.totalTax) + ' 원';
+          document.getElementById('venture-after-tax').innerText = formatNumberWithCommas(afterResult.totalTax) + ' 원';
+          document.getElementById('venture-saving-tax').innerText = formatNumberWithCommas(saving) + ' 원';
+          
+          ventureResultDiv.style.display = 'block';
+        } else {
+          ventureResultDiv.style.display = 'none';
+        }
+      });
+    }
+
 
   initProfilingModal();
 }
+
+
+// ==========================================
+// Sidebar & Menu Map Logic
+// ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+  const sidebarMenu = document.getElementById('sidebar-menu');
+  const btnOpenSidebar = document.getElementById('btn-open-sidebar');
+  const btnCloseSidebar = document.getElementById('btn-close-sidebar');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
+  const navTreeContainer = document.getElementById('sidebar-nav-tree');
+  
+  if (!sidebarMenu || !navTreeContainer) return;
+
+  // Toggle Sidebar for mobile
+  function toggleSidebar(show) {
+    if (show) {
+      sidebarMenu.classList.add('open');
+      sidebarOverlay.classList.add('show');
+      document.body.style.overflow = 'hidden'; // prevent bg scroll
+    } else {
+      sidebarMenu.classList.remove('open');
+      sidebarOverlay.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+  }
+
+  if (btnOpenSidebar) {
+    btnOpenSidebar.addEventListener('click', () => toggleSidebar(true));
+  }
+  if (btnCloseSidebar) {
+    btnCloseSidebar.addEventListener('click', () => toggleSidebar(false));
+  }
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener('click', () => toggleSidebar(false));
+  }
+
+  // Generate Menu Map
+  const tabs = document.querySelectorAll('.calculator-panel');
+  const tabButtons = document.querySelectorAll('.nav-step-btn');
+  
+  let menuHtml = '';
+  const sectionsData = [];
+  
+  // Mapping tab IDs to names for the tree
+  const tabNames = {
+    'tab-profile': '내 정보 입력',
+    'tab-salary': '직장인·연말정산',
+    'tab-business': '사업·투자·절세',
+    'tab-capital': '상속·증여·양도',
+    'tab-report': '종합 리포트'
+  };
+
+  tabs.forEach((tab, index) => {
+    const tabId = tab.id;
+    const tabName = tabNames[tabId] || tabId;
+    
+    menuHtml += `<div class="nav-tree-item" data-target-tab="${tabId}">`;
+    menuHtml += `<div class="nav-tree-tab ${index === 0 ? 'active' : ''}" data-tab="${tabId}">
+                   <span style="font-size:1.1rem; opacity:0.8;">${index + 1}.</span> ${tabName}
+                 </div>`;
+    menuHtml += `<div class="nav-tree-sub">`;
+    
+    // Find all titles in this tab
+    const titles = tab.querySelectorAll('.card-title, .category-section-header h3');
+    titles.forEach((titleEl, tIdx) => {
+      // Ensure the title or its parent has an ID for scrolling
+      let targetId = titleEl.id;
+      if (!targetId) {
+        // If no ID, check parent input-card
+        const parentCard = titleEl.closest('.input-card, .result-card');
+        if (parentCard && parentCard.id) {
+          targetId = parentCard.id;
+        } else {
+          // Generate an ID
+          targetId = `menu-target-${tabId}-${tIdx}`;
+          titleEl.id = targetId;
+        }
+      }
+      
+      let titleText = titleEl.textContent.trim();
+      // Remove emojis using a simple regex if desired, or keep them. We'll keep them for consistency.
+      
+      menuHtml += `<a class="nav-tree-link" data-scroll-to="${targetId}" data-parent-tab="${tabId}">${titleText}</a>`;
+      sectionsData.push({ id: targetId, tabId: tabId, el: document.getElementById(targetId) || titleEl });
+    });
+    
+    menuHtml += `</div></div>`;
+  });
+  
+  navTreeContainer.innerHTML = menuHtml;
+
+  // Interactivity: Click tab to expand and switch
+  const treeTabs = navTreeContainer.querySelectorAll('.nav-tree-tab');
+  treeTabs.forEach(treeTab => {
+    treeTab.addEventListener('click', function() {
+      const targetTabId = this.getAttribute('data-tab');
+      // Trigger the existing tab switch logic by finding the top stepper button
+      const topStepBtn = document.querySelector(`.nav-step-btn[data-tab="${targetTabId.replace('tab-', '')}"]`);
+      if (topStepBtn) {
+        topStepBtn.click();
+      }
+    });
+  });
+
+  // Interactivity: Click link to scroll
+  const treeLinks = navTreeContainer.querySelectorAll('.nav-tree-link');
+  treeLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const targetId = this.getAttribute('data-scroll-to');
+      const parentTabId = this.getAttribute('data-parent-tab');
+      
+      // Switch tab if not active
+      const currentActiveTab = document.querySelector('.calculator-panel.active');
+      if (currentActiveTab && currentActiveTab.id !== parentTabId) {
+        const topStepBtn = document.querySelector(`.nav-step-btn[data-tab="${parentTabId.replace('tab-', '')}"]`);
+        if (topStepBtn) topStepBtn.click();
+      }
+      
+      // Scroll to element
+      setTimeout(() => {
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) {
+          // close sidebar on mobile
+          if (window.innerWidth <= 1024) toggleSidebar(false);
+          
+          targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          
+          // Flash effect
+          const originalBg = targetEl.style.backgroundColor;
+          targetEl.style.transition = 'background-color 0.5s';
+          targetEl.style.backgroundColor = 'rgba(108, 99, 255, 0.2)';
+          setTimeout(() => {
+            targetEl.style.backgroundColor = originalBg;
+          }, 1000);
+        }
+      }, 100);
+    });
+  });
+
+  // Scroll Spy logic
+  const scrollSpyObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        if (!id) return;
+        
+        // Remove active class from all links
+        treeLinks.forEach(l => l.classList.remove('active-scroll'));
+        // Add active class to corresponding link
+        const activeLink = document.querySelector(`.nav-tree-link[data-scroll-to="${id}"]`);
+        if (activeLink) {
+          activeLink.classList.add('active-scroll');
+        }
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+
+  // Observe all generated section IDs
+  sectionsData.forEach(item => {
+    if (item.el) scrollSpyObserver.observe(item.el);
+  });
+
+  // Keep menu tree synced with main tabs
+  function syncMenuTreeWithTabs() {
+    const activeTabPanel = document.querySelector('.calculator-panel.active');
+    if (!activeTabPanel) return;
+    const activeTabId = activeTabPanel.id;
+    
+    const allTreeItems = document.querySelectorAll('.nav-tree-item');
+    allTreeItems.forEach(item => {
+      if (item.getAttribute('data-target-tab') === activeTabId) {
+        item.classList.add('open');
+        item.querySelector('.nav-tree-tab').classList.add('active');
+      } else {
+        item.classList.remove('open');
+        item.querySelector('.nav-tree-tab').classList.remove('active');
+      }
+    });
+  }
+  
+  // Hook into existing tab buttons to sync tree
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      setTimeout(syncMenuTreeWithTabs, 50);
+    });
+  });
+  
+  // Initial sync
+  syncMenuTreeWithTabs();
+});

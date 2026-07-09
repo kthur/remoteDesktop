@@ -180,10 +180,57 @@ const TaxAdvisor = {
   // 4. 연말정산 절세 분석
   getYearEndAdvice(inputs, results) {
     const advice = [];
-    const { totalSalary, pensionSavings, irpSavings, monthlyRent, studentLoanRepay, localDonation, ventureInvestment } = inputs;
-    const { finalTax } = results;
+    const { totalSalary, pensionSavings, irpSavings, monthlyRent, studentLoanRepay, localDonation, ventureInvestment, creditCard = 0, cashReceipt = 0 } = inputs;
+    const { finalTax, bracketRate = 15, totalTaxCalculated = finalTax } = results;
 
-    if (finalTax <= 0) return advice;
+    // 1. 소비 가이드라인 (신용카드 등 소득공제)
+    const cardThreshold = totalSalary * 0.25;
+    const totalSpent = creditCard + cashReceipt;
+    if (totalSalary > 0) {
+      if (totalSpent < cardThreshold) {
+        const gap = cardThreshold - totalSpent;
+        advice.push({
+          id: 'yearend_card_threshold',
+          type: 'warning',
+          priority: 'high',
+          saving: 0,
+          title: "💳 신용카드 소득공제 문턱 미달",
+          desc: 현재 총 소비액(원)이 총급여의 25%(원)에 미달하여 소득공제를 받을 수 없습니다. 앞으로 원은 신용카드 혜택이 좋은 카드로 집중 소비하시고, 문턱을 넘은 후에는 공제율이 높은 체크카드/현금영수증을 사용하세요.,
+          actionText: "소비 목표액 적용"
+        });
+      } else {
+        advice.push({
+          id: 'yearend_card_optimize',
+          type: 'success',
+          priority: 'medium',
+          saving: Math.floor(totalSpent * 0.3 * (bracketRate / 100)), // 대략적인 환급액 (체크카드 기준 30%)
+          title: "🎯 소득공제 문턱 초과! 체크카드/현금 사용 권장",
+          desc: 현재 소비액이 소득공제 문턱(총급여 25%)을 넘었습니다. 문턱 초과분부터는 공제율이 신용카드(15%)보다 2배 높은 체크카드나 현금영수증(30%)을 적극 사용하시면 환급액이 극대화됩니다.,
+          actionText: "체크카드 사용 100만 원 적용"
+        });
+      }
+    }
+
+    // 2. 연금 계좌 가이드라인
+    const maxPensionLimit = totalSalary <= 120000000 ? 9000000 : 7000000;
+    const currentPension = pensionSavings + irpSavings;
+    const pensionCreditRate = totalSalary <= 55000000 ? 0.165 : 0.132;
+    
+    if (currentPension < maxPensionLimit) {
+      const gap = maxPensionLimit - currentPension;
+      advice.push({
+        id: 'yearend_pension_guide',
+        type: 'success',
+        priority: 'high',
+        saving: Math.floor(gap * pensionCreditRate),
+        title: "🏦 연금저축/IRP 납입 여력 알림",
+        desc: 올해 연금계좌 세액공제 한도 원 중 아직 원을 더 납입하실 수 있습니다. % 세액공제율을 적용받아 잔여 한도 납입 시 약 원의 세금을 즉시 돌려받을 수 있습니다.,
+        actionText: "연금저축/IRP 최대한도 적용",
+        actionValue: maxPensionLimit
+      });
+    }
+
+    if (totalTaxCalculated <= 0) return advice;
 
     if (ventureInvestment === 0 && totalSalary >= 88000000) {
       advice.push({
