@@ -2322,6 +2322,10 @@ document.addEventListener('DOMContentLoaded', () => {
     renderFinancialDetails("a", aResult);
     renderFinancialDetails("b", bResult);
 
+    // [🆕 Hook: Dashboard & Nudges]
+    if (window.updateDashboardSummary) window.updateDashboardSummary(d);
+    if (window.updateNudgeBadges) window.updateNudgeBadges(d);
+
     const { optResult, best } = runOptimizerAndRender(d, dependents);
 
     renderAdviceSection(d, aResult);
@@ -3986,6 +3990,434 @@ function renderAdvice(containerId, adviceList, actionCallback) {
       });
     }
 
+
+
+  // ──────────────────────────────────────────────
+  // 10대 절세 기능 고도화: 대시보드, 퀵 필터, 세율구간, 시나리오, 세금달력
+  // ──────────────────────────────────────────────
+  const initDashboardAndWidgets = () => {
+    // 1. 퀵 필터 설정
+    const filterChips = document.querySelectorAll('.filter-chip');
+    filterChips.forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        filterChips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        applyQuickFilter(chip.dataset.filter);
+      });
+    });
+
+    function applyQuickFilter(category) {
+      const allCards = document.querySelectorAll('.input-card, .result-card, .category-section-header');
+      const allTreeLinks = document.querySelectorAll('.nav-tree-link');
+      
+      if (category === 'all') {
+        allCards.forEach(c => c.classList.remove('dimmed'));
+        allTreeLinks.forEach(l => l.classList.remove('dimmed'));
+        return;
+      }
+
+      // Keyword mapping for auto-tagging
+      const keywordMap = {
+        wage: ['카드', '체육시설', '월세', '보장성', '기부', '표준', '친환경', '주택', '연금저축/IRP', '연말정산', '가족 요약', '의료비'],
+        business: ['부가가치세', '경비율', '종합소득세', '노란우산', '사업소득', '프리랜서'],
+        investment: ['채권', '벤처', '금융소득', '투자자'],
+        property: ['양도소득세', '보유세', '간주임대료', '부동산'],
+        estate: ['상속세', '증여']
+      };
+
+      const keywords = keywordMap[category] || [];
+
+      allCards.forEach(card => {
+        // 정보 입력 카드(기본 정보)는 항상 제외
+        if (card.querySelector('.card-title') && card.querySelector('.card-title').textContent.includes('정보 입력')) {
+          card.classList.remove('dimmed');
+          return;
+        }
+        
+        let cardText = card.textContent || '';
+        const isMatch = keywords.some(kw => cardText.includes(kw));
+        if (isMatch) {
+          card.classList.remove('dimmed');
+        } else {
+          card.classList.add('dimmed');
+        }
+      });
+
+      // Sync with Sidebar Tree Links
+      allTreeLinks.forEach(link => {
+        let linkText = link.textContent || '';
+        const isMatch = keywords.some(kw => linkText.includes(kw));
+        if (isMatch) {
+          link.classList.remove('dimmed');
+        } else {
+          link.classList.add('dimmed');
+        }
+      });
+    }
+
+    // 2. 세율 시각화 마커 위치 조절 함수
+    window.updateTaxVisualizer = function(taxableIncome) {
+      let percent = 0;
+      let currentRate = "6%";
+      if (taxableIncome <= 14000000) {
+        percent = (taxableIncome / 14000000) * 14;
+        currentRate = "6%";
+      } else if (taxableIncome <= 50000000) {
+        percent = 14 + ((taxableIncome - 14000000) / 36000000) * 16;
+        currentRate = "15%";
+      } else if (taxableIncome <= 88000000) {
+        percent = 14 + 16 + ((taxableIncome - 50000000) / 38000000) * 15;
+        currentRate = "24%";
+      } else if (taxableIncome <= 150000000) {
+        percent = 14 + 16 + 15 + ((taxableIncome - 88000000) / 62000000) * 15;
+        currentRate = "35%";
+      } else if (taxableIncome <= 300000000) {
+        percent = 14 + 16 + 15 + 15 + ((taxableIncome - 150000000) / 150000000) * 12;
+        currentRate = "38%";
+      } else if (taxableIncome <= 500000000) {
+        percent = 14 + 16 + 15 + 15 + 12 + ((taxableIncome - 300000000) / 200000000) * 10;
+        currentRate = "40%";
+      } else if (taxableIncome <= 1000000000) {
+        percent = 14 + 16 + 15 + 15 + 12 + 10 + ((taxableIncome - 500000000) / 500000000) * 10;
+        currentRate = "42%";
+      } else {
+        percent = 92 + Math.min(8, ((taxableIncome - 1000000000) / 1000000000) * 8);
+        currentRate = "45%";
+      }
+      percent = Math.min(100, Math.max(0, percent));
+      
+      const pin = document.getElementById('tax-pin-marker');
+      if (pin) pin.style.left = percent + '%';
+      const label = document.getElementById('tax-pin-label');
+      if (label) label.textContent = currentRate;
+      
+      const info = document.getElementById('tax-visual-info');
+      if (info) {
+        let nextLimit = "";
+        let nextRate = "";
+        if (taxableIncome <= 14000000) { nextLimit = "1,400만 원"; nextRate = "15%"; }
+        else if (taxableIncome <= 50000000) { nextLimit = "5,000만 원"; nextRate = "24%"; }
+        else if (taxableIncome <= 88000000) { nextLimit = "8,800만 원"; nextRate = "35%"; }
+        else if (taxableIncome <= 150000000) { nextLimit = "1.5억 원"; nextRate = "38%"; }
+        else if (taxableIncome <= 300000000) { nextLimit = "3억 원"; nextRate = "40%"; }
+        else if (taxableIncome <= 500000000) { nextLimit = "5억 원"; nextRate = "42%"; }
+        else if (taxableIncome <= 1000000000) { nextLimit = "10억 원"; nextRate = "45%"; }
+        
+        if (nextLimit) {
+          info.innerHTML = `💡 과세표준 <b>${Math.floor(taxableIncome / 10000).toLocaleString()}만 원</b> 기준 구간입니다.<br>${nextLimit} 초과 시 <b>${nextRate}</b> 구간으로 상승합니다.`;
+        } else {
+          info.innerHTML = "🔥 최고 세율 구간(45%)에 진입하셨습니다. 추가 절세 방안을 총동원해 보세요.";
+        }
+      }
+    };
+
+    // 3. 실시간 대시보드 업데이트 함수
+    window.updateDashboardSummary = function(d) {
+      const hasSpouseB = document.getElementById('enable-spouse-b') ? document.getElementById('enable-spouse-b').checked : false;
+      const summary = TaxCalculator.calculateDashboardSummary({
+        aSalary: d.aSalary,
+        aBusinessRev: d.aBusinessRevenue,
+        aBusinessExp: d.aBusinessExpense,
+        aFinancialGen: d.aFinancialGen,
+        aFinancialOverseas: d.aFinancialOverseas,
+        bSalary: d.bSalary,
+        bBusinessRev: d.bBusinessRevenue,
+        bBusinessExp: d.bBusinessExpense,
+        bFinancialGen: d.bFinancialGen,
+        bFinancialOverseas: d.bFinancialOverseas,
+        hasSpouseB: hasSpouseB
+      });
+
+      document.getElementById('dash-total-tax').textContent = formatNumberWithCommas(summary.totalTax) + ' 원';
+      document.getElementById('dash-effective-rate').textContent = summary.effectiveRate + '%';
+      document.getElementById('dash-net-return').textContent = formatNumberWithCommas(summary.netReturn) + ' 원';
+      
+      updateTaxVisualizer(summary.primaryTaxableIncome);
+    };
+
+    // 4. 절세 기회 알림 배지 (Nudge System)
+    window.updateNudgeBadges = function(d) {
+      // Clean up previous badges
+      document.querySelectorAll('.nudge-badge').forEach(b => b.remove());
+
+      const nudges = [];
+      
+      // IRP/연금저축
+      if (d.aSalary > 0 && d.aPension === 0 && d.aIrp === 0) {
+        nudges.push({ tab: 'salary', text: '연금저축/IRP 공제 팁', selector: '[data-tab="salary"]', titleKeyword: '연금저축/IRP' });
+      }
+      
+      // 노란우산공제
+      if (d.aBusinessRevenue > 10000000 && d.aYellow === 0) {
+        nudges.push({ tab: 'business', text: '노란우산공제 팁', selector: '[data-tab="business"]', titleKeyword: '노란우산공제' });
+      }
+
+      // 벤처투자
+      if (d.aSalary > 80000000 && d.aVenture === 0) {
+        nudges.push({ tab: 'business', text: '벤처투자 100% 공제', selector: '[data-tab="business"]', titleKeyword: '벤처투자' });
+      }
+
+      nudges.forEach(n => {
+        // Add indicator badge to Tab button
+        const topStepBtn = document.querySelector(`.nav-step-btn[data-tab="${n.tab}"]`);
+        if (topStepBtn && !topStepBtn.querySelector('.nudge-badge')) {
+          const badge = document.createElement('span');
+          badge.className = 'nudge-badge';
+          badge.textContent = '💡 팁';
+          topStepBtn.appendChild(badge);
+        }
+
+        // Add indicator to left sidebar link
+        const sidebarLink = Array.from(document.querySelectorAll('.nav-tree-link')).find(link => link.textContent.includes(n.titleKeyword));
+        if (sidebarLink && !sidebarLink.querySelector('.nudge-badge')) {
+          const badge = document.createElement('span');
+          badge.className = 'nudge-badge info';
+          badge.textContent = '💡';
+          sidebarLink.appendChild(badge);
+        }
+      });
+    };
+
+    // 5. 절세 시나리오 매니저
+    const loadScenarios = () => {
+      const scenarios = JSON.parse(localStorage.getItem('tax_scenarios') || '{}');
+      const select = document.getElementById('scenario-compare-select');
+      if (!select) return;
+      select.innerHTML = '<option value="">비교할 시나리오 선택...</option>';
+      for (const name in scenarios) {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        select.appendChild(opt);
+      }
+    };
+
+    document.getElementById('btn-save-scenario').addEventListener('click', () => {
+      const name = document.getElementById('scenario-name-input').value.trim();
+      if (!name) {
+        alert("시나리오 이름을 입력해주세요.");
+        return;
+      }
+      
+      const currentState = localStorage.getItem('tax_calculator_state');
+      if (!currentState) {
+        alert("저장할 데이터 상태가 존재하지 않습니다.");
+        return;
+      }
+
+      const scenarios = JSON.parse(localStorage.getItem('tax_scenarios') || '{}');
+      scenarios[name] = JSON.parse(currentState);
+      localStorage.setItem('tax_scenarios', JSON.stringify(scenarios));
+      
+      document.getElementById('scenario-name-input').value = '';
+      loadScenarios();
+      showToast(`시나리오 "${name}" 저장 완료!`);
+    });
+
+    document.getElementById('btn-delete-scenario').addEventListener('click', () => {
+      const select = document.getElementById('scenario-compare-select');
+      const name = select.value;
+      if (!name) {
+        alert("삭제할 시나리오를 선택해주세요.");
+        return;
+      }
+
+      const scenarios = JSON.parse(localStorage.getItem('tax_scenarios') || '{}');
+      delete scenarios[name];
+      localStorage.setItem('tax_scenarios', JSON.stringify(scenarios));
+      loadScenarios();
+      document.getElementById('scenario-compare-result').style.display = 'none';
+      showToast(`시나리오 "${name}" 삭제 완료.`);
+    });
+
+    document.getElementById('btn-compare-scenario').addEventListener('click', () => {
+      const select = document.getElementById('scenario-compare-select');
+      const name = select.value;
+      if (!name) {
+        alert("비교할 시나리오를 선택해주세요.");
+        return;
+      }
+
+      const scenarios = JSON.parse(localStorage.getItem('tax_scenarios') || '{}');
+      const savedState = scenarios[name];
+      const currentState = JSON.parse(localStorage.getItem('tax_calculator_state') || '{}');
+      
+      if (!savedState) return;
+
+      // 간단 비교
+      const savedTax = savedState.calculatedTax || 0;
+      const currentTax = currentState.calculatedTax || 0;
+      const diff = savedTax - currentTax;
+
+      const resultBox = document.getElementById('scenario-compare-result');
+      resultBox.style.display = 'block';
+      if (diff > 0) {
+        resultBox.innerHTML = `⚖️ <b>"${name}" 대비 현재 상태:</b><br>총 세금이 <b>${formatNumberWithCommas(diff)}원</b> 더 절감됩니다! (세후 실수령액 증가)`;
+      } else if (diff < 0) {
+        resultBox.innerHTML = `⚖️ <b>"${name}" 대비 현재 상태:</b><br>총 세금이 <b>${formatNumberWithCommas(Math.abs(diff))}원</b> 더 많이 청구됩니다. (이전안이 더 유리)`;
+      } else {
+        resultBox.innerHTML = `⚖️ <b>"${name}" 대비 현재 상태:</b><br>세액 변동이 없습니다. 동일한 절세 금액입니다.`;
+      }
+    });
+
+    // 6. 세금 달력 타임라인 렌더링 및 스무스 이동 가이드
+    const renderTaxCalendar = () => {
+      const calendarContainer = document.getElementById('tax-calendar-items');
+      if (!calendarContainer) return;
+
+      const currentMonth = new Date().getMonth() + 1;
+      const schedules = [
+        { month: 1, title: '💼 연말정산 서류 제출', desc: '홈택스 PDF 자동 입력을 사용해 보세요 👉', tabId: 'tab-profile', scrollKeyword: 'pdf-dropzone' },
+        { month: 5, title: '🏭 종합소득세 신고기간', desc: '개인사업자 종합소득세 간편 계산기로 이동 👉', tabId: 'tab-business', scrollKeyword: '개인사업자 종합소득세' },
+        { month: 7, title: '🏠 재산세 1기 납부', desc: '부동산 보유세 계산기로 이동 👉', tabId: 'tab-capital', scrollKeyword: '부동산 보유세' },
+        { month: 9, title: '🏠 재산세 2기 납부', desc: '부동산 보유세 계산기로 이동 👉', tabId: 'tab-capital', scrollKeyword: '부동산 보유세' },
+        { month: 11, title: '🏭 종합소득세 중간예납', desc: '종소세 간편 계산기로 이동 👉', tabId: 'tab-business', scrollKeyword: '개인사업자 종합소득세' },
+        { month: 12, title: '🛡️ 연금저축/IRP 불입 마감', desc: '연금저축/IRP 세액공제 최적화 도구로 이동 👉', tabId: 'tab-salary', scrollKeyword: '연금저축/IRP' }
+      ];
+
+      let calendarHtml = '';
+      schedules.forEach(s => {
+        const isCurrent = s.month === currentMonth || (currentMonth === 2 && s.month === 1); // 1~2월 연말정산
+        calendarHtml += `
+          <div class="calendar-item \${isCurrent ? 'current' : ''}" data-nav-tab="\${s.tabId}" data-scroll-keyword="\${s.scrollKeyword}" style="cursor: pointer; transition: all 0.2s;">
+            <div class="calendar-month">\${s.month}월</div>
+            <div class="calendar-details">
+              <div class="calendar-title">\${s.title}</div>
+              <div class="calendar-desc" style="color:var(--accent-secondary); font-weight:600;">\${s.desc}</div>
+            </div>
+          </div>
+        `;
+      });
+      calendarContainer.innerHTML = calendarHtml;
+
+      // Add navigation handlers to calendar items
+      calendarContainer.querySelectorAll('.calendar-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const tabId = item.getAttribute('data-nav-tab');
+          const scrollKeyword = item.getAttribute('data-scroll-keyword');
+          
+          // Switch to target tab
+          const topStepBtn = document.querySelector(`.nav-step-btn[data-tab="\${tabId.replace('tab-', '')}"]`);
+          if (topStepBtn) {
+            topStepBtn.click();
+          }
+
+          // Scroll to matching card
+          setTimeout(() => {
+            const allHeaders = document.querySelectorAll('.card-title, #pdf-dropzone');
+            let targetEl = null;
+            allHeaders.forEach(el => {
+              if (el.textContent.includes(scrollKeyword) || el.id === scrollKeyword) {
+                targetEl = el.closest('.input-card, .result-card, .pdf-dropzone');
+              }
+            });
+
+            if (targetEl) {
+              targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              
+              // Flash animation
+              const originalBg = targetEl.style.backgroundColor;
+              targetEl.style.transition = 'background-color 0.5s';
+              targetEl.style.backgroundColor = 'rgba(108, 99, 255, 0.2)';
+              setTimeout(() => {
+                targetEl.style.backgroundColor = originalBg;
+              }, 1000);
+            }
+          }, 150);
+        });
+      });
+    };
+
+    loadScenarios();
+    renderTaxCalendar();
+
+    // 7. 가상자산(코인) 과세 계산기 연동
+    const btnCalcCrypto = document.getElementById('btn-calc-crypto');
+    const cryptoGainInput = document.getElementById('crypto-gain');
+    const cryptoResultDiv = document.getElementById('crypto-result');
+    const cryptoResultContent = document.getElementById('crypto-result-content');
+
+    if (btnCalcCrypto && cryptoGainInput) {
+      // Add formatting listener to crypto gain input
+      cryptoGainInput.addEventListener('input', formatInputOnEvent);
+      cryptoGainInput.addEventListener('change', formatInputOnEvent);
+
+      btnCalcCrypto.addEventListener('click', () => {
+        const gainVal = parseVal('crypto-gain');
+        const res = TaxCalculator.calculateCryptoTax(gainVal);
+        
+        cryptoResultContent.innerHTML = `
+          <div style="margin-bottom: 8px;">💵 총 양도차익: <b>${formatNumberWithCommas(res.gain)} 원</b></div>
+          <div style="margin-bottom: 8px;">🛡️ 가상자산 기본공제: <b>${formatNumberWithCommas(res.deduction)} 원</b></div>
+          <div style="margin-bottom: 8px;">과세표준: <b>${formatNumberWithCommas(res.taxableAmount)} 원</b></div>
+          <div style="margin-bottom: 8px; color: var(--accent-secondary); font-size: 0.95rem;">
+            <b>예상 납부세액: ${formatNumberWithCommas(res.totalTax)} 원</b> (지방세 10% 포함)
+          </div>
+          <p style="margin: 8px 0 0 0; font-size: 0.75rem; opacity: 0.8; line-height: 1.4;">
+            💡 ${res.recommendation}
+          </p>
+        `;
+        cryptoResultDiv.style.display = 'block';
+      });
+
+      // Hook up to debounced updates if desired
+      cryptoGainInput.addEventListener('input', debounce(() => {
+        if (!isLoadingState && cryptoGainInput.value) {
+          btnCalcCrypto.click();
+        }
+      }, 500));
+    }
+
+    // 8. PDF 다운로드 및 인쇄 버튼 연동
+    const btnPrintReport = document.getElementById('btn-print-report');
+    if (btnPrintReport) {
+      btnPrintReport.addEventListener('click', () => {
+        window.print();
+      });
+    }
+
+    // 9. 세무사 1:1 상담 연결 CTA 연동
+    const btnExpertCta = document.getElementById('btn-expert-cta');
+    if (btnExpertCta) {
+      btnExpertCta.addEventListener('click', () => {
+        alert("🤝 TAX NAVI Premium 세무 컨설팅\n\n정교한 상속/증여세 설계, 벤처투자 소득공제(3천만 원 이상) 세무 조정이 필요하신가요?\nTAX NAVI와 제휴된 전문 세무 법인을 통해 1:1 세무사 무료 유선 상담을 예약하실 수 있습니다.\n\n[상담 신청서 작성 페이지로 이동합니다 (데모)]");
+      });
+    }
+
+    // 10. 카카오톡 / 링크 공유 기능 연동
+    const btnShareReportNew = document.getElementById('btn-share-report');
+    if (btnShareReportNew) {
+      btnShareReportNew.addEventListener('click', () => {
+        const amountEl = document.getElementById('floating-bar-amount');
+        const bestTax = amountEl ? amountEl.textContent : '0 원';
+        
+        const shareData = {
+          title: 'TAX NAVI 대한민국 종합 절세 시뮬레이터',
+          text: `우리 가족 최적화 합산 세액은 [${bestTax}]입니다! TAX NAVI를 통해 실시간으로 맞춤형 절세 혜택을 확인해 보세요.`,
+          url: window.location.href
+        };
+
+        if (navigator.share) {
+          navigator.share(shareData)
+            .then(() => showToast('공유 완료!'))
+            .catch((err) => console.log('Share failed', err));
+        } else {
+          // Fallback to clipboard copy
+          const textToCopy = `${shareData.text}\n👉 절세 시뮬레이터 바로가기: ${shareData.url}`;
+          navigator.clipboard.writeText(textToCopy)
+            .then(() => {
+              showToast('📋 링크와 요약 내역이 클립보드에 복사되었습니다!');
+            })
+            .catch(() => {
+              alert('클립보드 복사에 실패했습니다. 주소창의 링크를 공유해 주세요.');
+            });
+        }
+      });
+    }
+
+  };
+
+  initDashboardAndWidgets();
 
   initProfilingModal();
 }

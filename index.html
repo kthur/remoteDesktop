@@ -546,6 +546,104 @@
 </div>
 </div><!-- /manual-input-container -->
 </div>
+</div>
+
+<!-- Right Area: 실시간 절세 대시보드 & 퀵 유틸리티 -->
+<div class="result-card" id="dashboard-result-card">
+  <h2 class="card-title">📊 실시간 절세 대시보드</h2>
+  
+  <!-- 퀵 필터 -->
+  <div class="dashboard-section" style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+    <h4 style="font-size:0.9rem; font-weight:700; margin-bottom:8px; color:var(--accent-secondary);">🔍 맞춤 계산기 퀵 필터</h4>
+    <p style="font-size:0.75rem; opacity:0.7; margin:0 0 8px 0;">관련 계산기만 밝게 표시하고 나머지는 흐리게 처리합니다.</p>
+    <div style="display:flex; flex-wrap:wrap; gap:6px;" id="quick-filter-container">
+      <button type="button" class="filter-chip active" data-filter="all">전체보기</button>
+      <button type="button" class="filter-chip" data-filter="wage">💼 직장인</button>
+      <button type="button" class="filter-chip" data-filter="business">🏭 개인사업자</button>
+      <button type="button" class="filter-chip" data-filter="investment">📈 투자자</button>
+      <button type="button" class="filter-chip" data-filter="property">🏠 부동산 보유</button>
+      <button type="button" class="filter-chip" data-filter="estate">🎁 상속/증여</button>
+    </div>
+  </div>
+
+  <!-- 요약 지표 (대시보드) -->
+  <div class="dashboard-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:1.5rem;">
+    <div class="dashboard-stat-box" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:10px; border-radius:8px; text-align:center;">
+      <div class="stat-label" style="font-size:0.72rem; opacity:0.6; margin-bottom:4px;">예상 총 세액</div>
+      <div class="stat-value" id="dash-total-tax" style="font-size:1.15rem; font-weight:800; color:#fff;">0 원</div>
+    </div>
+    <div class="dashboard-stat-box" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:10px; border-radius:8px; text-align:center;">
+      <div class="stat-label" style="font-size:0.72rem; opacity:0.6; margin-bottom:4px;">실효 세율</div>
+      <div class="stat-value" id="dash-effective-rate" style="font-size:1.15rem; font-weight:800; color:#fff;">0%</div>
+    </div>
+    <div class="dashboard-stat-box" style="grid-column: span 2; background:rgba(0,212,170,0.05); border:1px solid rgba(0,212,170,0.15); padding:12px; border-radius:8px; text-align:center;">
+      <div class="stat-label" style="font-size:0.75rem; opacity:0.8; margin-bottom:4px; color:var(--accent-secondary);">세후 실수령액 (Net Return)</div>
+      <div class="stat-value" id="dash-net-return" style="color:var(--accent-secondary); font-size:1.4rem; font-weight:800;">0 원</div>
+    </div>
+  </div>
+
+  <!-- 세율 구간 시각화 -->
+  <div class="dashboard-section" style="margin-bottom: 1.5rem;">
+    <h4 style="font-size:0.9rem; font-weight:700; margin-bottom:10px; color:var(--accent-primary);">📈 종합소득 과세표준 세율구간</h4>
+    <div class="tax-visualizer-container" style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px;">
+      <div class="tax-visualizer-bar" id="tax-visual-bar" style="position:relative; height:16px; background:#222; border-radius:8px; display:flex; overflow:hidden; margin-bottom:6px;">
+        <!-- 과세구간 8개 색상 막대 -->
+        <div class="tax-zone zone-6" style="width: 14%; background:#3b82f6; opacity:0.85;" data-rate="6%" data-limit="1,400만"></div>
+        <div class="tax-zone zone-15" style="width: 16%; background:#10b981; opacity:0.85;" data-rate="15%" data-limit="5,000만"></div>
+        <div class="tax-zone zone-24" style="width: 15%; background:#eab308; opacity:0.85;" data-rate="24%" data-limit="8,800만"></div>
+        <div class="tax-zone zone-35" style="width: 15%; background:#f97316; opacity:0.85;" data-rate="35%" data-limit="1.5억"></div>
+        <div class="tax-zone zone-38" style="width: 12%; background:#ef4444; opacity:0.85;" data-rate="38%" data-limit="3억"></div>
+        <div class="tax-zone zone-40" style="width: 10%; background:#ec4899; opacity:0.85;" data-rate="40%" data-limit="5억"></div>
+        <div class="tax-zone zone-42" style="width: 10%; background:#a855f7; opacity:0.85;" data-rate="42%" data-limit="10억"></div>
+        <div class="tax-zone zone-45" style="width: 8%; background:#6366f1; opacity:0.85;" data-rate="45%" data-limit="초과"></div>
+        
+        <!-- 핀포인트 마커 -->
+        <div class="tax-pin" id="tax-pin-marker" style="position:absolute; width:4px; height:24px; background:#fff; top:-4px; left:0%; transform:translateX(-50%); box-shadow:0 0 8px #fff; transition:left 0.5s ease;">
+          <div class="pin-tooltip" style="position:absolute; bottom:28px; left:50%; transform:translateX(-50%); background:#000; color:#fff; font-size:0.68rem; padding:4px 8px; border-radius:4px; white-space:nowrap; border:1px solid rgba(255,255,255,0.2);">
+            현재구간: <span id="tax-pin-label" style="font-weight:bold; color:var(--accent-secondary);">6%</span>
+          </div>
+        </div>
+      </div>
+      <div class="tax-labels" style="display:flex; justify-content:space-between; font-size:0.62rem; opacity:0.6; color:#fff; padding:0 2px;">
+        <span>1.4천만(6%)</span>
+        <span>8.8천만(24%)</span>
+        <span>3억(38%)</span>
+        <span>10억(45%)</span>
+      </div>
+      <p id="tax-visual-info" style="font-size:0.75rem; margin-top:8px; line-height:1.4; color:var(--text-secondary-dark); margin-bottom:0;"></p>
+    </div>
+  </div>
+
+  <!-- 절세 시나리오 저장/비교 위젯 -->
+  <div class="dashboard-section" style="margin-bottom: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05);">
+    <h4 style="font-size:0.9rem; font-weight:700; margin-bottom:10px; color:var(--accent-gold); display:flex; align-items:center; gap:6px;">
+      💾 절세 시나리오 저장/비교
+    </h4>
+    <div style="display:flex; gap:6px; margin-bottom:10px;">
+      <input type="text" id="scenario-name-input" class="form-input" placeholder="시나리오명 (예: 기본안)" style="padding:6px; font-size:0.8rem; flex:1;" />
+      <button type="button" class="btn-primary" id="btn-save-scenario" style="padding:6px 12px; font-size:0.78rem; margin:0; min-height:36px; line-height:1;">저장</button>
+    </div>
+    <div style="display:flex; gap:6px; margin-bottom:10px; align-items:center;">
+      <select id="scenario-compare-select" class="form-input" style="padding:6px; font-size:0.8rem; flex:1; min-height:36px;">
+        <option value="">비교할 시나리오 선택...</option>
+      </select>
+      <button type="button" class="btn-secondary" id="btn-compare-scenario" style="padding:6px 12px; font-size:0.78rem; margin:0; min-height:36px; line-height:1;">비교</button>
+      <button type="button" class="btn-secondary" id="btn-delete-scenario" style="padding:6px; font-size:0.78rem; margin:0; min-height:36px; line-height:1; border-color:#ef4444; color:#ef4444;">삭제</button>
+    </div>
+    <div id="scenario-compare-result" style="display:none; padding:10px; background:rgba(255,215,0,0.05); border:1px solid rgba(255,215,0,0.15); border-radius:8px; font-size:0.78rem; line-height:1.4;">
+    </div>
+  </div>
+
+  <!-- 세금 달력 (Tax Calendar) 위젯 -->
+  <div class="dashboard-section" style="padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05);">
+    <h4 style="font-size:0.9rem; font-weight:700; margin-bottom:10px; color:var(--accent-info); display:flex; align-items:center; gap:6px;">
+      📅 주요 세무 일정 (Tax Calendar)
+    </h4>
+    <div class="tax-calendar-widget" id="tax-calendar-items" style="display:grid; gap:8px;">
+      <!-- Dynamic timeline items loaded by JS -->
+    </div>
+  </div>
+</div>
 </div></section> <!-- end tab-income -->
 <!-- ==================== 2. 직장인·연말정산 탭 ==================== -->
 <section aria-label="직장인·연말정산" class="calculator-panel" id="tab-salary" role="tabpanel">
@@ -1240,6 +1338,25 @@
   </div>
 </div>
 
+
+<!-- 🌐 가상자산(코인) 과세 계산기 -->
+<div class="input-card" style="grid-column: 1 / -1; margin-top: 1.5rem;">
+  <h2 class="card-title">🌐 가상자산(코인) 과세 계산기 (2025/2026 개정 반영)</h2>
+  <div class="grid-2col" style="display:grid; gap:1.5rem;">
+    <div>
+      <div class="form-group">
+        <label>연간 가상자산 양도차익 <span class="tooltip-icon" data-tooltip="연간 가상자산(코인) 매매로 발생한 순 양도차익(양도가액 - 취득가액 - 필요경비)입니다. 기본공제 250만 원이 자동 적용됩니다.">?</span></label>
+        <input class="form-input money-input" id="crypto-gain" inputmode="numeric" type="text" value=""/>
+      </div>
+      <button type="button" class="btn-primary" id="btn-calc-crypto" style="margin-top:0.5rem;">🎯 코인 세금 계산</button>
+    </div>
+    <div id="crypto-result" style="background:rgba(99,102,241,0.05); padding:1.5rem; border-radius:12px; display:none;">
+      <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem; color:var(--accent-info);">📊 가상자산 세액 산출 내역</h4>
+      <div id="crypto-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
+    </div>
+  </div>
+</div>
+
 </section>
 <!-- ==================== 4. 상속·증여·양도 탭 ==================== -->
 <section aria-label="상속·증여·양도" class="calculator-panel" id="tab-capital" role="tabpanel">
@@ -1689,7 +1806,11 @@
 <div class="accordion-header">📋 우리 가족 절세 통합 리포트</div>
 <div class="accordion-body" id="acc-body-family">
 <div id="res-family-summary-content" style="font-size:0.82rem; line-height:1.6;"></div>
-<button id="btn-share-report" style="margin-top:10px; padding:8px 14px; background:var(--accent-gold); color:#0f172a; border:none; border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer;">📤 리포트 복사하기</button>
+<div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
+  <button type="button" id="btn-share-report" style="padding:8px 14px; background:var(--accent-gold); color:#0f172a; border:none; border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer;">📤 카카오톡 / 링크 공유</button>
+  <button type="button" id="btn-print-report" style="padding:8px 14px; background:var(--accent-primary); color:#fff; border:none; border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer;">🖨️ PDF 다운로드 / 인쇄</button>
+  <button type="button" id="btn-expert-cta" style="padding:8px 14px; background:transparent; border:1px solid var(--accent-secondary); color:var(--accent-secondary); border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer;">🤝 세무사 1:1 상담 연결</button>
+</div>
 </div>
 
 <div class="accordion-section" id="acc-advice">

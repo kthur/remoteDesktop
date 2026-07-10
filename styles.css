@@ -2022,3 +2022,179 @@ header .logo-section {
   display: flex;
   align-items: center;
 }
+
+
+/* ==========================================================================
+   Dashboard, Quick Filter & Interactive Widgets
+   ========================================================================== */
+.filter-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary-dark);
+  padding: 6px 12px;
+  border-radius: 50px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+body.light-mode .filter-chip {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: var(--text-primary-light);
+}
+.filter-chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+body.light-mode .filter-chip:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+.filter-chip.active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(108, 99, 255, 0.3);
+}
+
+/* Dimmed State for Quick Filter */
+.input-card.dimmed, 
+.result-card.dimmed, 
+.category-section-header.dimmed,
+.nav-tree-link.dimmed {
+  opacity: 0.2 !important;
+  filter: grayscale(80%);
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+/* Nudge Badges */
+.nudge-badge {
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 6px;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+  display: inline-block;
+  vertical-align: middle;
+  animation: pulse 2s infinite;
+}
+.nudge-badge.info {
+  background: var(--accent-secondary);
+  box-shadow: 0 0 6px rgba(0, 212, 170, 0.5);
+  color: #000;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+/* Tax Calendar Items */
+.calendar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.2s;
+}
+body.light-mode .calendar-item {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.05);
+}
+.calendar-item.current {
+  background: rgba(0, 212, 170, 0.06);
+  border-color: rgba(0, 212, 170, 0.2);
+}
+.calendar-month {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--accent-primary);
+}
+.calendar-item.current .calendar-month {
+  background: var(--accent-secondary);
+  color: #000;
+}
+.calendar-details {
+  flex: 1;
+}
+.calendar-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.calendar-desc {
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
+/* Print Stylesheet for High Quality Reports */
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 11pt !important;
+  }
+  .layout-wrapper {
+    display: block !important;
+  }
+  .sidebar-menu,
+  .sidebar-overlay,
+  .stepper-container,
+  .stepper-nav-buttons,
+  .spouse-sync-panel,
+  .mobile-spouse-select-wrapper,
+  .theme-switch-btn,
+  .privacy-badge,
+  .sticky-summary-bar,
+  #dashboard-result-card,
+  .btn-primary,
+  .btn-secondary,
+  .btn-toggle-advanced,
+  .pdf-dropzone,
+  .calculator-panel:not(.active),
+  #btn-open-sidebar {
+    display: none !important;
+  }
+  .app-container {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  .calculator-panel.active {
+    display: block !important;
+  }
+  .input-card, .result-card {
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin-bottom: 20px !important;
+    page-break-inside: avoid;
+  }
+  .card-title {
+    color: #000 !important;
+    border-bottom: 2px solid #000 !important;
+    padding-bottom: 6px !important;
+    font-size: 16pt !important;
+  }
+  input, select, textarea {
+    border: 1px solid #999 !important;
+    background: transparent !important;
+    color: #000 !important;
+  }
+}
