@@ -1365,6 +1365,10 @@
         <label>연간 가상자산 양도차익 <span class="tooltip-icon" data-tooltip="연간 가상자산(코인) 매매로 발생한 순 양도차익(양도가액 - 취득가액 - 필요경비)입니다. 기본공제 250만 원이 자동 적용됩니다.">?</span></label>
         <input class="form-input money-input" id="crypto-gain" inputmode="numeric" type="text" value=""/>
       </div>
+      <div class="form-group" style="margin-top:0.5rem;">
+        <label>가상자산 이월결손금 (양도차손) <span class="tooltip-icon" data-tooltip="과거 연도에서 발생하여 이월된 가상자산 양도차손(결손금)입니다. 올해 양도차익에서 공제됩니다.">?</span></label>
+        <input class="form-input money-input" id="crypto-loss" inputmode="numeric" type="text" value=""/>
+      </div>
       <button type="button" class="btn-primary" id="btn-calc-crypto" style="margin-top:0.5rem;">🎯 코인 세금 계산</button>
     </div>
     <div id="crypto-result" style="background:rgba(99,102,241,0.05); padding:1.5rem; border-radius:12px; display:none;">
@@ -1374,6 +1378,32 @@
   </div>
 </div>
 
+
+<!-- 📈 금융투자소득세(금투세) 심화 계산기 -->
+<div class="input-card" style="grid-column: 1 / -1; margin-top: 1.5rem;">
+  <h2 class="card-title">📈 금융투자소득세(금투세) 심화 시뮬레이터</h2>
+  <div class="grid-2col" style="display:grid; gap:1.5rem;">
+    <div>
+      <div class="form-group">
+        <label>주식/채권형 펀드 연간 소득 <span class="tooltip-icon" data-tooltip="국내 상장주식, 공모 국내 주식형 펀드 등에서 발생한 연간 금융투자소득입니다. 기본공제 5,000만 원이 적용됩니다.">?</span></label>
+        <input class="form-input money-input" id="fit-stock-gain" inputmode="numeric" type="text" value=""/>
+      </div>
+      <div class="form-group">
+        <label>기타 금융투자 연간 소득 <span class="tooltip-icon" data-tooltip="비상장 주식, 해외 주식, 파생상품, 채권 양도차익 등에서 발생한 연간 소득입니다. 기본공제 250만 원이 적용됩니다.">?</span></label>
+        <input class="form-input money-input" id="fit-other-gain" inputmode="numeric" type="text" value=""/>
+      </div>
+      <div class="form-group">
+        <label>금융투자 이월결손금 <span class="tooltip-icon" data-tooltip="이전 연도에서 발생한 금융투자 이월 결손금입니다. 올해 소득에서 공제됩니다.">?</span></label>
+        <input class="form-input money-input" id="fit-loss" inputmode="numeric" type="text" value=""/>
+      </div>
+      <button type="button" class="btn-primary" id="btn-calc-fit" style="margin-top:0.5rem;">🎯 금투세 계산</button>
+    </div>
+    <div id="fit-result" style="background:rgba(0,212,170,0.05); padding:1.5rem; border-radius:12px; display:none;">
+      <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem; color:var(--accent-secondary);">📊 금투세 산출 내역</h4>
+      <div id="fit-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
+    </div>
+  </div>
+</div>
 </section>
 <!-- ==================== 4. 상속·증여·양도 탭 ==================== -->
 <section aria-label="상속·증여·양도" class="calculator-panel" id="tab-capital" role="tabpanel">

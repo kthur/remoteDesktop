@@ -19,6 +19,23 @@ function debounce(fn, delay = 400) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // IndexedDB Initialization for multi scenario storage (R4)
+  let db;
+  const dbRequest = indexedDB.open("TaxNaviDB", 1);
+  dbRequest.onupgradeneeded = (e) => {
+    const database = e.target.result;
+    if (!database.objectStoreNames.contains("scenarios")) {
+      database.createObjectStore("scenarios");
+    }
+  };
+  dbRequest.onsuccess = (e) => {
+    db = e.target.result;
+    // Load scenarios when DB is ready
+    if (typeof loadScenarios === 'function') loadScenarios();
+  };
+  dbRequest.onerror = (e) => {
+    console.error("IndexedDB open failed", e);
+  };
   // 1. ?�보???�플�?�?초기??
   const initOnboarding = () => {
     const btnPdf = document.getElementById('btn-ob-pdf');
@@ -109,7 +126,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const parseVal = (idOrEl) => {
     const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
     if (!el) return 0;
-    var raw = parseInt(el.value.replace(/,/g, ''), 10) || 0;
+    // Remove all non-numeric characters to prevent letters, negative signs, etc.
+    let clean = el.value.replace(/[^0-9]/g, '');
+    var raw = parseInt(clean, 10) || 0;
+    raw = Math.max(0, raw); // Ensure positive
     var unit = el.dataset.unit || 'won';
     return raw * (unit === 'man' ? 10000 : unit === 'eok' ? 100000000 : 1);
   };
@@ -4183,18 +4203,25 @@ function renderAdvice(containerId, adviceList, actionCallback) {
       });
     };
 
-    // 5. 절세 시나리오 매니저
-    const loadScenarios = () => {
-      const scenarios = JSON.parse(localStorage.getItem('tax_scenarios') || '{}');
+    // 5. IndexedDB 기반 절세 시나리오 매니저 (R4)
+    window.loadScenarios = () => {
       const select = document.getElementById('scenario-compare-select');
       if (!select) return;
       select.innerHTML = '<option value="">비교할 시나리오 선택...</option>';
-      for (const name in scenarios) {
-        const opt = document.createElement('option');
-        opt.value = name;
-        opt.textContent = name;
-        select.appendChild(opt);
-      }
+      
+      if (!db) return;
+      const tx = db.transaction(["scenarios"], "readonly");
+      const store = tx.objectStore("scenarios");
+      const req = store.getAllKeys();
+      req.onsuccess = () => {
+        const keys = req.result;
+        keys.forEach(key => {
+          const opt = document.createElement('option');
+          opt.value = key;
+          opt.textContent = key;
+          select.appendChild(opt);
+        });
+      };
     };
 
     document.getElementById('btn-save-scenario').addEventListener('click', () => {
@@ -4210,13 +4237,20 @@ function renderAdvice(containerId, adviceList, actionCallback) {
         return;
       }
 
-      const scenarios = JSON.parse(localStorage.getItem('tax_scenarios') || '{}');
-      scenarios[name] = JSON.parse(currentState);
-      localStorage.setItem('tax_scenarios', JSON.stringify(scenarios));
+      if (!db) {
+        alert("데이터베이스가 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.");
+        return;
+      }
+
+      const tx = db.transaction(["scenarios"], "readwrite");
+      const store = tx.objectStore("scenarios");
+      store.put(JSON.parse(currentState), name);
       
-      document.getElementById('scenario-name-input').value = '';
-      loadScenarios();
-      showToast(`시나리오 "${name}" 저장 완료!`);
+      tx.oncomplete = () => {
+        document.getElementById('scenario-name-input').value = '';
+        loadScenarios();
+        showToast(`시나리오 "${name}" IndexedDB 저장 완료!`);
+      };
     });
 
     document.getElementById('btn-delete-scenario').addEventListener('click', () => {
@@ -4227,12 +4261,17 @@ function renderAdvice(containerId, adviceList, actionCallback) {
         return;
       }
 
-      const scenarios = JSON.parse(localStorage.getItem('tax_scenarios') || '{}');
-      delete scenarios[name];
-      localStorage.setItem('tax_scenarios', JSON.stringify(scenarios));
-      loadScenarios();
-      document.getElementById('scenario-compare-result').style.display = 'none';
-      showToast(`시나리오 "${name}" 삭제 완료.`);
+      if (!db) return;
+
+      const tx = db.transaction(["scenarios"], "readwrite");
+      const store = tx.objectStore("scenarios");
+      store.delete(name);
+      
+      tx.oncomplete = () => {
+        loadScenarios();
+        document.getElementById('scenario-compare-result').style.display = 'none';
+        showToast(`시나리오 "${name}" 삭제 완료.`);
+      };
     });
 
     document.getElementById('btn-compare-scenario').addEventListener('click', () => {
@@ -4243,26 +4282,33 @@ function renderAdvice(containerId, adviceList, actionCallback) {
         return;
       }
 
-      const scenarios = JSON.parse(localStorage.getItem('tax_scenarios') || '{}');
-      const savedState = scenarios[name];
-      const currentState = JSON.parse(localStorage.getItem('tax_calculator_state') || '{}');
+      if (!db) return;
+
+      const tx = db.transaction(["scenarios"], "readonly");
+      const store = tx.objectStore("scenarios");
+      const req = store.get(name);
       
-      if (!savedState) return;
+      req.onsuccess = () => {
+        const savedState = req.result;
+        const currentState = JSON.parse(localStorage.getItem('tax_calculator_state') || '{}');
+        
+        if (!savedState) return;
 
-      // 간단 비교
-      const savedTax = savedState.calculatedTax || 0;
-      const currentTax = currentState.calculatedTax || 0;
-      const diff = savedTax - currentTax;
+        // 간단 비교
+        const savedTax = savedState.calculatedTax || 0;
+        const currentTax = currentState.calculatedTax || 0;
+        const diff = savedTax - currentTax;
 
-      const resultBox = document.getElementById('scenario-compare-result');
-      resultBox.style.display = 'block';
-      if (diff > 0) {
-        resultBox.innerHTML = `⚖️ <b>"${name}" 대비 현재 상태:</b><br>총 세금이 <b>${formatNumberWithCommas(diff)}원</b> 더 절감됩니다! (세후 실수령액 증가)`;
-      } else if (diff < 0) {
-        resultBox.innerHTML = `⚖️ <b>"${name}" 대비 현재 상태:</b><br>총 세금이 <b>${formatNumberWithCommas(Math.abs(diff))}원</b> 더 많이 청구됩니다. (이전안이 더 유리)`;
-      } else {
-        resultBox.innerHTML = `⚖️ <b>"${name}" 대비 현재 상태:</b><br>세액 변동이 없습니다. 동일한 절세 금액입니다.`;
-      }
+        const resultBox = document.getElementById('scenario-compare-result');
+        resultBox.style.display = 'block';
+        if (diff > 0) {
+          resultBox.innerHTML = `⚖️ <b>"${name}" 대비 현재 상태:</b><br>총 세금이 <b>\${formatNumberWithCommas(diff)}원</b> 더 절감됩니다! (세후 실수령액 증가)`;
+        } else if (diff < 0) {
+          resultBox.innerHTML = `⚖️ <b>"${name}" 대비 현재 상태:</b><br>총 세금이 <b>\${formatNumberWithCommas(Math.abs(diff))}원</b> 더 많이 청구됩니다. (이전안이 더 유리)`;
+        } else {
+          resultBox.innerHTML = `⚖️ <b>"${name}" 대비 현재 상태:</b><br>세액 변동이 없습니다. 동일한 절세 금액입니다.`;
+        }
+      };
     });
 
     // 6. 세금 달력 타임라인 렌더링 및 스무스 이동 가이드
@@ -4535,19 +4581,28 @@ function renderAdvice(containerId, adviceList, actionCallback) {
       cryptoGainInput.addEventListener('input', formatInputOnEvent);
       cryptoGainInput.addEventListener('change', formatInputOnEvent);
 
+      // Bind formatting to crypto loss input as well
+      const cryptoLossInput = document.getElementById('crypto-loss');
+      if (cryptoLossInput) {
+        cryptoLossInput.addEventListener('input', formatInputOnEvent);
+        cryptoLossInput.addEventListener('change', formatInputOnEvent);
+      }
+
       btnCalcCrypto.addEventListener('click', () => {
         const gainVal = parseVal('crypto-gain');
-        const res = TaxCalculator.calculateCryptoTax(gainVal);
+        const lossVal = parseVal('crypto-loss');
+        const res = TaxCalculator.calculateCryptoTax(gainVal, lossVal);
         
         cryptoResultContent.innerHTML = `
-          <div style="margin-bottom: 8px;">💵 총 양도차익: <b>${formatNumberWithCommas(res.gain)} 원</b></div>
-          <div style="margin-bottom: 8px;">🛡️ 가상자산 기본공제: <b>${formatNumberWithCommas(res.deduction)} 원</b></div>
-          <div style="margin-bottom: 8px;">과세표준: <b>${formatNumberWithCommas(res.taxableAmount)} 원</b></div>
+          <div style="margin-bottom: 8px;">💵 총 양도차익: <b>\${formatNumberWithCommas(res.gain)} 원</b></div>
+          \${res.carryoverLoss > 0 ? `<div style="margin-bottom: 8px;">📉 이월결손금 공제: <b>\${formatNumberWithCommas(res.carryoverLoss)} 원</b></div>` : ''}
+          <div style="margin-bottom: 8px;">🛡️ 가상자산 기본공제: <b>\${formatNumberWithCommas(res.deduction)} 원</b></div>
+          <div style="margin-bottom: 8px;">과세표준: <b>\${formatNumberWithCommas(res.taxableAmount)} 원</b></div>
           <div style="margin-bottom: 8px; color: var(--accent-secondary); font-size: 0.95rem;">
-            <b>예상 납부세액: ${formatNumberWithCommas(res.totalTax)} 원</b> (지방세 10% 포함)
+            <b>예상 납부세액: \${formatNumberWithCommas(res.totalTax)} 원</b> (지방세 10% 포함)
           </div>
           <p style="margin: 8px 0 0 0; font-size: 0.75rem; opacity: 0.8; line-height: 1.4;">
-            💡 ${res.recommendation}
+            💡 \${res.recommendation}
           </p>
         `;
         cryptoResultDiv.style.display = 'block';
@@ -4559,6 +4614,51 @@ function renderAdvice(containerId, adviceList, actionCallback) {
           btnCalcCrypto.click();
         }
       }, 500));
+    }
+
+
+    // 7.1 금융투자소득세(금투세) 심화 시뮬레이터 연동 (R2)
+    const btnCalcFit = document.getElementById('btn-calc-fit');
+    const fitStockGain = document.getElementById('fit-stock-gain');
+    const fitOtherGain = document.getElementById('fit-other-gain');
+    const fitLoss = document.getElementById('fit-loss');
+    const fitResultDiv = document.getElementById('fit-result');
+    const fitResultContent = document.getElementById('fit-result-content');
+
+    if (btnCalcFit && fitStockGain && fitOtherGain && fitLoss) {
+      [fitStockGain, fitOtherGain, fitLoss].forEach(el => {
+        el.addEventListener('input', formatInputOnEvent);
+        el.addEventListener('change', formatInputOnEvent);
+      });
+
+      btnCalcFit.addEventListener('click', () => {
+        const stockVal = parseVal('fit-stock-gain');
+        const otherVal = parseVal('fit-other-gain');
+        const lossVal = parseVal('fit-loss');
+        const res = TaxCalculator.calculateFinancialInvestmentTax(stockVal, otherVal, lossVal);
+        
+        fitResultContent.innerHTML = `
+          <div style="margin-bottom: 8px;">📉 주식/채권형 과세대상: <b>\${formatNumberWithCommas(res.stockGain)} 원</b></div>
+          <div style="margin-bottom: 8px;">📈 기타 금융투자 과세대상: <b>\${formatNumberWithCommas(res.otherGain)} 원</b></div>
+          \${res.carryoverLoss > 0 ? `<div style="margin-bottom: 8px;">📉 금융투자 이월결손금 공제: <b>\${formatNumberWithCommas(res.carryoverLoss)} 원</b></div>` : ''}
+          <div style="margin-bottom: 8px;">과세표준 합계: <b>\${formatNumberWithCommas(res.totalBase)} 원</b></div>
+          <div style="margin-bottom: 8px; color: var(--accent-secondary); font-size: 0.95rem;">
+            <b>예상 금투세 세액: \${formatNumberWithCommas(res.totalTax)} 원</b> (지방소득세 포함)
+          </div>
+          <p style="margin: 8px 0 0 0; font-size: 0.75rem; opacity: 0.8; line-height: 1.4;">
+            💡 \${res.recommendation}
+          </p>
+        `;
+        fitResultDiv.style.display = 'block';
+      });
+
+      [fitStockGain, fitOtherGain, fitLoss].forEach(el => {
+        el.addEventListener('input', debounce(() => {
+          if (!isLoadingState) {
+            btnCalcFit.click();
+          }
+        }, 500));
+      });
     }
 
     // 8. PDF 다운로드 및 인쇄 버튼 연동

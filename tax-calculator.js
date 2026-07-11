@@ -1582,3 +1582,170 @@ TaxCalculator.calculateYellowUmbrellaSimulation = function(opts) {
         : '납입액 전액(' + payment.toLocaleString() + '원)이 소득공제됩니다. 예상 절세액: ' + estimatedTaxSavings.toLocaleString() + '원')
   };
 };
+
+
+// ──────────────────────────────────────────────
+// 가상자산(코인) 과세 계산기 (2025/2026 개정 반영 - 이월결손금 공제 포함)
+// ──────────────────────────────────────────────
+TaxCalculator.calculateCryptoTax = function(gain, carryoverLoss) {
+  var loss = carryoverLoss || 0;
+  var netGain = Math.max(0, gain - loss);
+  
+  if (netGain <= 2500000) {
+    return {
+      gain: gain,
+      carryoverLoss: loss,
+      deduction: netGain,
+      taxableAmount: 0,
+      tax: 0,
+      localTax: 0,
+      totalTax: 0,
+      rate: 0.22,
+      recommendation: "이월결손금 공제 후 순수익이 기본공제(250만 원) 이하이므로 납부할 세금이 없습니다."
+    };
+  }
+  
+  var deduction = 2500000;
+  var taxableAmount = netGain - deduction;
+  var tax = Math.floor(taxableAmount * 0.20);
+  var localTax = Math.floor(tax * 0.10);
+  var totalTax = tax + localTax;
+  
+  return {
+    gain: gain,
+    carryoverLoss: loss,
+    deduction: deduction,
+    taxableAmount: taxableAmount,
+    tax: tax,
+    localTax: localTax,
+    totalTax: totalTax,
+    rate: 0.22,
+    recommendation: "이월결손금 공제 및 기본공제 250만 원 초과분에 대해 22%(지방세 포함) 세율로 분류과세됩니다. 예상 세액: " + totalTax.toLocaleString() + "원"
+  };
+};
+
+// ──────────────────────────────────────────────
+// 금융투자소득세(금투세) 심화 계산기
+// ──────────────────────────────────────────────
+TaxCalculator.calculateFinancialInvestmentTax = function(stockGain, otherGain, carryoverLoss) {
+  var loss = carryoverLoss || 0;
+  
+  // Apply carryover loss first to stock gain, then to other gain
+  var stockTaxable = stockGain;
+  var otherTaxable = otherGain;
+  
+  if (loss > 0) {
+    if (stockTaxable >= loss) {
+      stockTaxable -= loss;
+      loss = 0;
+    } else {
+      loss -= stockTaxable;
+      stockTaxable = 0;
+      otherTaxable = Math.max(0, otherTaxable - loss);
+    }
+  }
+
+  // Exemptions
+  var stockExemption = Math.min(stockTaxable, 50000000);
+  var otherExemption = Math.min(otherTaxable, 2500000);
+  
+  var stockBase = Math.max(0, stockTaxable - 50000000);
+  var otherBase = Math.max(0, otherTaxable - 2500000);
+  
+  var totalBase = stockBase + otherBase;
+  
+  // Tax Rates: 20% (up to 3 eok), 25% (excess) + 10% local tax
+  var tax = 0;
+  var baseRate = 0.20;
+  if (totalBase <= 300000000) {
+    tax = Math.floor(totalBase * 0.20);
+    baseRate = 0.20;
+  } else {
+    tax = Math.floor(300000000 * 0.20 + (totalBase - 300000000) * 0.25);
+    baseRate = 0.25;
+  }
+  
+  var localTax = Math.floor(tax * 0.10);
+  var totalTax = tax + localTax;
+  
+  return {
+    stockGain: stockGain,
+    otherGain: otherGain,
+    carryoverLoss: carryoverLoss || 0,
+    stockBase: stockBase,
+    otherBase: otherBase,
+    totalBase: totalBase,
+    tax: tax,
+    localTax: localTax,
+    totalTax: totalTax,
+    rate: baseRate * 1.1, // 지방세 포함 실효세율
+    recommendation: totalTax > 0 
+      ? "기본공제 초과분에 대해 금융투자소득세가 부과됩니다. 예상 세액: " + totalTax.toLocaleString() + "원 (지방세 10% 포함)"
+      : "금융투자 소득이 기본공제 한도 내에 있어 납부할 세금이 없습니다."
+  };
+};
+
+// ──────────────────────────────────────────────
+// 대시보드용 통합 요약 계산기
+// ──────────────────────────────────────────────
+TaxCalculator.calculateDashboardSummary = function(inputs) {
+  // 배우자 A
+  var aSalary = inputs.aSalary || 0;
+  var aBusinessRev = inputs.aBusinessRev || 0;
+  var aBusinessExp = inputs.aBusinessExp || 0;
+  var aFinancialGen = inputs.aFinancialGen || 0;
+  var aFinancialOverseas = inputs.aFinancialOverseas || 0;
+  var aCard = inputs.aCard || 0;
+  
+  // 배우자 B
+  var bSalary = inputs.bSalary || 0;
+  var bBusinessRev = inputs.bBusinessRev || 0;
+  var bBusinessExp = inputs.bBusinessExp || 0;
+  var bFinancialGen = inputs.bFinancialGen || 0;
+  var bFinancialOverseas = inputs.bFinancialOverseas || 0;
+  var bCard = inputs.bCard || 0;
+  
+  var hasSpouseB = inputs.hasSpouseB || false;
+  
+  // 종합소득 산출
+  var aNetBusiness = Math.max(0, aBusinessRev - aBusinessExp);
+  var bNetBusiness = Math.max(0, bBusinessRev - bBusinessExp);
+  
+  // 단순 세액 모의계산
+  var aComprehensive = TaxCalculator.calculateComprehensiveIncome({
+    totalIncome: aSalary > 0 ? aSalary : aNetBusiness,
+    incomeType: aSalary > 0 ? 'wage' : 'business',
+    expense: aSalary > 0 ? 0 : aBusinessExp,
+    financialGeneral: aFinancialGen,
+    financialOverseas: aFinancialOverseas
+  });
+  
+  var bComprehensive = { comprehensiveTotal: 0, taxableIncome: 0 };
+  if (hasSpouseB) {
+    bComprehensive = TaxCalculator.calculateComprehensiveIncome({
+      totalIncome: bSalary > 0 ? bSalary : bNetBusiness,
+      incomeType: bSalary > 0 ? 'wage' : 'business',
+      expense: bSalary > 0 ? 0 : bBusinessExp,
+      financialGeneral: bFinancialGen,
+      financialOverseas: bFinancialOverseas
+    });
+  }
+  
+  var totalTax = aComprehensive.comprehensiveTotal + bComprehensive.comprehensiveTotal;
+  var totalIncome = aSalary + aNetBusiness + aFinancialGen + aFinancialOverseas +
+                    (hasSpouseB ? (bSalary + bNetBusiness + bFinancialGen + bFinancialOverseas) : 0);
+                    
+  var effectiveRate = totalIncome > 0 ? (totalTax / totalIncome) * 100 : 0;
+  var netReturn = Math.max(0, totalIncome - totalTax);
+  
+  // 과세표준 기준 세율구간 리턴 (A 기준 대표 표시)
+  var primaryTaxableIncome = aComprehensive.taxableIncome;
+  
+  return {
+    totalTax: totalTax,
+    effectiveRate: Math.round(effectiveRate * 100) / 100,
+    netReturn: netReturn,
+    primaryTaxableIncome: primaryTaxableIncome,
+    totalIncome: totalIncome
+  };
+};
