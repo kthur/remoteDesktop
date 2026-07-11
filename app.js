@@ -70,11 +70,11 @@ document.addEventListener('DOMContentLoaded', () => {
           
           const labelType = btn.dataset.labelType;
           if (labelType === 'income') {
-            btn.innerHTML = isHidden ? '???�업·금융·기�? ?�득 ?�기 ?? : '???�업·금융·기�? ?�득 ?�치�???;
+            btn.innerHTML = isHidden ? '사업·금융·기타 소득 접기 ▲' : '사업·금융·기타 소득 펼치기 ▼';
           } else if (labelType === 'deduction') {
-            btn.innerHTML = isHidden ? '??추�? 공제 ??�� ?�기 ?? : '??추�? 공제 ??�� ?�치�???;
+            btn.innerHTML = isHidden ? '추가 공제 항목 접기 ▲' : '추가 공제 항목 펼치기 ▼';
           } else {
-            btn.innerHTML = isHidden ? '???�기 ?? : '???�치�???;
+            btn.innerHTML = isHidden ? '접기 ▲' : '펼치기 ▼';
           }
         }
       });
@@ -91,13 +91,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const revVal = parseInt(revenueEl.value.replace(/,/g, ''), 10) || 0;
       if (revVal <= 0) {
         yellowEl.disabled = true;
-        yellowEl.placeholder = "?�업?�득 매출 ?�력 ???�성??;
+        yellowEl.placeholder = "사업소득 매출 입력 시 활성화";
         yellowEl.value = "";
         yellowEl.style.background = "rgba(255, 255, 255, 0.02)";
         yellowEl.style.cursor = "not-allowed";
       } else {
         yellowEl.disabled = false;
-        yellowEl.placeholder = "?�간 ?�입??(최�? 500�???공제)";
+        yellowEl.placeholder = "연간 납입액 (최대 500만 원 공제)";
         yellowEl.style.background = "";
         yellowEl.style.cursor = "";
       }
@@ -126,10 +126,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const parseVal = (idOrEl) => {
     const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
     if (!el) return 0;
-    // Remove all non-numeric characters to prevent letters, negative signs, etc.
-    let clean = el.value.replace(/[^0-9]/g, '');
+    let val = el.value || '';
+    let clean = val.replace(/[^0-9\-]/g, '');
+    let isNeg = clean.startsWith('-');
+    clean = clean.replace(/-/g, '');
+    if (isNeg) {
+      clean = '-' + clean;
+    }
     var raw = parseInt(clean, 10) || 0;
-    raw = Math.max(0, raw); // Ensure positive
     var unit = el.dataset.unit || 'won';
     return raw * (unit === 'man' ? 10000 : unit === 'eok' ? 100000000 : 1);
   };
@@ -151,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateResultWithHighlight(elId, value) {
     const el = document.getElementById(elId);
     if (!el) return;
-    const formatted = typeof value === 'number' ? value.toLocaleString() + ' ?? : value;
+    const formatted = typeof value === 'number' ? value.toLocaleString() + ' 원' : value;
     if (el.textContent !== formatted) {
       el.textContent = formatted;
       el.classList.remove('result-highlight');
@@ -189,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let digitsBeforeCursor = originalValue.substring(0, originalSelectionStart).replace(/[^0-9]/g, '').length;
     let isNegativeBefore = originalValue.substring(0, originalSelectionStart).includes('-');
     
-    let cleanVal = originalValue.replace(/,/g, '');
+    let cleanVal = originalValue.replace(/[^0-9\-]/g, '');
     if (cleanVal === '') {
       el.value = '';
       return;
@@ -290,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!body) return;
         body.classList.toggle('collapsed');
         const arrow = header.querySelector('span:last-child');
-        if (arrow) arrow.textContent = body.classList.contains('collapsed') ? '?? : '??;
+        if (arrow) arrow.textContent = body.classList.contains('collapsed') ? '▼' : '▲';
       });
     });
   }
@@ -318,11 +322,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fill) fill.style.width = pct + '%';
     if (pctLabel) pctLabel.textContent = pct + '%';
     if (label) {
-      if (pct === 0) label.textContent = '?�력??주세??;
-      else if (pct < 30) label.textContent = '기본 ?�보 ?�력 �?;
-      else if (pct < 60) label.textContent = '공제 ??�� ?�력 �?;
-      else if (pct < 100) label.textContent = '추�? ?�력 가??;
-      else label.textContent = '??모든 ??�� ?�력 ?�료!';
+      if (pct === 0) label.textContent = '정보를 입력해 주세요';
+      else if (pct < 30) label.textContent = '기본 정보 입력 중';
+      else if (pct < 60) label.textContent = '공제 항목 입력 중';
+      else if (pct < 100) label.textContent = '추가 입력 가능';
+      else label.textContent = '모든 항목 입력 완료!';
     }
   }
 
@@ -568,7 +572,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Korean Currency Helper
   function convertToKoreanWon(value) {
     const num = Math.floor(parseFloat(String(value).replace(/,/g, '')) || 0);
-    if (num === 0) return '0??;
+    if (num === 0) return '0원';
     
     let result = '';
     const eok = Math.floor(num / 100000000);
@@ -576,20 +580,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const won = num % 10000;
     
     if (eok > 0) {
-      result += `${eok}??`;
+      result += `${eok}억 `;
     }
     if (man > 0) {
-      result += `${man.toLocaleString('ko-KR')}�?`;
+      result += `${man.toLocaleString('ko-KR')}만 `;
     }
     if (won > 0 && eok === 0 && man === 0) {
       result += `${won.toLocaleString('ko-KR')}`;
     }
     
-    return result.trim() + ' ??;
-  }
-
-  // ?�� P2: ?�위 변??�?
-  var unitFactors = { won: 1, man: 10000, eok: 100000000 };
+    return result.trim() + ' 원';
+  };
 
   function setupKoreanUnitHelpers() {
     const targetIds = [
@@ -631,7 +632,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const clearBtn = document.createElement('button');
       clearBtn.type = 'button';
       clearBtn.className = 'input-clear-btn';
-      clearBtn.textContent = '??;
+      clearBtn.textContent = '×';
       wrapper.appendChild(clearBtn);
 
       const toggleClearBtnVisibility = () => {
@@ -741,24 +742,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const clean = text.replace(/\s+/g, ' ');
     // �?���?PDF ?�식 ?�?????�턴??관?�?�게
     const patterns = [
-      // 총급?? "총급?�액 70,000,000" / "총급??70,000,000" / "총급?�액\n70,000,000" 
-      { key: 'totalSalary',   regex: /총급???:???\s*[:\s]*(?:�????\s*\[?\s*([\d,]+)\s*\]?/, id: 'inc-a-salary' },
-      // ?�용카드: "?�용카드?�용?? 붙여?�기 ?�??
-      { key: 'creditCard',    regex: /?�용카드\s*?�용??s*[:\s]*(?:�????\s*\[?\s*([\d,]+)\s*\]?/, id: 'inc-a-card' },
-      // 체크카드/?�금
-      { key: 'cashReceipt',   regex: /(?:체크카드|?�금?�수�?직불카드)\s*(?:?�용???\s*[:\s]*(?:�????\s*\[?\s*([\d,]+)\s*\]?/, id: null },
-      // ?�금?��?
-      { key: 'pension',       regex: /?�금(?:?��?계좌)\s*(?:?�입???\s*[:\s]*(?:�????\s*\[?\s*([\d,]+)\s*\]?/, id: 'inc-a-pension' },
-      // ?�료�?
-      { key: 'medical',       regex: /?�료�?s*(?:지출액)?\s*[:\s]*(?:�????\s*\[?\s*([\d,]+)\s*\]?/, id: null },
-      // 보험�?
-      { key: 'insurance',     regex: /(?:보장??s*보험�?보험�?\s*[:\s]*(?:�????\s*\[?\s*([\d,]+)\s*\]?/, id: null },
-      // 교육�?
-      { key: 'education',     regex: /교육�?s*(?:공제)?\s*[:\s]*(?:�????\s*\[?\s*([\d,]+)\s*\]?/, id: null },
-      // 주택?�금
-      { key: 'housing',       regex: /주택?�금\s*(?:공제)?\s*[:\s]*(?:�????\s*\[?\s*([\d,]+)\s*\]?/, id: null },
-      // 기�?�?
-      { key: 'donation',      regex: /기�?�?s*[:\s]*(?:�????\s*\[?\s*([\d,]+)\s*\]?/, id: null },
+      { key: 'totalSalary',   regex: /총급여(?:액)?\s*[:\s]*(?:금액)?\s*\[?\s*([\d,]+)\s*\]?/, id: 'inc-a-salary' },
+      { key: 'creditCard',    regex: /신용카드\s*사용액?\s*[:\s]*(?:금액)?\s*\[?\s*([\d,]+)\s*\]?/, id: 'inc-a-card' },
+      { key: 'cashReceipt',   regex: /(?:체크카드|현금영수증|직불카드)\s*(?:사용액)?\s*[:\s]*(?:금액)?\s*\[?\s*([\d,]+)\s*\]?/, id: null },
+      { key: 'pension',       regex: /연금(?:저축)?계좌\s*(?:납입액)?\s*[:\s]*(?:금액)?\s*\[?\s*([\d,]+)\s*\]?/, id: 'inc-a-pension' },
+      { key: 'medical',       regex: /의료비\s*(?:지출액)?\s*[:\s]*(?:금액)?\s*\[?\s*([\d,]+)\s*\]?/, id: null },
+      { key: 'insurance',     regex: /(?:보장성\s*)?보험료\s*[:\s]*(?:금액)?\s*\[?\s*([\d,]+)\s*\]?/, id: null },
+      { key: 'education',     regex: /교육비\s*(?:공제)?\s*[:\s]*(?:금액)?\s*\[?\s*([\d,]+)\s*\]?/, id: null },
+      { key: 'housing',       regex: /주택자금\s*(?:공제)?\s*[:\s]*(?:금액)?\s*\[?\s*([\d,]+)\s*\]?/, id: null },
+      { key: 'donation',      regex: /기부금\s*[:\s]*(?:금액)?\s*\[?\s*([\d,]+)\s*\]?/, id: null }
     ];
     const result = {};
     const filledFields = [];
@@ -852,10 +844,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const content = document.getElementById('pdf-review-content');
     if (!modal || !content) return;
     const fieldLabels = {
-      totalSalary: '총급??, creditCard: '?�용카드 ?�용??,
-      cashReceipt: '체크카드/?�금', pension: '?�금?��?,
-      medical: '?�료�?, insurance: '보험�?,
-      education: '교육�?, housing: '주택?�금', donation: '기�?�?
+      totalSalary: '총급여', creditCard: '신용카드 사용액',
+      cashReceipt: '체크카드/현금', pension: '연금저축',
+      medical: '의료비', insurance: '보험료',
+      education: '교육비', housing: '주택자금', donation: '기부금'
     };
     let html = `<div style="font-weight:700; margin-bottom:8px;">?�� <strong>${count}�?/strong> ??��???�동 ?�력?�었?�니??</div>`;
     filledFields.forEach(f => {
@@ -1010,13 +1002,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Sync Target Selectors
   const targetSelectors = [
     { id: 'pension-target', salary: 'pension-salary', amount: 'pension-amount' },
-    { id: 'card-target', salary: amount: 'card-usage-amount' },
-    { id: 'sports-target', salary: amount: 'sports-fee' },
+    { id: 'card-target', salary: 'card-salary', amount: 'card-usage-amount' },
+    { id: 'sports-target', salary: 'sports-salary', amount: 'sports-fee' },
     { id: 'hometown-target', amount: 'hometown-amount' }, // only has amount, no salary
     { id: 'isa-target', salary: 'isa-salary', amount: 'isa-annual' },
-    { id: 'rent-target', salary: amount: 'rent-amount' },
+    { id: 'rent-target', salary: 'rent-salary', amount: 'rent-amount' },
     { id: 'insurance-target', amount: 'insurance-premium' },
-    { id: 'housing-target', salary: amount: 'housing-sub-amount' }
+    { id: 'housing-target', salary: 'housing-salary', amount: 'housing-sub-amount' }
   ];
 
   targetSelectors.forEach(config => {
@@ -1061,35 +1053,33 @@ document.addEventListener('DOMContentLoaded', () => {
   themeToggleBtn.addEventListener('click', () => {
     document.body.classList.toggle('light-mode');
     const isLight = document.body.classList.contains('light-mode');
-    themeToggleBtn.querySelector('.theme-icon').textContent = isLight ? '?��? : '?��';
-    themeToggleBtn.querySelector('.theme-text').textContent = isLight ? '?�크 모드�??�환' : '?�이??모드�??�환';
+    themeToggleBtn.querySelector('.theme-icon').textContent = isLight ? '🌙' : '☀️';
+    themeToggleBtn.querySelector('.theme-text').textContent = isLight ? '다크 모드로 전환' : '라이트 모드로 전환';
   });
 
-  // ?�� P2-4: breadcrumb ?�데?�트
   function updateBreadcrumb(tabKey, subKey) {
     var bc = document.getElementById('breadcrumb');
     if (!bc) return;
     var labels = {
-      profile: '???�보 ?�력', income: '?�득·?�말',
-      capital: '?�속·증여·?�도', report: '종합 리포??,
-      salary: '직장?�·연말정??, business: '?�업·?�자·?�세'
+      profile: '내 정보 입력', income: '소득·연말',
+      capital: '상속·증여·양도', report: '종합 리포트',
+      salary: '직장인·연말정산', business: '사업·투자·절세'
     };
     var subLabels = {
-      transfer: '?�도?�득', holding: '보유??, gift: '증여·?�속',
-      'profile-a': '배우?�A', 'profile-b': '배우?�B', 'profile-dep': '부?��?�?
+      transfer: '양도소득', holding: '보유세', gift: '증여·상속',
+      'profile-a': '배우자A', 'profile-b': '배우자B', 'profile-dep': '부양가족'
     };
     var parts = [];
     parts.push('<span class="breadcrumb-item active">TAX NAVI</span>');
-    parts.push('<span class="breadcrumb-sep">??/span>');
+    parts.push('<span class="breadcrumb-sep">/</span>');
     parts.push('<span class="breadcrumb-item active">' + (labels[tabKey] || tabKey) + '</span>');
     if (subKey && subLabels[subKey]) {
-      parts.push('<span class="breadcrumb-sep">??/span>');
+      parts.push('<span class="breadcrumb-sep">/</span>');
       parts.push('<span class="breadcrumb-item active">' + subLabels[subKey] + '</span>');
     }
     bc.innerHTML = parts.join('');
   }
 
-  // 2. ?�분류 ???�환 (종합?�득??/ ?�도?�득??
   const tabButtons = document.querySelectorAll('.nav-step-btn');
   const panels = document.querySelectorAll('.calculator-panel');
 
