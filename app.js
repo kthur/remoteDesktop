@@ -2325,6 +2325,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // [🆕 Hook: Dashboard & Nudges]
     if (window.updateDashboardSummary) window.updateDashboardSummary(d);
     if (window.updateNudgeBadges) window.updateNudgeBadges(d);
+    
+    // [🆕 Hook: Next-Step Enhancements]
+    const finalTax = best ? best.totalTax : aResult.comprehensiveTotal + bResult.comprehensiveTotal;
+    if (window.renderDashboardCharts) window.renderDashboardCharts(d, finalTax);
+    if (window.updateActionChecklist) window.updateActionChecklist(d);
 
     const { optResult, best } = runOptimizerAndRender(d, dependents);
 
@@ -4330,6 +4335,194 @@ function renderAdvice(containerId, adviceList, actionCallback) {
 
     loadScenarios();
     renderTaxCalendar();
+
+    // 11. PWA 설치 배너 연동
+    let deferredPrompt;
+    const pwaBanner = document.getElementById('pwa-install-banner');
+    const btnPwaInstall = document.getElementById('btn-pwa-install');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (pwaBanner) pwaBanner.style.display = 'block';
+    });
+
+    if (btnPwaInstall) {
+      btnPwaInstall.addEventListener('click', () => {
+        if (!deferredPrompt) return;
+        pwaBanner.style.display = 'none';
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('User accepted PWA installation');
+          }
+          deferredPrompt = null;
+        });
+      });
+    }
+
+    // 12. 글로벌 모의 시뮬레이션 상태 객체
+    window.simulatedActions = {
+      pension: false,
+      donation: false,
+      venture: false,
+      yellow: false
+    };
+
+    // 13. 실시간 절세 체크리스트 생성 및 렌더링
+    window.updateActionChecklist = function(d) {
+      const container = document.getElementById('dashboard-checklist-container');
+      if (!container) return;
+
+      const items = [];
+
+      // 연금저축/IRP 팁
+      const currentPension = d.aPension + d.aIrp;
+      if (d.aSalary > 0 && currentPension < 9000000) {
+        items.push({
+          id: 'pension',
+          label: `연금저축/IRP 한도 채우기 (연 900만)`,
+          saving: '최대 148.5만 원 환급',
+          checked: window.simulatedActions.pension
+        });
+      }
+
+      // 고향사랑기부제 팁
+      if (d.aSalary > 0 && d.aHometown === undefined) { // Check if not optimal
+        items.push({
+          id: 'donation',
+          label: '고향사랑기부금 20만 원 최적 납입',
+          saving: '14.4만 세액공제 + 6만 답례품',
+          checked: window.simulatedActions.donation
+        });
+      }
+
+      // 벤처투자
+      if (d.aSalary > 80000000 && d.aVenture === 0) {
+        items.push({
+          id: 'venture',
+          label: '벤처투자 100% 소득공제 (3,000만)',
+          saving: '한도 내 최대 1,155만 원 절세',
+          checked: window.simulatedActions.venture
+        });
+      }
+
+      // 노란우산
+      if (d.aBusinessRevenue > 10000000 && d.aYellow === 0) {
+        items.push({
+          id: 'yellow',
+          label: '노란우산공제 최대 납입 (연 500만)',
+          saving: '최대 115만 원 소득공제',
+          checked: window.simulatedActions.yellow
+        });
+      }
+
+      if (items.length === 0) {
+        container.innerHTML = `<div style="font-size:0.75rem; text-align:center; opacity:0.6; padding:10px;">🎉 현재 상황에서 가능한 절세 액션을 모두 완료했습니다!</div>`;
+        return;
+      }
+
+      let checklistHtml = '';
+      items.forEach(item => {
+        checklistHtml += `
+          <div class="checklist-item \${item.checked ? 'checked' : ''}" data-action-id="\${item.id}">
+            <input type="checkbox" class="checklist-checkbox" \${item.checked ? 'checked' : ''} />
+            <div class="checklist-label-group" style="flex:1;">
+              <div class="checklist-label">\${item.label}</div>
+              <div class="checklist-saving-badge">\${item.saving}</div>
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = checklistHtml;
+
+      // Bind checklist click handlers
+      container.querySelectorAll('.checklist-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          // If clicking background or label
+          const checkbox = item.querySelector('.checklist-checkbox');
+          if (e.target !== checkbox) {
+            checkbox.checked = !checkbox.checked;
+          }
+          
+          const actionId = item.getAttribute('data-action-id');
+          window.simulatedActions[actionId] = checkbox.checked;
+          
+          // Re-trigger calculation to apply simulation
+          const btnCalc = document.getElementById("btn-calc-income-integrated");
+          if (btnCalc) btnCalc.click();
+        });
+      });
+    };
+
+    // 14. SVG 자산 배분 도넛 차트 렌더링
+    window.renderDashboardCharts = function(d, totalTax) {
+      const chartSection = document.getElementById('acc-asset-chart');
+      if (!chartSection) return;
+
+      const hasSpouseB = document.getElementById('enable-spouse-b') ? document.getElementById('enable-spouse-b').checked : false;
+      const totalIncome = d.aSalary + Math.max(0, d.aBusinessRevenue - d.aBusinessExpense) + d.aFinancialGen + d.aFinancialOverseas +
+                          (hasSpouseB ? (d.bSalary + Math.max(0, d.bBusinessRevenue - d.bBusinessExpense) + d.bFinancialGen + d.bFinancialOverseas) : 0);
+      
+      if (totalIncome <= 0) {
+        chartSection.style.display = 'none';
+        return;
+      }
+
+      chartSection.style.display = 'block';
+
+      // 저축액 집계 (연금저축/IRP/벤처투자/노란우산 등)
+      const savings = d.aPension + d.aIrp + d.aVenture + d.aYellow +
+                      (hasSpouseB ? (d.bPension + d.bIrp + d.bVenture + d.bYellow) : 0);
+      
+      const taxAmount = totalTax;
+      const spendAmount = Math.max(0, totalIncome - taxAmount - savings);
+
+      const taxRatio = taxAmount / totalIncome;
+      const savingsRatio = savings / totalIncome;
+      const spendRatio = spendAmount / totalIncome;
+
+      const taxPercent = Math.round(taxRatio * 100);
+      const savingsPercent = Math.round(savingsRatio * 100);
+      const spendPercent = Math.round(spendRatio * 100);
+      const netReturnPercent = Math.round((1 - taxRatio) * 100);
+
+      // Circle Circumference = 2 * PI * r = 2 * 3.14159 * 80 = 502
+      const circumference = 502;
+      
+      // Update label percents
+      document.getElementById('chart-net-percent').textContent = netReturnPercent + '%';
+      document.getElementById('chart-lbl-tax').textContent = taxPercent + '%';
+      document.getElementById('chart-lbl-saving').textContent = savingsPercent + '%';
+      document.getElementById('chart-lbl-spend').textContent = spendPercent + '%';
+
+      // Segments Dash Offset Calculation
+      const taxOffset = circumference - (circumference * taxRatio);
+      const savingOffset = circumference - (circumference * savingsRatio);
+      const spendOffset = circumference - (circumference * spendRatio);
+
+      const arcTax = document.getElementById('chart-arc-tax');
+      const arcSaving = document.getElementById('chart-arc-saving');
+      const arcSpend = document.getElementById('chart-arc-spend');
+
+      // Set dash offsets
+      if (arcTax) {
+        arcTax.style.strokeDashoffset = taxOffset;
+        arcTax.setAttribute('transform', `rotate(-90 100 100)`);
+      }
+      if (arcSaving) {
+        arcSaving.style.strokeDashoffset = savingOffset;
+        // Rotate offset starts after Tax arc
+        const savingRotation = -90 + (taxRatio * 360);
+        arcSaving.setAttribute('transform', `rotate(\${savingRotation} 100 100)`);
+      }
+      if (arcSpend) {
+        arcSpend.style.strokeDashoffset = spendOffset;
+        // Rotate offset starts after Tax + Saving arcs
+        const spendRotation = -90 + ((taxRatio + savingsRatio) * 360);
+        arcSpend.setAttribute('transform', `rotate(\${spendRotation} 100 100)`);
+      }
+    };
 
     // 7. 가상자산(코인) 과세 계산기 연동
     const btnCalcCrypto = document.getElementById('btn-calc-crypto');

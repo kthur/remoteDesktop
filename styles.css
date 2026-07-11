@@ -2198,3 +2198,70 @@ body.light-mode .calendar-item {
     color: #000 !important;
   }
 }
+
+
+/* ==========================================================================
+   TAX NAVI Next Step Enhancements: SVG Chart, Checklists & Installation
+   ========================================================================== */
+
+/* Checklist Item Styles */
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+body.light-mode .checklist-item {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.05);
+}
+.checklist-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateX(2px);
+}
+body.light-mode .checklist-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+.checklist-item.checked {
+  background: rgba(0, 212, 170, 0.05) !important;
+  border-color: rgba(0, 212, 170, 0.2) !important;
+  opacity: 0.8;
+}
+.checklist-checkbox {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  accent-color: var(--accent-secondary);
+}
+.checklist-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.checklist-item.checked .checklist-label {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.checklist-saving-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: bold;
+  color: var(--accent-secondary);
+  background: rgba(0, 212, 170, 0.1);
+  padding: 1px 4px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+/* SVG Chart Animations */
+circle {
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
