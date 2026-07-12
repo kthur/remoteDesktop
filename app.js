@@ -1085,6 +1085,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabButtons = document.querySelectorAll('.nav-step-btn');
   const panels = document.querySelectorAll('.calculator-panel');
 
+  const updateStepperDoneState = () => {
+    let activeIndex = -1;
+    tabButtons.forEach((btn, index) => {
+      if (btn.classList.contains('active')) {
+        activeIndex = index;
+      }
+    });
+    tabButtons.forEach((btn, index) => {
+      if (index < activeIndex) {
+        btn.classList.add('done');
+      } else {
+        btn.classList.remove('done');
+      }
+    });
+  };
+
   tabButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       tabButtons.forEach(b => {
@@ -1100,6 +1116,7 @@ document.addEventListener('DOMContentLoaded', () => {
         targetPanel.classList.add('active');
       }
       updateBreadcrumb(btn.dataset.tab);
+      updateStepperDoneState();
 
       // Reset quick filter to 'all' when switching tabs manually
       if (!isInternalFilterClick) {
@@ -1116,6 +1133,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  // Set initial stepper state
+  updateStepperDoneState();
 
   // 3. ?�도?�득?????�력 ?�환 ?�어 (부?�산 vs 주식)
   // 1-2. ?�도/증여/?�속 ?�그먼트 컨트�??�릭 바인??
