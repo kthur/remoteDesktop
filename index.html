@@ -99,6 +99,15 @@
   </div>
 </div>
 
+<!-- 🆕 내 정보 입력 서브 스티커 (동작 흐름 시인성 개선) -->
+<div id="profile-sub-stepper" style="display: flex; justify-content: center; align-items: center; gap: 8px; margin: 15px auto -5px auto; max-width: 440px; padding: 6px 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 20px; font-size: 0.8rem; transition: all 0.3s ease-in-out;">
+  <span class="sub-step active" data-sub-step="profile-a" style="color: var(--accent-primary); font-weight: bold; transition: all 0.2s;">👤 배우자 A 입력</span>
+  <span style="opacity: 0.3;">&gt;</span>
+  <span class="sub-step" data-sub-step="profile-b" style="opacity: 0.5; transition: all 0.2s;">👤 배우자 B 입력</span>
+  <span style="opacity: 0.3;">&gt;</span>
+  <span class="sub-step" data-sub-step="profile-dep" style="opacity: 0.5; transition: all 0.2s;">👥 부양가족 설정</span>
+</div>
+
 <!-- 🆕 Profiling Modal (첫 방문 시) -->
 <div id="profiling-modal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.7); backdrop-filter:blur(6px); align-items:center; justify-content:center;">
 <div style="background:var(--card-bg-dark); border:1px solid var(--card-border-dark); border-radius:20px; padding:2rem; max-width:440px; width:92%; max-height:90vh; overflow-y:auto; box-shadow:0 24px 48px rgba(0,0,0,0.4);">
@@ -251,6 +260,7 @@
 <div class="" style="margin-bottom:1.5rem;">
 <!-- 배우자 A 입력 영역 -->
 <div class="spouse-container-box active profile-segment-group" data-group="profile-a" id="spouse-a-container" style="display:block;">
+<h3 class="card-title" id="title-profile-a" style="display:none;">배우자 A 정보 입력</h3>
 <div class="step-section-body" id="spouse-a-body" style="display:block;">
 <div class="form-group">
 <label>근로소득 (총급여) <span class="tooltip-icon" data-tooltip="연간 총 근로소득(총급여액)입니다.">?</span></label>
@@ -369,6 +379,7 @@
 </div><!-- /spouse-a-body -->
 <!-- 배우자 B 입력 영역 -->
 <div class="spouse-container-box profile-segment-group" data-group="profile-b" id="spouse-b-container" style="display:none;">
+<h3 class="card-title" id="title-profile-b" style="display:none;">배우자 B 정보 입력</h3>
 <div class="step-section-body" id="spouse-b-body" style="display:block;">
 <div class="form-group">
 <label>근로소득 (총급여) <span class="tooltip-icon" data-tooltip="연간 총 근로소득(총급여액)입니다.">?</span></label>
@@ -484,6 +495,7 @@
 </div>
 <!-- 부양가족 섹션 (Step 3) -->
 <div class="profile-segment-group" data-group="profile-dep" id="profile-dep-container" style="display:none;">
+<h3 class="card-title" id="title-profile-dep" style="display:none;">부양가족 설정</h3>
 <div class="step-section-header" data-target="dependents-body" style="cursor:pointer; user-select:none;">
 <h4 style="font-size:0.95rem; font-weight:700; display:flex; align-items:center; justify-content:space-between; margin-bottom:0;">
 <span>👥 3단계: 부양가족 및 지출내역 상세조율</span>
@@ -820,37 +832,39 @@
 </div>
 
 <!-- 🏟️ 체육시설 이용료 소득공제 -->
-<div class="input-card" style="margin-top: 1.5rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03);">
-  <h2 class="card-title">🏟️ 체육시설 이용료 소득공제</h2>
-  <div class="grid-2col" style="display:grid; gap:1.5rem;">
-    <div>
-      <div class="form-group">
-        <label>대상 선택</label>
-        <select id="sports-target" class="form-input">
-          <option value="a">배우자 A</option>
-          <option value="b">배우자 B</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>연간 총급여 <span class="tooltip-icon" data-tooltip="연간 총급여액입니다. 7,000만 원 이하 시 체육시설 공제 혜택을 받을 수 있습니다.">?</span></label>
-        <div style="display:flex; gap:6px;">
-          <input class="form-input money-input" id="sports-salary" inputmode="numeric" type="text" value="" readonly style="background:rgba(255,255,255,0.02); color:#aaa; cursor:not-allowed; flex:1;"/>
-          <a href="#" class="btn-edit-profile-salary" data-spouse-id="sports-target" style="font-size:0.75rem; text-decoration:none; color:var(--accent-primary); display:flex; align-items:center; white-space:nowrap; border:1px solid rgba(108,99,255,0.3); padding:4px 8px; border-radius:6px; background:rgba(108,99,255,0.05); transition:all 0.2s;">프로필 수정</a>
+<div id="salary-sports-placeholder">
+  <div class="input-card" id="sports-deduction-card" style="margin-top: 1.5rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03);">
+    <h2 class="card-title">🏟️ 체육시설 이용료 소득공제</h2>
+    <div class="grid-2col" style="display:grid; gap:1.5rem;">
+      <div>
+        <div class="form-group">
+          <label>대상 선택</label>
+          <select id="sports-target" class="form-input">
+            <option value="a">배우자 A</option>
+            <option value="b">배우자 B</option>
+          </select>
         </div>
+        <div class="form-group">
+          <label>연간 총급여 <span class="tooltip-icon" data-tooltip="연간 총급여액입니다. 7,000만 원 이하 시 체육시설 공제 혜택을 받을 수 있습니다.">?</span></label>
+          <div style="display:flex; gap:6px;">
+            <input class="form-input money-input" id="sports-salary" inputmode="numeric" type="text" value="" readonly style="background:rgba(255,255,255,0.02); color:#aaa; cursor:not-allowed; flex:1;"/>
+            <a href="#" class="btn-edit-profile-salary" data-spouse-id="sports-target" style="font-size:0.75rem; text-decoration:none; color:var(--accent-primary); display:flex; align-items:center; white-space:nowrap; border:1px solid rgba(108,99,255,0.3); padding:4px 8px; border-radius:6px; background:rgba(108,99,255,0.05); transition:all 0.2s;">프로필 수정</a>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>연간 수영장/체육단련장 이용료 <span class="tooltip-icon" data-tooltip="수영장, 체육단련장 등 시설 이용료 연간 합계액입니다.">?</span></label>
+          <input class="form-input money-input" id="sports-fee" inputmode="numeric" type="text" value=""/>
+        </div>
+        <div style="font-size:0.78rem; display:flex; align-items:center; gap:6px; margin:10px 0;">
+          <input id="sports-has-pt" type="checkbox" style="cursor:pointer; width:16px; height:16px; margin:0;"/>
+          <label for="sports-has-pt" style="cursor:pointer; font-weight:500; user-select:none;">PT(개인트레이닝) 포함 (50%만 인정)</label>
+        </div>
+        <button class="btn-primary" id="btn-calc-sports" style="margin-top:0.5rem;">🎯 공제액 계산</button>
       </div>
-      <div class="form-group">
-        <label>연간 수영장/체육단련장 이용료 <span class="tooltip-icon" data-tooltip="수영장, 체육단련장 등 시설 이용료 연간 합계액입니다.">?</span></label>
-        <input class="form-input money-input" id="sports-fee" inputmode="numeric" type="text" value=""/>
+      <div id="sports-result" style="background:rgba(56,189,248,0.05); padding:1.5rem; border-radius:12px; display:none;">
+        <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 체육시설 이용료 공제 내역</h4>
+        <div id="sports-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
       </div>
-      <div style="font-size:0.78rem; display:flex; align-items:center; gap:6px; margin:10px 0;">
-        <input id="sports-has-pt" type="checkbox" style="cursor:pointer; width:16px; height:16px; margin:0;"/>
-        <label for="sports-has-pt" style="cursor:pointer; font-weight:500; user-select:none;">PT(개인트레이닝) 포함 (50%만 인정)</label>
-      </div>
-      <button class="btn-primary" id="btn-calc-sports" style="margin-top:0.5rem;">🎯 공제액 계산</button>
-    </div>
-    <div id="sports-result" style="background:rgba(56,189,248,0.05); padding:1.5rem; border-radius:12px; display:none;">
-      <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📊 체육시설 이용료 공제 내역</h4>
-      <div id="sports-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
     </div>
   </div>
 </div>
@@ -1356,54 +1370,10 @@
 </div>
 
 
-<!-- 🌐 가상자산(코인) 과세 계산기 -->
-<div class="input-card" style="grid-column: 1 / -1; margin-top: 1.5rem;">
-  <h2 class="card-title">🌐 가상자산(코인) 과세 계산기 (2025/2026 개정 반영)</h2>
-  <div class="grid-2col" style="display:grid; gap:1.5rem;">
-    <div>
-      <div class="form-group">
-        <label>연간 가상자산 양도차익 <span class="tooltip-icon" data-tooltip="연간 가상자산(코인) 매매로 발생한 순 양도차익(양도가액 - 취득가액 - 필요경비)입니다. 기본공제 250만 원이 자동 적용됩니다.">?</span></label>
-        <input class="form-input money-input" id="crypto-gain" inputmode="numeric" type="text" value=""/>
-      </div>
-      <div class="form-group" style="margin-top:0.5rem;">
-        <label>가상자산 이월결손금 (양도차손) <span class="tooltip-icon" data-tooltip="과거 연도에서 발생하여 이월된 가상자산 양도차손(결손금)입니다. 올해 양도차익에서 공제됩니다.">?</span></label>
-        <input class="form-input money-input" id="crypto-loss" inputmode="numeric" type="text" value=""/>
-      </div>
-      <button type="button" class="btn-primary" id="btn-calc-crypto" style="margin-top:0.5rem;">🎯 코인 세금 계산</button>
-    </div>
-    <div id="crypto-result" style="background:rgba(99,102,241,0.05); padding:1.5rem; border-radius:12px; display:none;">
-      <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem; color:var(--accent-info);">📊 가상자산 세액 산출 내역</h4>
-      <div id="crypto-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
-    </div>
-  </div>
-</div>
 
 
-<!-- 📈 금융투자소득세(금투세) 심화 계산기 -->
-<div class="input-card" style="grid-column: 1 / -1; margin-top: 1.5rem;">
-  <h2 class="card-title">📈 금융투자소득세(금투세) 심화 시뮬레이터</h2>
-  <div class="grid-2col" style="display:grid; gap:1.5rem;">
-    <div>
-      <div class="form-group">
-        <label>주식/채권형 펀드 연간 소득 <span class="tooltip-icon" data-tooltip="국내 상장주식, 공모 국내 주식형 펀드 등에서 발생한 연간 금융투자소득입니다. 기본공제 5,000만 원이 적용됩니다.">?</span></label>
-        <input class="form-input money-input" id="fit-stock-gain" inputmode="numeric" type="text" value=""/>
-      </div>
-      <div class="form-group">
-        <label>기타 금융투자 연간 소득 <span class="tooltip-icon" data-tooltip="비상장 주식, 해외 주식, 파생상품, 채권 양도차익 등에서 발생한 연간 소득입니다. 기본공제 250만 원이 적용됩니다.">?</span></label>
-        <input class="form-input money-input" id="fit-other-gain" inputmode="numeric" type="text" value=""/>
-      </div>
-      <div class="form-group">
-        <label>금융투자 이월결손금 <span class="tooltip-icon" data-tooltip="이전 연도에서 발생한 금융투자 이월 결손금입니다. 올해 소득에서 공제됩니다.">?</span></label>
-        <input class="form-input money-input" id="fit-loss" inputmode="numeric" type="text" value=""/>
-      </div>
-      <button type="button" class="btn-primary" id="btn-calc-fit" style="margin-top:0.5rem;">🎯 금투세 계산</button>
-    </div>
-    <div id="fit-result" style="background:rgba(0,212,170,0.05); padding:1.5rem; border-radius:12px; display:none;">
-      <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem; color:var(--accent-secondary);">📊 금투세 산출 내역</h4>
-      <div id="fit-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
-    </div>
-  </div>
-</div>
+
+
 </section>
 <!-- ==================== 4. 상속·증여·양도 탭 ==================== -->
 <section aria-label="상속·증여·양도" class="calculator-panel" id="tab-capital" role="tabpanel">
@@ -1714,6 +1684,57 @@
 </div>
 </div>
 </div>
+<!-- 🌐 가상자산(코인) 과세 계산기 -->
+<div class="input-card segment-group-capital transfer-group" style="grid-column: 1 / -1; margin-top: 1.5rem;">
+  <h2 class="card-title">🌐 가상자산(코인) 과세 계산기 (2025/2026 개정 반영)</h2>
+  <div class="grid-2col" style="display:grid; gap:1.5rem;">
+    <div>
+      <div class="form-group">
+        <label>연간 가상자산 양도차익 <span class="tooltip-icon" data-tooltip="연간 가상자산(코인) 매매로 발생한 순 양도차익(양도가액 - 취득가액 - 필요경비)입니다. 기본공제 250만 원이 자동 적용됩니다.">?</span></label>
+        <input class="form-input money-input" id="crypto-gain" inputmode="numeric" type="text" value=""/>
+      </div>
+      <div class="form-group" style="margin-top:0.5rem;">
+        <label>가상자산 이월결손금 (양도차손) <span class="tooltip-icon" data-tooltip="과거 연도에서 발생하여 이월된 가상자산 양도차손(결손금)입니다. 올해 양도차익에서 공제됩니다.">?</span></label>
+        <input class="form-input money-input" id="crypto-loss" inputmode="numeric" type="text" value=""/>
+      </div>
+      <button type="button" class="btn-primary" id="btn-calc-crypto" style="margin-top:0.5rem;">🎯 코인 세금 계산</button>
+    </div>
+    <div id="crypto-result" style="background:rgba(99,102,241,0.05); padding:1.5rem; border-radius:12px; display:none;">
+      <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem; color:var(--accent-info);">📊 가상자산 세액 산출 내역</h4>
+      <div id="crypto-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 📈 금융투자소득세(금투세) 심화 계산기 -->
+<div class="input-card segment-group-capital transfer-group" style="grid-column: 1 / -1; margin-top: 1.5rem;">
+  <h2 class="card-title">📈 금융투자소득세(금투세) 심화 시뮬레이터</h2>
+  <div class="grid-2col" style="display:grid; gap:1.5rem;">
+    <div>
+      <div class="form-group">
+        <label>주식/채권형 펀드 연간 소득 <span class="tooltip-icon" data-tooltip="국내 상장주식, 공모 국내 주식형 펀드 등에서 발생한 연간 금융투자소득입니다. 기본공제 5,000만 원이 적용됩니다.">?</span></label>
+        <input class="form-input money-input" id="fit-group-a" inputmode="numeric" type="text" value=""/>
+      </div>
+      <div class="form-group">
+        <label>기타 금융투자 연간 소득 <span class="tooltip-icon" data-tooltip="비상장 주식, 해외 주식, 파생상품, 채권 양도차익 등에서 발생한 연간 소득입니다. 기본공제 250만 원이 적용됩니다.">?</span></label>
+        <input class="form-input money-input" id="fit-group-b" inputmode="numeric" type="text" value=""/>
+      </div>
+      <div class="form-group">
+        <label>금융투자 이월결손금 <span class="tooltip-icon" data-tooltip="이전 연도에서 발생한 금융투자 이월 결손금입니다. 올해 소득에서 공제됩니다.">?</span></label>
+        <input class="form-input money-input" id="fit-loss" inputmode="numeric" type="text" value=""/>
+      </div>
+      <div class="form-group">
+        <label>원천징수 세액</label>
+        <input class="form-input money-input" id="fit-withheld" inputmode="numeric" type="text" value=""/>
+      </div>
+      <button type="button" class="btn-primary" id="btn-calc-fit" style="margin-top:0.5rem;">🎯 금투세 계산</button>
+    </div>
+    <div id="fit-result" style="background:rgba(0,212,170,0.05); padding:1.5rem; border-radius:12px; display:none;">
+      <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem; color:var(--accent-secondary);">📊 금투세 산출 내역</h4>
+      <div id="fit-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
+    </div>
+  </div>
+</div>
 </section>
 <!-- ==================== 5. 종합 리포트 탭 ==================== -->
 <section aria-label="통합 리포트" class="calculator-panel" id="tab-report" role="tabpanel">
@@ -1806,7 +1827,7 @@
 <div class="accordion-section" id="acc-asset-chart" style="display:none;">
   <div class="accordion-header">📊 부부 합산 자산 배분 현황 (세금 vs 소비 vs 저축)</div>
   <div class="accordion-body" id="acc-body-asset-chart" style="display:flex; flex-direction:column; align-items:center; gap:1.5rem; padding:1.5rem;">
-    <div style="position:relative; width:200px; height:200px;">
+    <div class="chart-wrapper">
       <svg width="200" height="200" viewBox="0 0 200 200">
         <!-- Background circle -->
         <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="16" />
@@ -1895,6 +1916,13 @@
   <button type="button" id="btn-print-report" style="padding:8px 14px; background:var(--accent-primary); color:#fff; border:none; border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer;">🖨️ PDF 다운로드 / 인쇄</button>
   <button type="button" id="btn-expert-cta" style="padding:8px 14px; background:transparent; border:1px solid var(--accent-secondary); color:var(--accent-secondary); border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer;">🤝 세무사 1:1 상담 연결</button>
 </div>
+</div>
+
+<div class="accordion-section" id="acc-deductions-opt" style="display:block;">
+  <div class="accordion-header">🏟️ 추가 공제 최적화 (체육시설 이용료)</div>
+  <div class="accordion-body" id="acc-body-deductions-opt" style="padding:1.5rem 16px;">
+    <!-- Dynamic place for sports-deduction-card -->
+  </div>
 </div>
 
 <div class="accordion-section" id="acc-advice">

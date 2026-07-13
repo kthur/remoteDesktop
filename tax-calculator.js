@@ -1679,6 +1679,11 @@ TaxCalculator.calculateFinancialInvestmentTax = function(stockGain, otherGain, c
     localTax: localTax,
     totalTax: totalTax,
     rate: baseRate * 1.1, // 지방세 포함 실효세율
+    stockDeduction: stockExemption,
+    otherDeduction: otherExemption,
+    lossApplied: (carryoverLoss || 0) - loss,
+    taxableIncome: totalBase,
+    calculatedTax: tax,
     recommendation: totalTax > 0 
       ? "기본공제 초과분에 대해 금융투자소득세가 부과됩니다. 예상 세액: " + totalTax.toLocaleString() + "원 (지방세 10% 포함)"
       : "금융투자 소득이 기본공제 한도 내에 있어 납부할 세금이 없습니다."

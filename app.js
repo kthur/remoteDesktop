@@ -1,3 +1,13 @@
+let parseVal;
+let formatNumberWithCommas;
+let formatInputOnEvent;
+let updateBreadcrumb;
+let showToast;
+let db;
+let isLoadingState = false;
+let saveStateToLocalStorage;
+let selectProfileGroup;
+
 function getTargetSalary(targetId) {
   const el = document.getElementById(targetId);
   const t = el ? el.value : "a";
@@ -20,7 +30,16 @@ function debounce(fn, delay = 400) {
 
 document.addEventListener('DOMContentLoaded', () => {
   // IndexedDB Initialization for multi scenario storage (R4)
-  let db;
+  // db declared globally
+  // Memory cache of scenarios to ensure completely synchronous UI updates
+  window.scenarioCache = {};
+  try {
+    const fallback = JSON.parse(localStorage.getItem('fallback_scenarios') || '{}');
+    Object.assign(window.scenarioCache, fallback);
+  } catch (err) {
+    console.error(err);
+  }
+
   const dbRequest = indexedDB.open("TaxNaviDB", 1);
   dbRequest.onupgradeneeded = (e) => {
     const database = e.target.result;
@@ -30,8 +49,22 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   dbRequest.onsuccess = (e) => {
     db = e.target.result;
-    // Load scenarios when DB is ready
-    if (typeof loadScenarios === 'function') loadScenarios();
+    window.db = db; // Expose globally for E2E synchronization
+    const tx = db.transaction(["scenarios"], "readonly");
+    const store = tx.objectStore("scenarios");
+    const req = store.getAll();
+    const keysReq = store.getAllKeys();
+    keysReq.onsuccess = () => {
+      const keys = keysReq.result;
+      req.onsuccess = () => {
+        const vals = req.result;
+        keys.forEach((key, idx) => {
+          window.scenarioCache[key] = vals[idx];
+        });
+        localStorage.setItem('fallback_scenarios', JSON.stringify(window.scenarioCache));
+        if (typeof loadScenarios === 'function') loadScenarios();
+      };
+    };
   };
   dbRequest.onerror = (e) => {
     console.error("IndexedDB open failed", e);
@@ -123,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initAdvancedToggles();
   initYellowUmbrellaDisabler();
 
-  const parseVal = (idOrEl) => {
+  parseVal = (idOrEl) => {
     const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
     if (!el) return 0;
     let val = el.value || '';
@@ -138,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return raw * (unit === 'man' ? 10000 : unit === 'eok' ? 100000000 : 1);
   };
 
-  const formatNumberWithCommas = (value) => {
+  formatNumberWithCommas = (value) => {
     let numStr = String(value).replace(/,/g, '');
     if (numStr === '') return '';
     let hasMinus = numStr.startsWith('-');
@@ -165,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ?�� P0-12: ?�스??메시지 ?�시
-  function showToast(message, duration) {
+  showToast = function(message, duration) {
     if (duration === undefined) duration = 2000;
     let container = document.getElementById('toast-container');
     if (!container) {
@@ -184,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, duration);
   }
 
-  const formatInputOnEvent = (e) => {
+  formatInputOnEvent = (e) => {
     const el = e.target;
     let originalSelectionStart = el.selectionStart;
     let originalValue = el.value;
@@ -256,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ?�� ?�스??메시지 ?�시
-  function showToast(message, duration) {
+  showToast = function(message, duration) {
     duration = duration || 2500;
     let toast = document.getElementById('app-toast');
     if (!toast) {
@@ -347,10 +380,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Flag to prevent save-during-load loop
-  let isLoadingState = false;
+  // isLoadingState declared globally
 
   // Local Storage Save & Load logic
-  function saveStateToLocalStorage() {
+  saveStateToLocalStorage = function() {
     const state = {
       statics: {},
       dependents: []
@@ -882,7 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Pension
     const pensionTarget = document.getElementById('pension-target')?.value || 'a';
-    
+    const pensionSalaryEl = document.getElementById('pension-salary');
     if (pensionSalaryEl) {
       pensionSalaryEl.value = pensionTarget === 'a' ? spouseASalary : spouseBSalary;
       pensionSalaryEl.dispatchEvent(new Event('input'));
@@ -890,7 +923,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Card
     const cardTarget = document.getElementById('card-target')?.value || 'a';
-    
+    const cardSalaryEl = document.getElementById('card-salary');
     if (cardSalaryEl) {
       cardSalaryEl.value = cardTarget === 'a' ? spouseASalary : spouseBSalary;
       cardSalaryEl.dispatchEvent(new Event('input'));
@@ -898,7 +931,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Sports
     const sportsTarget = document.getElementById('sports-target')?.value || 'a';
-    
+    const sportsSalaryEl = document.getElementById('sports-salary');
     if (sportsSalaryEl) {
       sportsSalaryEl.value = sportsTarget === 'a' ? spouseASalary : spouseBSalary;
       sportsSalaryEl.dispatchEvent(new Event('input'));
@@ -906,7 +939,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ISA
     const isaTarget = document.getElementById('isa-target')?.value || 'a';
-    
+    const isaSalaryEl = document.getElementById('isa-salary');
     if (isaSalaryEl) {
       isaSalaryEl.value = isaTarget === 'a' ? spouseASalary : spouseBSalary;
       isaSalaryEl.dispatchEvent(new Event('input'));
@@ -1057,7 +1090,7 @@ document.addEventListener('DOMContentLoaded', () => {
     themeToggleBtn.querySelector('.theme-text').textContent = isLight ? '다크 모드로 전환' : '라이트 모드로 전환';
   });
 
-  function updateBreadcrumb(tabKey, subKey) {
+  updateBreadcrumb = function(tabKey, subKey) {
     var bc = document.getElementById('breadcrumb');
     if (!bc) return;
     var labels = {
@@ -1078,6 +1111,24 @@ document.addEventListener('DOMContentLoaded', () => {
       parts.push('<span class="breadcrumb-item active">' + subLabels[subKey] + '</span>');
     }
     bc.innerHTML = parts.join('');
+    
+    // 🆕 Update profile sub-stepper visibility based on active tab
+    const profileSubStepper = document.getElementById('profile-sub-stepper');
+    if (profileSubStepper) {
+      profileSubStepper.style.display = (tabKey === 'profile') ? 'flex' : 'none';
+    }
+
+    // 🆕 Dynamic tab-specific layout mover for Sports Deduction
+    const sportsCard = document.getElementById('sports-deduction-card');
+    if (sportsCard) {
+      if (tabKey === 'report') {
+        const dest = document.getElementById('acc-body-deductions-opt');
+        if (dest) dest.appendChild(sportsCard);
+      } else {
+        const dest = document.getElementById('salary-sports-placeholder');
+        if (dest) dest.appendChild(sportsCard);
+      }
+    }
   }
 
   let isInternalFilterClick = false;
@@ -1117,6 +1168,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       updateBreadcrumb(btn.dataset.tab);
       updateStepperDoneState();
+      
+      // 🆕 Reset Capital segment to transfer when switching to Capital gains tab
+      if (btn.dataset.tab === 'capital') {
+        const transferSegmentBtn = document.querySelector('.segment-btn[data-segment="transfer"]');
+        if (transferSegmentBtn) {
+          transferSegmentBtn.click();
+        }
+      }
 
       // Reset quick filter to 'all' when switching tabs manually
       if (!isInternalFilterClick) {
@@ -1240,7 +1299,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function selectProfileGroup(targetGroup) {
+  selectProfileGroup = function(targetGroup) {
     if (targetGroup === 'profile-b') {
       const checkbox = document.getElementById('enable-spouse-b');
       if (checkbox && !checkbox.checked) {
@@ -1274,6 +1333,22 @@ document.addEventListener('DOMContentLoaded', () => {
         group.style.display = 'block';
       } else {
         group.style.display = 'none';
+      }
+    });
+    
+    // 🆕 Update active state in sub-stepper indicators
+    const subSteps = document.querySelectorAll('#profile-sub-stepper .sub-step');
+    subSteps.forEach(el => {
+      const isCurrent = el.dataset.subStep === targetGroup;
+      el.classList.toggle('active', isCurrent);
+      if (isCurrent) {
+        el.style.color = 'var(--accent-primary)';
+        el.style.opacity = '1';
+        el.style.fontWeight = 'bold';
+      } else {
+        el.style.color = 'inherit';
+        el.style.opacity = '0.5';
+        el.style.fontWeight = 'normal';
       }
     });
     
@@ -1357,6 +1432,16 @@ document.addEventListener('DOMContentLoaded', () => {
           container.classList.remove('active');
         }
       });
+    });
+  });
+  
+  // 🆕 Add click listeners to sub-stepper span indicators for easy page-top segment navigation
+  document.querySelectorAll('#profile-sub-stepper .sub-step').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const targetGroup = this.dataset.subStep;
+      if (typeof selectProfileGroup === 'function') {
+        selectProfileGroup(targetGroup);
+      }
     });
   });
 
@@ -1453,6 +1538,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const financialAssetValue = parseVal('inherit-financial');
     const giftPast10Years = parseVal('inherit-gift-past');
 
+    if (totalAsset < 0 || childCount < 0 || spouseShare < 0 || coResidentHouseValue < 0 || financialAssetValue < 0 || giftPast10Years < 0) {
+      document.getElementById('inherit-result').style.display = 'block';
+      document.getElementById('inherit-result-content').innerHTML = `
+        <div style="color:var(--accent-warning);font-weight:bold;">오류: 입력금액은 0원 이상이어야 합니다. (음수 입력 불가)</div>
+      `;
+      return;
+    }
+
     const result = TaxCalculator.calculateInheritanceTax({
       totalAsset, childCount, hasLivingSpouse, spouseShare,
       isCoResidentHouse, coResidentHouseValue, financialAssetValue, giftPast10Years
@@ -1525,6 +1618,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalSalary = getTargetSalary('sports-target');
     const facilityFee = parseVal('sports-fee');
     const hasPT = document.getElementById('sports-has-pt').checked;
+
+    // Restore standard structure to avoid strict mode violations on subsequent runs
+    document.getElementById('sports-result').innerHTML = `
+      <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem; color:var(--accent-info);">📊 체육시설 이용료 공제 내역</h4>
+      <div id="sports-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
+    `;
+
+    if (facilityFee < 0) {
+      document.getElementById('sports-result').style.display = 'block';
+      document.getElementById('sports-result').innerHTML = `
+        <div style="color:var(--accent-warning);font-weight:bold;">오류: 입력금액은 0원 이상이어야 합니다. (음수 입력 불가)</div>
+      `;
+      return;
+    }
+
     const result = TaxCalculator.calculateSportsDeduction({ totalSalary, facilityFee, hasPT });
 
     document.getElementById('sports-result').style.display = 'block';
@@ -1596,7 +1704,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('isa-opt-result').style.display = 'block';
     document.getElementById('isa-opt-content').innerHTML = `
       <div>선택된 ISA 유형: <strong>${result.isaType === 'sub' ? '서민형' : result.isaType === 'domestic' ? '국내투자형' : '일반형'}</strong></div>
-      <div>연간 납입 한도: <strong>${result.annualLimit.toLocaleString()} 원</strong> (2026년 개편: 2배↑)</div>
+      <div>연 납입 한도: <strong>${result.annualLimit.toLocaleString()} 원</strong> (2026년 개편: 2배↑)</div>
       <div>비과세 한도: <strong>${result.taxfreeLimit.toLocaleString()} 원</strong></div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
       ${isDomesticType
@@ -1848,15 +1956,15 @@ document.addEventListener('DOMContentLoaded', () => {
     clearInlineErrors();
     const isSpouseBEnabled = document.getElementById('enable-spouse-b')?.checked;
     
-    if (d.aSalary < 0 || (isSpouseBEnabled && d.bSalary < 0)) { showInlineError("income-form-error", "?�득금액?� 0???�상?�어???�니??"); return false; }
-    if (d.aIsaType === "sub" && d.aSalary > 50000000) { showInlineError("income-form-error", "배우??A ISA ?��????�격 ?�음 (급여 5,000�?초과)"); return false; }
-    if (isSpouseBEnabled && d.bIsaType === "sub" && d.bSalary > 50000000) { showInlineError("income-form-error", "배우??B ISA ?��????�격 ?�음 (급여 5,000�?초과)"); return false; }
+    if (d.aSalary < 0 || (isSpouseBEnabled && d.bSalary < 0)) { showInlineError("income-form-error", "소득금액은 0원 이상이어야 합니다."); return false; }
+    if (d.aIsaType === "sub" && d.aSalary > 50000000) { showInlineError("income-form-error", "배우자 A ISA 서민형 자격 없음 (급여 5,000만 원 초과)"); return false; }
+    if (isSpouseBEnabled && d.bIsaType === "sub" && d.bSalary > 50000000) { showInlineError("income-form-error", "배우자 B ISA 서민형 자격 없음 (급여 5,000만 원 초과)"); return false; }
     const allNonNeg = [d.aCard, d.bCard, d.aYellow, d.bYellow, d.aPension, d.bPension,
       d.aFinancialGen, d.aFinancialOverseas, d.aIsaIncome, d.aBondSeparated,
       d.bFinancialGen, d.bFinancialOverseas, d.bIsaIncome, d.bBondSeparated,
       d.aVentureInvestment, d.aHousingSubscription, d.aHousingLoanRepay,
       d.bVentureInvestment, d.bHousingSubscription, d.bHousingLoanRepay];
-    if (allNonNeg.some(v => v < 0)) { showInlineError("income-form-error", "모든 ?�력금액?� 0???�상?�어???�니??"); return false; }
+    if (allNonNeg.some(v => v < 0)) { showInlineError("income-form-error", "모든 입력금액은 0원 이상이어야 합니다."); return false; }
     return true;
   }
 
@@ -1869,20 +1977,27 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!name) {
         name = card.querySelector(".person-name")?.textContent || "부양가족";
       }
-      if (depNames.includes(name)) { showInlineError("income-form-error", "중복??부?��?�??�름: " + name); return null; }
+      if (depNames.includes(name)) { showInlineError("income-form-error", "중복된 부양가족 이름: " + name); return null; }
       depNames.push(name);
       const cardVal = parseVal(card.querySelector(".opt-dep-card"));
       const medicalVal = parseVal(card.querySelector(".opt-dep-medical"));
       const eduVal = parseVal(card.querySelector(".opt-dep-edu"));
       const studentLoanRepayVal = parseVal(card.querySelector(".opt-dep-student-loan"));
-      if (cardVal < 0 || medicalVal < 0 || eduVal < 0 || studentLoanRepayVal < 0) { showInlineError("income-form-error", "부?��?�?지출액?� 0???�상?�어???�니??"); return null; }
+      if (cardVal < 0 || medicalVal < 0 || eduVal < 0 || studentLoanRepayVal < 0) {
+        showInlineError("income-form-error", "부양가족 입력금액은 0원 이상이어야 합니다.");
+        return null;
+      }
       dependents.push({
-        name, relation: card.querySelector(".opt-dep-relation").value,
-        card: cardVal, medical: medicalVal, edu: eduVal,
+        name,
+        relation: card.querySelector(".opt-dep-relation").value,
+        card: cardVal,
+        medical: medicalVal,
+        edu: eduVal,
         studentLoanRepay: studentLoanRepayVal,
         senior: card.querySelector(".opt-dep-senior").checked,
         disabled: card.querySelector(".opt-dep-disabled").checked,
-        birth: card.querySelector(".opt-dep-birth").checked, birthOrder: 1
+        birth: card.querySelector(".opt-dep-birth").checked,
+        birthOrder: 1
       });
     }
     return dependents;
@@ -2324,7 +2439,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById("med-bar-b").style.width = (bMed / maxMed * 100) + "%";
     document.getElementById("med-tax-a").textContent = aMed.toLocaleString() + " 원";
     document.getElementById("med-tax-b").textContent = bMed.toLocaleString() + " 원";
-    document.getElementById("res-medical-desc").textContent = aMed > bMed ? "배우??A �?�� ?�리" : bMed > aMed ? "배우??B �?�� ?�리" : "차이 ?�음";
+    document.getElementById("res-medical-desc").textContent = aMed > bMed ? "배우자 A 청구 유리" : bMed > aMed ? "배우자 B 청구 유리" : "차이 없음";
     showAccordionSection("acc-medical");
   }
 
@@ -2373,11 +2488,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.updateNudgeBadges) window.updateNudgeBadges(d);
     
     // [🆕 Hook: Next-Step Enhancements]
+    const { optResult, best } = runOptimizerAndRender(d, dependents);
+
     const finalTax = best ? best.totalTax : aResult.comprehensiveTotal + bResult.comprehensiveTotal;
     if (window.renderDashboardCharts) window.renderDashboardCharts(d, finalTax);
     if (window.updateActionChecklist) window.updateActionChecklist(d);
-
-    const { optResult, best } = runOptimizerAndRender(d, dependents);
 
     renderAdviceSection(d, aResult);
     renderCardNavigation(d);
@@ -2437,7 +2552,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const bar = document.getElementById('floating-result-bar');
     const amtEl = document.getElementById('floating-bar-amount');
     if (!bar || !amtEl) return;
-    const totalTax = best ? best.totalTax : 0;
+    
+    // R2: Add advanced financial investment tax (금투세) and virtual asset tax (가상자산세)
+    const fitStockGain = parseVal('fit-group-a') || 0;
+    const fitOtherGain = parseVal('fit-group-b') || 0;
+    const fitLoss = parseVal('fit-loss') || 0;
+    console.error('DEBUG inside updateFloatingBar values parsed:', fitStockGain, fitOtherGain, fitLoss);
+    const fitRes = TaxCalculator.calculateFinancialInvestmentTax(fitStockGain, fitOtherGain, fitLoss);
+
+    const cryptoGain = parseVal('crypto-gain') || 0;
+    const cryptoLoss = parseVal('crypto-loss') || 0;
+    const cryptoRes = TaxCalculator.calculateCryptoTax(cryptoGain, cryptoLoss);
+
+    let totalTax = best ? best.totalTax : 0;
+    totalTax += (fitRes.totalTax || 0) + (cryptoRes.totalTax || 0);
     if (totalTax > 0) {
       amtEl.textContent = totalTax.toLocaleString() + ' 원';
       bar.classList.add('active');
@@ -3772,9 +3900,8 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   }
-});
 
-function renderAdvice(containerId, adviceList, actionCallback) {
+const renderAdvice = (containerId, adviceList, actionCallback) => {
   const container = document.getElementById(containerId);
   container.innerHTML = '';
 
@@ -3949,9 +4076,10 @@ function renderAdvice(containerId, adviceList, actionCallback) {
   if (activeTab) {
     updateBreadcrumb(activeTab.dataset.tab);
   }
+};
 
   // ?�� Profiling modal (�?방문 ??
-  function initProfilingModal() {
+  const initProfilingModal = () => {
     var modal = document.getElementById('profiling-modal');
     if (!modal) return;
     var done = localStorage.getItem('tax_profiling_done');
@@ -4044,7 +4172,7 @@ function renderAdvice(containerId, adviceList, actionCallback) {
   // ──────────────────────────────────────────────
   // 10대 절세 기능 고도화: 대시보드, 퀵 필터, 세율구간, 시나리오, 세금달력
   // ──────────────────────────────────────────────
-  const initDashboardAndWidgets = () => {
+
     // 1. 퀵 필터 설정
     const filterChips = document.querySelectorAll('.filter-chip');
     filterChips.forEach(chip => {
@@ -4074,7 +4202,7 @@ function renderAdvice(containerId, adviceList, actionCallback) {
       });
     });
 
-    function applyQuickFilter(category) {
+    const applyQuickFilter = (category) => {
       const allCards = document.querySelectorAll('.input-card, .result-card, .category-section-header');
       const allTreeLinks = document.querySelectorAll('.nav-tree-link');
       
@@ -4196,6 +4324,20 @@ function renderAdvice(containerId, adviceList, actionCallback) {
         hasSpouseB: hasSpouseB
       });
 
+      // R2: Add advanced financial investment tax (금투세) and virtual asset tax (가상자산세)
+      const fitStockGain = parseVal('fit-group-a') || 0;
+      const fitOtherGain = parseVal('fit-group-b') || 0;
+      const fitLoss = parseVal('fit-loss') || 0;
+      const fitRes = TaxCalculator.calculateFinancialInvestmentTax(fitStockGain, fitOtherGain, fitLoss);
+
+      const cryptoGain = parseVal('crypto-gain') || 0;
+      const cryptoLoss = parseVal('crypto-loss') || 0;
+      const cryptoRes = TaxCalculator.calculateCryptoTax(cryptoGain, cryptoLoss);
+
+      const extraTax = (fitRes.totalTax || 0) + (cryptoRes.totalTax || 0);
+      summary.totalTax += extraTax;
+      summary.netReturn = Math.max(0, summary.netReturn - extraTax);
+
       document.getElementById('dash-total-tax').textContent = formatNumberWithCommas(summary.totalTax) + ' 원';
       document.getElementById('dash-effective-rate').textContent = summary.effectiveRate + '%';
       document.getElementById('dash-net-return').textContent = formatNumberWithCommas(summary.netReturn) + ' 원';
@@ -4221,7 +4363,7 @@ function renderAdvice(containerId, adviceList, actionCallback) {
       }
 
       // 벤처투자
-      if (d.aSalary > 80000000 && d.aVenture === 0) {
+      if (d.aSalary > 80000000 && d.aVentureInvestment === 0) {
         nudges.push({ tab: 'business', text: '벤처투자 100% 공제', selector: '[data-tab="business"]', titleKeyword: '벤처투자' });
       }
 
@@ -4250,50 +4392,50 @@ function renderAdvice(containerId, adviceList, actionCallback) {
     window.loadScenarios = () => {
       const select = document.getElementById('scenario-compare-select');
       if (!select) return;
+      const prevVal = select.value;
       select.innerHTML = '<option value="">비교할 시나리오 선택...</option>';
       
-      if (!db) return;
-      const tx = db.transaction(["scenarios"], "readonly");
-      const store = tx.objectStore("scenarios");
-      const req = store.getAllKeys();
-      req.onsuccess = () => {
-        const keys = req.result;
-        keys.forEach(key => {
-          const opt = document.createElement('option');
-          opt.value = key;
-          opt.textContent = key;
-          select.appendChild(opt);
-        });
-      };
-    };
-
-    document.getElementById('btn-save-scenario').addEventListener('click', () => {
+      Object.keys(window.scenarioCache).forEach(key => {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = key;
+        select.appendChild(opt);
+      });
+      
+      if (prevVal && window.scenarioCache[prevVal]) {
+        select.value = prevVal;
+      }
+    };    document.getElementById('btn-save-scenario').addEventListener('click', () => {
       const name = document.getElementById('scenario-name-input').value.trim();
       if (!name) {
         alert("시나리오 이름을 입력해주세요.");
         return;
       }
       
+      saveStateToLocalStorage();
       const currentState = localStorage.getItem('tax_calculator_state');
       if (!currentState) {
         alert("저장할 데이터 상태가 존재하지 않습니다.");
         return;
       }
-
-      if (!db) {
-        alert("데이터베이스가 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.");
-        return;
-      }
-
-      const tx = db.transaction(["scenarios"], "readwrite");
-      const store = tx.objectStore("scenarios");
-      store.put(JSON.parse(currentState), name);
       
-      tx.oncomplete = () => {
+      const parsedData = JSON.parse(currentState);
+      window.scenarioCache[name] = parsedData;
+      localStorage.setItem('fallback_scenarios', JSON.stringify(window.scenarioCache));
+      loadScenarios();
+
+      if (db) {
+        const tx = db.transaction(["scenarios"], "readwrite");
+        const store = tx.objectStore("scenarios");
+        store.put(parsedData, name);
+        tx.oncomplete = () => {
+          document.getElementById('scenario-name-input').value = '';
+          showToast(`시나리오 "${name}" 저장 완료!`);
+        };
+      } else {
         document.getElementById('scenario-name-input').value = '';
-        loadScenarios();
-        showToast(`시나리오 "${name}" IndexedDB 저장 완료!`);
-      };
+        showToast(`시나리오 "${name}" 저장 완료!`);
+      }
     });
 
     document.getElementById('btn-delete-scenario').addEventListener('click', () => {
@@ -4304,17 +4446,21 @@ function renderAdvice(containerId, adviceList, actionCallback) {
         return;
       }
 
-      if (!db) return;
+      delete window.scenarioCache[name];
+      localStorage.setItem('fallback_scenarios', JSON.stringify(window.scenarioCache));
+      loadScenarios();
+      document.getElementById('scenario-compare-result').style.display = 'none';
 
-      const tx = db.transaction(["scenarios"], "readwrite");
-      const store = tx.objectStore("scenarios");
-      store.delete(name);
-      
-      tx.oncomplete = () => {
-        loadScenarios();
-        document.getElementById('scenario-compare-result').style.display = 'none';
+      if (db) {
+        const tx = db.transaction(["scenarios"], "readwrite");
+        const store = tx.objectStore("scenarios");
+        store.delete(name);
+        tx.oncomplete = () => {
+          showToast(`시나리오 "${name}" 삭제 완료.`);
+        };
+      } else {
         showToast(`시나리오 "${name}" 삭제 완료.`);
-      };
+      }
     });
 
     document.getElementById('btn-compare-scenario').addEventListener('click', () => {
@@ -4325,34 +4471,61 @@ function renderAdvice(containerId, adviceList, actionCallback) {
         return;
       }
 
-      if (!db) return;
+      const savedState = window.scenarioCache[name];
+      if (!savedState) return;
 
-      const tx = db.transaction(["scenarios"], "readonly");
-      const store = tx.objectStore("scenarios");
-      const req = store.get(name);
-      
-      req.onsuccess = () => {
-        const savedState = req.result;
-        const currentState = JSON.parse(localStorage.getItem('tax_calculator_state') || '{}');
-        
-        if (!savedState) return;
+      const currentState = JSON.parse(localStorage.getItem('tax_calculator_state') || '{}');
+      const savedTax = savedState.calculatedTax || 0;
+      const currentTax = currentState.calculatedTax || 0;
+      const diff = savedTax - currentTax;
 
-        // 간단 비교
-        const savedTax = savedState.calculatedTax || 0;
-        const currentTax = currentState.calculatedTax || 0;
-        const diff = savedTax - currentTax;
-
-        const resultBox = document.getElementById('scenario-compare-result');
-        resultBox.style.display = 'block';
-        if (diff > 0) {
-          resultBox.innerHTML = `⚖️ <b>"${name}" 대비 현재 상태:</b><br>총 세금이 <b>${formatNumberWithCommas(diff)}원</b> 더 절감됩니다! (세후 실수령액 증가)`;
-        } else if (diff < 0) {
-          resultBox.innerHTML = `⚖️ <b>"${name}" 대비 현재 상태:</b><br>총 세금이 <b>${formatNumberWithCommas(Math.abs(diff))}원</b> 더 많이 청구됩니다. (이전안이 더 유리)`;
-        } else {
-          resultBox.innerHTML = `⚖️ <b>"${name}" 대비 현재 상태:</b><br>세액 변동이 없습니다. 동일한 절세 금액입니다.`;
-        }
-      };
+      const resultBox = document.getElementById('scenario-compare-result');
+      resultBox.style.display = 'block';
+      if (diff > 0) {
+        resultBox.innerHTML = `⚖️ <b>"${name}" 대비 현재 상태:</b><br>총 세금이 <b>${formatNumberWithCommas(diff)}원</b> 더 절감됩니다! (세후 실수령액 증가)`;
+      } else if (diff < 0) {
+        resultBox.innerHTML = `⚖️ <b>"${name}" 대비 현재 상태:</b><br>총 세금이 <b>${formatNumberWithCommas(Math.abs(diff))}원</b> 더 많이 청구됩니다. (이전안이 더 유리)`;
+      } else {
+        resultBox.innerHTML = `⚖️ <b>"${name}" 대비 현재 상태:</b><br>세액 변동이 없습니다. 동일한 절세 금액입니다.`;
+      }
     });
+
+    const btnRenameScenario = document.getElementById('btn-rename-scenario');
+    if (btnRenameScenario) {
+      btnRenameScenario.addEventListener('click', () => {
+        const select = document.getElementById('scenario-compare-select');
+        const name = select.value;
+        if (!name) {
+          alert("이름을 변경할 시나리오를 선택해주세요.");
+          return;
+        }
+
+        const newName = prompt("시나리오의 새 이름을 입력해주세요:", name);
+        if (!newName || !newName.trim()) return;
+        const trimmed = newName.trim();
+
+        const data = window.scenarioCache[name];
+        if (data) {
+          window.scenarioCache[trimmed] = data;
+          delete window.scenarioCache[name];
+          localStorage.setItem('fallback_scenarios', JSON.stringify(window.scenarioCache));
+          loadScenarios();
+          select.value = trimmed;
+
+          if (db) {
+            const tx = db.transaction(["scenarios"], "readwrite");
+            const store = tx.objectStore("scenarios");
+            store.put(data, trimmed);
+            store.delete(name);
+            tx.oncomplete = () => {
+              showToast(`시나리오 이름이 "${trimmed}"으로 변경되었습니다.`);
+            };
+          } else {
+            showToast(`시나리오 이름이 "${trimmed}"으로 변경되었습니다.`);
+          }
+        }
+      });
+    }
 
     // 6. 세금 달력 타임라인 렌더링 및 스무스 이동 가이드
     const renderTaxCalendar = () => {
@@ -4487,7 +4660,7 @@ function renderAdvice(containerId, adviceList, actionCallback) {
       }
 
       // 벤처투자
-      if (d.aSalary > 80000000 && d.aVenture === 0) {
+      if (d.aSalary > 80000000 && d.aVentureInvestment === 0) {
         items.push({
           id: 'venture',
           label: '벤처투자 100% 소득공제 (3,000만)',
@@ -4561,8 +4734,8 @@ function renderAdvice(containerId, adviceList, actionCallback) {
       chartSection.style.display = 'block';
 
       // 저축액 집계 (연금저축/IRP/벤처투자/노란우산 등)
-      const savings = d.aPension + d.aIrp + d.aVenture + d.aYellow +
-                      (hasSpouseB ? (d.bPension + d.bIrp + d.bVenture + d.bYellow) : 0);
+      const savings = d.aPension + d.aIrp + d.aVentureInvestment + d.aYellow +
+                      (hasSpouseB ? (d.bPension + d.bIrp + d.bVentureInvestment + d.bYellow) : 0);
       
       const taxAmount = totalTax;
       const spendAmount = Math.max(0, totalIncome - taxAmount - savings);
@@ -4615,87 +4788,119 @@ function renderAdvice(containerId, adviceList, actionCallback) {
 
     // 7. 가상자산(코인) 과세 계산기 연동
     const btnCalcCrypto = document.getElementById('btn-calc-crypto');
-    const cryptoGainInput = document.getElementById('crypto-gain');
+    const cryptoGain = document.getElementById('crypto-gain');
+    const cryptoLoss = document.getElementById('crypto-loss');
     const cryptoResultDiv = document.getElementById('crypto-result');
     const cryptoResultContent = document.getElementById('crypto-result-content');
 
-    if (btnCalcCrypto && cryptoGainInput) {
-      // Add formatting listener to crypto gain input
-      cryptoGainInput.addEventListener('input', formatInputOnEvent);
-      cryptoGainInput.addEventListener('change', formatInputOnEvent);
-
-      // Bind formatting to crypto loss input as well
-      const cryptoLossInput = document.getElementById('crypto-loss');
-      if (cryptoLossInput) {
-        cryptoLossInput.addEventListener('input', formatInputOnEvent);
-        cryptoLossInput.addEventListener('change', formatInputOnEvent);
-      }
+    if (btnCalcCrypto && cryptoGain && cryptoLoss) {
+      const inputs = [cryptoGain, cryptoLoss];
+      inputs.forEach(el => {
+        el.addEventListener('input', formatInputOnEvent);
+        el.addEventListener('change', formatInputOnEvent);
+      });
 
       btnCalcCrypto.addEventListener('click', () => {
-        const gainVal = parseVal('crypto-gain');
-        const lossVal = parseVal('crypto-loss');
-        const res = TaxCalculator.calculateCryptoTax(gainVal, lossVal);
-        
+        const gain = parseVal(cryptoGain);
+        const loss = parseVal(cryptoLoss);
+        console.error('DEBUG click btnCalcCrypto gain:', gain, 'loss:', loss);
+
+        if (gain < 0 || loss < 0) {
+          cryptoResultContent.innerHTML = `
+            <div style="color:var(--accent-warning);font-weight:bold;">오류: 입력금액은 0원 이상이어야 합니다. (음수 입력 불가)</div>
+          `;
+          cryptoResultDiv.style.display = 'block';
+          return;
+        }
+
+        const res = TaxCalculator.calculateCryptoTax(gain, loss);
+
+        // Trigger dashboard and floating bar recalculation
+        const state = parseIncomeInputs();
+        if (state) {
+          if (window.updateDashboardSummary) window.updateDashboardSummary(state);
+          updateFloatingBar(null, state);
+        }
+
         cryptoResultContent.innerHTML = `
-          <div style="margin-bottom: 8px;">💵 총 양도차익: <b>${formatNumberWithCommas(res.gain)} 원</b></div>
-          ${res.carryoverLoss > 0 ? `<div style="margin-bottom: 8px;">📉 이월결손금 공제: <b>${formatNumberWithCommas(res.carryoverLoss)} 원</b></div>` : ''}
-          <div style="margin-bottom: 8px;">🛡️ 가상자산 기본공제: <b>${formatNumberWithCommas(res.deduction)} 원</b></div>
-          <div style="margin-bottom: 8px;">과세표준: <b>${formatNumberWithCommas(res.taxableAmount)} 원</b></div>
-          <div style="margin-bottom: 8px; color: var(--accent-secondary); font-size: 0.95rem;">
-            <b>예상 납부세액: ${formatNumberWithCommas(res.totalTax)} 원</b> (지방세 10% 포함)
-          </div>
-          <p style="margin: 8px 0 0 0; font-size: 0.75rem; opacity: 0.8; line-height: 1.4;">
+          <div>총 양도가액: <strong>${formatNumberWithCommas(res.gain)} 원</strong></div>
+          <div>필요경비: <strong>${formatNumberWithCommas(res.carryoverLoss)} 원</strong></div>
+          <div>기본공제액: <strong>${formatNumberWithCommas(res.deduction)} 원</strong></div>
+          <div style="margin-top:5px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:5px;">과세표준: <strong>${formatNumberWithCommas(res.taxableAmount)} 원</strong></div>
+          <div>결정세액: <strong>${formatNumberWithCommas(res.totalTax)} 원</strong></div>
+          <div style="color:var(--accent-secondary); font-weight:bold; margin-top:5px;">
             💡 ${res.recommendation}
-          </p>
+          </div>
         `;
         cryptoResultDiv.style.display = 'block';
       });
 
-      // Hook up to debounced updates if desired
-      cryptoGainInput.addEventListener('input', debounce(() => {
-        if (!isLoadingState && cryptoGainInput.value) {
-          btnCalcCrypto.click();
-        }
-      }, 500));
+      inputs.forEach(el => {
+        el.addEventListener('input', debounce(() => {
+          if (!isLoadingState) {
+            btnCalcCrypto.click();
+          }
+        }, 500));
+      });
     }
 
-
-    // 7.1 금융투자소득세(금투세) 심화 시뮬레이터 연동 (R2)
     const btnCalcFit = document.getElementById('btn-calc-fit');
-    const fitStockGain = document.getElementById('fit-stock-gain');
-    const fitOtherGain = document.getElementById('fit-other-gain');
+    const fitStockGain = document.getElementById('fit-group-a');
+    const fitOtherGain = document.getElementById('fit-group-b');
     const fitLoss = document.getElementById('fit-loss');
+    const fitWithheld = document.getElementById('fit-withheld');
     const fitResultDiv = document.getElementById('fit-result');
     const fitResultContent = document.getElementById('fit-result-content');
 
+
     if (btnCalcFit && fitStockGain && fitOtherGain && fitLoss) {
-      [fitStockGain, fitOtherGain, fitLoss].forEach(el => {
+      const inputs = [fitStockGain, fitOtherGain, fitLoss];
+      if (fitWithheld) inputs.push(fitWithheld);
+      
+      inputs.forEach(el => {
         el.addEventListener('input', formatInputOnEvent);
         el.addEventListener('change', formatInputOnEvent);
       });
 
       btnCalcFit.addEventListener('click', () => {
-        const stockVal = parseVal('fit-stock-gain');
-        const otherVal = parseVal('fit-other-gain');
-        const lossVal = parseVal('fit-loss');
-        const res = TaxCalculator.calculateFinancialInvestmentTax(stockVal, otherVal, lossVal);
+        const stockGain = parseVal(fitStockGain);
+        const otherGain = parseVal(fitOtherGain);
+        const loss = parseVal(fitLoss);
+        const withheld = fitWithheld ? parseVal(fitWithheld) : 0;
+
+        if (stockGain < 0 || otherGain < 0 || loss < 0 || withheld < 0) {
+          fitResultContent.innerHTML = `
+            <div style="color:var(--accent-warning);font-weight:bold;">오류: 입력금액은 0원 이상이어야 합니다. (음수 입력 불가)</div>
+          `;
+          fitResultDiv.style.display = 'block';
+          return;
+        }
+
+        const res = TaxCalculator.calculateFinancialInvestmentTax(stockGain, otherGain, loss, withheld);
         
+        // Trigger dashboard and floating bar recalculation
+        const state = parseIncomeInputs();
+        if (state) {
+          if (window.updateDashboardSummary) window.updateDashboardSummary(state);
+          updateFloatingBar(null, state);
+        }
+
         fitResultContent.innerHTML = `
-          <div style="margin-bottom: 8px;">📉 주식/채권형 과세대상: <b>${formatNumberWithCommas(res.stockGain)} 원</b></div>
-          <div style="margin-bottom: 8px;">📈 기타 금융투자 과세대상: <b>${formatNumberWithCommas(res.otherGain)} 원</b></div>
-          ${res.carryoverLoss > 0 ? `<div style="margin-bottom: 8px;">📉 금융투자 이월결손금 공제: <b>${formatNumberWithCommas(res.carryoverLoss)} 원</b></div>` : ''}
-          <div style="margin-bottom: 8px;">과세표준 합계: <b>${formatNumberWithCommas(res.totalBase)} 원</b></div>
-          <div style="margin-bottom: 8px; color: var(--accent-secondary); font-size: 0.95rem;">
-            <b>예상 금투세 세액: ${formatNumberWithCommas(res.totalTax)} 원</b> (지방소득세 포함)
-          </div>
-          <p style="margin: 8px 0 0 0; font-size: 0.75rem; opacity: 0.8; line-height: 1.4;">
+          <div>국내주식등 소득금액: <strong>${formatNumberWithCommas(res.stockGain)} 원</strong> (기본공제: ${formatNumberWithCommas(res.stockDeduction)} 원)</div>
+          <div>기타금융자산 소득금액: <strong>${formatNumberWithCommas(res.otherGain)} 원</strong> (기본공제: ${formatNumberWithCommas(res.otherDeduction)} 원)</div>
+          <div>이월결손금 공제: <strong>${formatNumberWithCommas(res.lossApplied)} 원</strong></div>
+          <div style="margin-top:5px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:5px;">과세표준: <strong>${formatNumberWithCommas(res.taxableIncome)} 원</strong></div>
+          <div>산출세액: <strong>${formatNumberWithCommas(res.calculatedTax)} 원</strong></div>
+          <div>지방소득세(10%): <strong>${formatNumberWithCommas(res.localTax)} 원</strong></div>
+          <div>총 합산세액: <strong>${formatNumberWithCommas(res.totalTax)} 원</strong></div>
+          <div style="color:var(--accent-secondary); font-weight:bold; margin-top:5px;">
             💡 ${res.recommendation}
-          </p>
+          </div>
         `;
         fitResultDiv.style.display = 'block';
       });
 
-      [fitStockGain, fitOtherGain, fitLoss].forEach(el => {
+      inputs.forEach(el => {
         el.addEventListener('input', debounce(() => {
           if (!isLoadingState) {
             btnCalcFit.click();
@@ -4751,12 +4956,8 @@ function renderAdvice(containerId, adviceList, actionCallback) {
       });
     }
 
-  };
-
-  initDashboardAndWidgets();
-
   initProfilingModal();
-}
+});
 
 
 // ==========================================
@@ -4877,12 +5078,42 @@ document.addEventListener('DOMContentLoaded', function() {
         if (topStepBtn) topStepBtn.click();
       }
       
-      // Scroll to element
+      // Expand segment or accordion depending on target element
       setTimeout(() => {
+        // Handle Capital Gains / Gift Tax tabs segment toggles
+        if (targetId === 'acc-holding-tax' || targetId === 'res-holding-title') {
+          const btn = document.querySelector('.segment-btn[data-segment="holding"]');
+          if (btn) btn.click();
+        } else if (targetId === 'acc-transfer-tax' || targetId === 'res-transfer-title') {
+          const btn = document.querySelector('.segment-btn[data-segment="transfer"]');
+          if (btn) btn.click();
+        } else if (targetId === 'acc-gift-tax' || targetId === 'res-gift-title' || targetId === 'gs-timeline-card') {
+          const btn = document.querySelector('.segment-btn[data-segment="gift"]');
+          if (btn) btn.click();
+        }
+        
+        // Handle profile group segments
+        if (typeof selectProfileGroup === 'function') {
+          if (targetId.includes('profile-b') || targetId.includes('b-salary')) {
+            selectProfileGroup('profile-b');
+          } else if (targetId.includes('profile-dep') || targetId.includes('spouse-b-enabled')) {
+            selectProfileGroup('profile-dep');
+          } else if (targetId.includes('profile-a') || targetId.includes('a-salary')) {
+            selectProfileGroup('profile-a');
+          }
+        }
+
         const targetEl = document.getElementById(targetId);
         if (targetEl) {
           // close sidebar on mobile
           if (window.innerWidth <= 1024) toggleSidebar(false);
+          
+          // Handle accordion expand
+          const parentAccordion = targetEl.closest('.accordion-section');
+          if (parentAccordion && !parentAccordion.classList.contains('active')) {
+            const header = parentAccordion.querySelector('.accordion-header');
+            if (header) header.click();
+          }
           
           targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
           
@@ -4948,4 +5179,5 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Initial sync
   syncMenuTreeWithTabs();
+  window.appInitialized = true;
 });
