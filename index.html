@@ -1944,8 +1944,8 @@
 <button class="floating-bar-btn" id="floating-bar-btn">📊 결과 보기</button>
 </div>
 <!-- 🆕 P1: 모바일 Bottom Sheet 결과창 -->
-<div class="bottom-sheet-dim" id="mobile-result-bottom-sheet-dim" style="display:none; position:fixed; inset:0; z-index:1001; background:rgba(0,0,0,0.5); backdrop-filter:blur(3px);"></div>
-<div class="bottom-sheet-container" id="mobile-result-bottom-sheet" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:1002; background:var(--card-bg-dark); border-top:1px solid var(--card-border-dark); border-radius:18px 18px 0 0; padding:1.5rem; max-height:85vh; overflow-y:auto; transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+<div class="bottom-sheet-dim" id="mobile-result-bottom-sheet-dim" style="display:none; position:fixed; inset:0; z-index:1200; background:rgba(0,0,0,0.5); backdrop-filter:blur(3px);"></div>
+<div class="bottom-sheet-container" id="mobile-result-bottom-sheet" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:1201; background:var(--card-bg-dark); border-top:1px solid var(--card-border-dark); border-radius:18px 18px 0 0; padding:1.5rem; max-height:85vh; overflow-y:auto; transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
 <div class="bottom-sheet-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:0.75rem;">
 <h3 style="font-size:1.1rem; font-weight:700; margin:0;">🏆 종합 절세 통합 리포트</h3>
 <button id="bottom-sheet-close-btn" style="background:transparent; border:none; color:var(--text-secondary-dark); font-size:1.2rem; cursor:pointer; font-weight:bold;">✖</button>
@@ -1955,7 +1955,7 @@
 </div>
 </div>
 <!-- 🆕 P0: PDF 파싱 완료 모달 -->
-<div id="pdf-review-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center;">
+<div id="pdf-review-modal" style="display:none; position:fixed; inset:0; z-index:1250; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center;">
 <div style="background:var(--card-bg-dark); border:1px solid var(--card-border-dark); border-radius:16px; padding:2rem; max-width:420px; width:90%; max-height:80vh; overflow-y:auto;">
 <h3 style="font-size:1rem; font-weight:700; margin-bottom:12px;">✅ PDF 자동 입력 완료</h3>
 <div id="pdf-review-content" style="font-size:0.82rem; line-height:1.6; margin-bottom:1rem;"></div>
@@ -1991,7 +1991,7 @@
   </script>
 </div>
 <!-- 하단 스티키 요약 바 (스크롤 반응형) -->
-<div id="sticky-tax-bar" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); width:90%; max-width:600px; background:rgba(30, 32, 41, 0.95); backdrop-filter:blur(10px); border:1px solid rgba(0, 212, 170, 0.3); padding:12px 20px; border-radius:24px; box-shadow:0 10px 30px rgba(0,0,0,0.5); z-index:9999; justify-content:space-between; align-items:center; transition:all 0.3s ease;">
+<div id="sticky-tax-bar" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); width:90%; max-width:600px; background:rgba(30, 32, 41, 0.95); backdrop-filter:blur(10px); border:1px solid rgba(0, 212, 170, 0.3); padding:12px 20px; border-radius:24px; box-shadow:0 10px 30px rgba(0,0,0,0.5); z-index:1150; justify-content:space-between; align-items:center; transition:all 0.3s ease;">
   <div style="display:flex; flex-direction:column;">
     <span style="font-size:0.75rem; color:var(--text-secondary-dark);">현재까지 예상 환급(납부)액</span>
     <span id="sticky-tax-amount" style="font-size:1.1rem; font-weight:800; color:var(--accent-secondary);">0원</span>

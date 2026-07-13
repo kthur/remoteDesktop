@@ -197,25 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 🆕 P0-12: 토스트 메시지 표시
-  showToast = function(message, duration) {
-    if (duration === undefined) duration = 2000;
-    let container = document.getElementById('toast-container');
-    if (!container) {
-      container = document.createElement('div');
-      container.id = 'toast-container';
-      container.className = 'toast-container';
-      document.body.appendChild(container);
-    }
-    var toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.textContent = message;
-    container.appendChild(toast);
-    setTimeout(function() {
-      toast.classList.add('out');
-      setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 250);
-    }, duration);
-  }
+
 
   formatInputOnEvent = (e) => {
     const el = e.target;

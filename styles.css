@@ -1852,7 +1852,7 @@ body.light-mode .sync-status-badge.disconnected {
   flex-direction: column;
   padding: 1.5rem 0;
   overflow-y: auto;
-  z-index: 100;
+  z-index: 1101; /* Elevated above mobile tab-navigation (1000) and sidebar-overlay (1100) */
   transition: transform 0.3s ease;
 }
 
@@ -1981,7 +1981,7 @@ body.light-mode .btn-hamburger { color: var(--text-primary-light); }
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 90;
+  z-index: 1100; /* Elevated above mobile tab-navigation (1000) to block interactions correctly */
   backdrop-filter: blur(2px);
 }
 
