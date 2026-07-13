@@ -5141,13 +5141,46 @@ document.addEventListener('DOMContentLoaded', function() {
     const activeTabId = activeTabPanel.id;
     
     const allTreeItems = document.querySelectorAll('.nav-tree-item');
-    allTreeItems.forEach(item => {
+    let activeStepIdx = 0;
+    
+    // Find the index of the active tab in the tree
+    allTreeItems.forEach((item, index) => {
+      if (item.getAttribute('data-target-tab') === activeTabId) {
+        activeStepIdx = index;
+      }
+    });
+
+    allTreeItems.forEach((item, index) => {
+      const subMenu = item.querySelector('.nav-tree-sub');
+      const treeTab = item.querySelector('.nav-tree-tab');
+      
+      // Determine if this step's items should be visible (only current or completed steps)
+      const isCompletedOrActive = index <= activeStepIdx;
+
       if (item.getAttribute('data-target-tab') === activeTabId) {
         item.classList.add('open');
-        item.querySelector('.nav-tree-tab').classList.add('active');
+        if (treeTab) treeTab.classList.add('active');
+        if (subMenu) subMenu.style.display = 'block';
       } else {
         item.classList.remove('open');
-        item.querySelector('.nav-tree-tab').classList.remove('active');
+        if (treeTab) treeTab.classList.remove('active');
+        // Hide sub-menu for future steps to guide sequential interaction
+        if (subMenu) {
+          subMenu.style.display = isCompletedOrActive ? 'block' : 'none';
+        }
+      }
+      
+      // Give visual distinction to future disabled-looking tree tabs
+      if (treeTab) {
+        if (isCompletedOrActive) {
+          treeTab.style.opacity = '1';
+          treeTab.style.pointerEvents = 'auto';
+          treeTab.style.cursor = 'pointer';
+        } else {
+          treeTab.style.opacity = '0.35';
+          treeTab.style.pointerEvents = 'none'; // Lock navigation to future steps in menu tree
+          treeTab.style.cursor = 'not-allowed';
+        }
       }
     });
   }
