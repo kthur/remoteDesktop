@@ -475,7 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                   <span class="person-name">부양가족 ${idx + 1}</span>
-                  <button class="btn-remove-person">??/button>
+                  <button class="btn-remove-person">✖</button>
                 </div>
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
                   <div class="form-group" style="margin-bottom:0;">
@@ -483,9 +483,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <input type="text" class="form-input opt-dep-name" value="${dep.name}" placeholder="예: 홍길동">
                   </div>
                   <div class="form-group" style="margin-bottom:0;">
-                    <label>가족 이름</label>
+                    <label>관계 설정</label>
                     <select class="form-input opt-dep-relation">
-            <strong>👤 ${dep.name}</strong> <span style="font-size:0.75rem; opacity:0.6;">(${dep.relation === 'child' ? '자녀' : dep.relation === 'parent' ? '부모' : '기타'})</span>
+                      <option value="child" ${dep.relation === 'child' ? 'selected' : ''}>자녀 (8세 이상)</option>
                       <option value="parent" ${dep.relation === 'parent' ? 'selected' : ''}>부모 (기본공제)</option>
                       <option value="other" ${dep.relation === 'other' ? 'selected' : ''}>기타</option>
                     </select>
@@ -1778,7 +1778,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span class="person-name">부양가족 ${nextId}</span>
-          <button class="btn-remove-person">??/button>
+          <button class="btn-remove-person">✖</button>
         </div>
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
           <div class="form-group" style="margin-bottom:0;">
@@ -1786,7 +1786,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <input type="text" class="form-input opt-dep-name" value="" placeholder="예: 홍길동">
           </div>
           <div class="form-group" style="margin-bottom:0;">
-            <label>가족 이름</label>
+            <label>관계 설정</label>
             <select class="form-input opt-dep-relation">
               <option value="child">자녀 (8세 이상)</option>
               <option value="parent">부모 (기본공제)</option>
@@ -5003,29 +5003,42 @@ document.addEventListener('DOMContentLoaded', function() {
                  </div>`;
     menuHtml += `<div class="nav-tree-sub">`;
     
-    // Find all titles in this tab
-    const titles = tab.querySelectorAll('.card-title, .category-section-header h3');
-    titles.forEach((titleEl, tIdx) => {
-      // Ensure the title or its parent has an ID for scrolling
-      let targetId = titleEl.id;
-      if (!targetId) {
-        // If no ID, check parent input-card
-        const parentCard = titleEl.closest('.input-card, .result-card');
-        if (parentCard && parentCard.id) {
-          targetId = parentCard.id;
-        } else {
-          // Generate an ID
-          targetId = `menu-target-${tabId}-${tIdx}`;
-          titleEl.id = targetId;
+    if (tabId === 'tab-profile') {
+      // Hardcode sequential sub-sections for Profile input step to allow direct switching/navigation
+      menuHtml += `<a class="nav-tree-link" data-scroll-to="spouse-a-container" data-parent-tab="tab-profile">👤 배우자 A 입력</a>`;
+      menuHtml += `<a class="nav-tree-link" data-scroll-to="spouse-b-container" data-parent-tab="tab-profile">👤 배우자 B 입력</a>`;
+      menuHtml += `<a class="nav-tree-link" data-scroll-to="profile-dep-container" data-parent-tab="tab-profile">👥 부양가족 설정</a>`;
+      sectionsData.push({ id: 'spouse-a-container', tabId: 'tab-profile', el: document.getElementById('spouse-a-container') });
+      sectionsData.push({ id: 'spouse-b-container', tabId: 'tab-profile', el: document.getElementById('spouse-b-container') });
+      sectionsData.push({ id: 'profile-dep-container', tabId: 'tab-profile', el: document.getElementById('profile-dep-container') });
+    } else {
+      // Find all titles in this tab
+      const titles = tab.querySelectorAll('.card-title, .category-section-header h3');
+      titles.forEach((titleEl, tIdx) => {
+        // Skip default/placeholder/generic titles
+        let titleText = titleEl.textContent.trim();
+        if (titleText === '정보 입력' || titleText === '👤 정보 입력' || titleText.includes('배우자 A 정보 입력') || titleText.includes('배우자 B 정보 입력') || titleText.includes('부양가족 설정')) {
+          return;
         }
-      }
-      
-      let titleText = titleEl.textContent.trim();
-      // Remove emojis using a simple regex if desired, or keep them. We'll keep them for consistency.
-      
-      menuHtml += `<a class="nav-tree-link" data-scroll-to="${targetId}" data-parent-tab="${tabId}">${titleText}</a>`;
-      sectionsData.push({ id: targetId, tabId: tabId, el: document.getElementById(targetId) || titleEl });
-    });
+
+        // Ensure the title or its parent has an ID for scrolling
+        let targetId = titleEl.id;
+        if (!targetId) {
+          // If no ID, check parent input-card
+          const parentCard = titleEl.closest('.input-card, .result-card');
+          if (parentCard && parentCard.id) {
+            targetId = parentCard.id;
+          } else {
+            // Generate an ID
+            targetId = `menu-target-${tabId}-${tIdx}`;
+            titleEl.id = targetId;
+          }
+        }
+        
+        menuHtml += `<a class="nav-tree-link" data-scroll-to="${targetId}" data-parent-tab="${tabId}">${titleText}</a>`;
+        sectionsData.push({ id: targetId, tabId: tabId, el: document.getElementById(targetId) || titleEl });
+      });
+    }
     
     menuHtml += `</div></div>`;
   });
@@ -5076,11 +5089,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Handle profile group segments
         if (typeof selectProfileGroup === 'function') {
-          if (targetId.includes('profile-b') || targetId.includes('b-salary')) {
+          if (targetId === 'spouse-b-container' || targetId.includes('profile-b') || targetId.includes('b-salary')) {
             selectProfileGroup('profile-b');
-          } else if (targetId.includes('profile-dep') || targetId.includes('spouse-b-enabled')) {
+          } else if (targetId === 'profile-dep-container' || targetId.includes('profile-dep') || targetId.includes('spouse-b-enabled')) {
             selectProfileGroup('profile-dep');
-          } else if (targetId.includes('profile-a') || targetId.includes('a-salary')) {
+          } else if (targetId === 'spouse-a-container' || targetId.includes('profile-a') || targetId.includes('a-salary')) {
             selectProfileGroup('profile-a');
           }
         }
