@@ -2281,3 +2281,61 @@ circle {
   height: 100%;
   display: block;
 }
+
+/* Floating Navigation/Menu Map Access Button */
+.floating-menu-trigger {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #fff;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(108, 99, 255, 0.4);
+  cursor: pointer;
+  z-index: 1099; /* Just below overlay but above normal elements */
+  transition: var(--transition-smooth);
+}
+.floating-menu-trigger:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 12px 32px rgba(108, 99, 255, 0.6);
+}
+@media (max-width: 1024px) {
+  .floating-menu-trigger {
+    bottom: 85px; /* Offset to avoid collision with mobile bottom tab bars */
+  }
+}
+
+/* Quick access buttons for section titles */
+.section-menu-access-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 0.68rem;
+  font-weight: bold;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  color: var(--accent-info);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  margin-left: 8px;
+  vertical-align: middle;
+}
+body.light-mode .section-menu-access-btn {
+  background: rgba(0,0,0,0.03);
+  border-color: rgba(0,0,0,0.05);
+}
+.section-menu-access-btn:hover {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: var(--accent-info);
+  transform: translateY(-1px);
+}
+

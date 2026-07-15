@@ -1999,6 +1999,71 @@
   <button id="btn-sticky-report" style="background:var(--accent-primary); border:none; padding:8px 16px; border-radius:16px; color:#fff; font-weight:bold; font-size:0.8rem; cursor:pointer; box-shadow:0 4px 12px rgba(108, 99, 255, 0.3);">리포트 보기</button>
 </div>
 
+<!-- Floating Navigation/Menu Map Toggle Button -->
+<button type="button" id="btn-floating-menu" class="floating-menu-trigger" aria-label="메뉴 맵 열기" title="TAX NAVI 맵 열기">🗺️</button>
+
+<script>
+  // Add direct interactivity for floating button and page header quick menu link injections
+  document.addEventListener('DOMContentLoaded', () => {
+    const floatBtn = document.getElementById('btn-floating-menu');
+    if (floatBtn) {
+      floatBtn.addEventListener('click', () => {
+        const sidebar = document.getElementById('sidebar-menu');
+        const overlay = document.getElementById('sidebar-overlay');
+        if (sidebar && overlay) {
+          const isOpen = sidebar.classList.contains('open');
+          if (isOpen) {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+            document.body.style.overflow = '';
+          } else {
+            sidebar.classList.add('open');
+            overlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+          }
+        }
+      });
+    }
+
+    // Inject '메뉴 맵 바로가기' shortcut buttons into all calculator headers
+    const cards = document.querySelectorAll('.input-card, .result-card');
+    cards.forEach(card => {
+      const title = card.querySelector('.card-title');
+      if (title && !card.id.includes('onboarding') && !title.querySelector('.section-menu-access-btn')) {
+        const shortcut = document.createElement('button');
+        shortcut.type = 'button';
+        shortcut.className = 'section-menu-access-btn';
+        shortcut.innerHTML = '🗺️ 맵 열기';
+        shortcut.title = 'TAX NAVI 메뉴 맵 열기';
+        shortcut.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const sidebar = document.getElementById('sidebar-menu');
+          const overlay = document.getElementById('sidebar-overlay');
+          if (sidebar && overlay) {
+            sidebar.classList.add('open');
+            overlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            
+            // Highlight the corresponding node inside the sidebar nav tree
+            const treeLinks = sidebar.querySelectorAll('.nav-tree-link');
+            treeLinks.forEach(link => {
+              if (link.getAttribute('data-scroll-to') === card.id) {
+                link.style.color = 'var(--accent-secondary)';
+                link.style.fontWeight = 'bold';
+                link.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => {
+                  link.style.color = '';
+                  link.style.fontWeight = '';
+                }, 2000);
+              }
+            });
+          }
+        });
+        title.appendChild(shortcut);
+      }
+    });
+  });
+</script>
 </div>
 </body>
 </html>

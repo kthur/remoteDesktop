@@ -4997,21 +4997,46 @@ document.addEventListener('DOMContentLoaded', function() {
     const tabId = tab.id;
     const tabName = tabNames[tabId] || tabId;
     
-    menuHtml += `<div class="nav-tree-item" data-target-tab="${tabId}">`;
-    menuHtml += `<div class="nav-tree-tab ${index === 0 ? 'active' : ''}" data-tab="${tabId}">
-                   <span style="font-size:1.1rem; opacity:0.8;">${index + 1}.</span> ${tabName}
-                 </div>`;
-    menuHtml += `<div class="nav-tree-sub">`;
-    
     if (tabId === 'tab-profile') {
-      // Hardcode sequential sub-sections for Profile input step to allow direct switching/navigation
-      menuHtml += `<a class="nav-tree-link" data-scroll-to="spouse-a-container" data-parent-tab="tab-profile">👤 배우자 A 입력</a>`;
-      menuHtml += `<a class="nav-tree-link" data-scroll-to="spouse-b-container" data-parent-tab="tab-profile">👤 배우자 B 입력</a>`;
-      menuHtml += `<a class="nav-tree-link" data-scroll-to="profile-dep-container" data-parent-tab="tab-profile">👥 부양가족 설정</a>`;
+      // Separate spouse and family sub-steps into distinct, top-level accessibility menu items
+      
+      // 1. Spouse A
+      menuHtml += `<div class="nav-tree-item" data-target-tab="tab-profile">`;
+      menuHtml += `<div class="nav-tree-tab active" data-tab="tab-profile" data-profile-segment="profile-a">
+                     <span style="font-size:1.1rem; opacity:0.8;">1-A.</span> 👤 배우자 A 입력
+                   </div>`;
+      menuHtml += `<div class="nav-tree-sub" style="display:block;">`;
+      menuHtml += `<a class="nav-tree-link" data-scroll-to="spouse-a-container" data-parent-tab="tab-profile">👤 배우자 A 기본 소득정보</a>`;
+      menuHtml += `</div></div>`;
       sectionsData.push({ id: 'spouse-a-container', tabId: 'tab-profile', el: document.getElementById('spouse-a-container') });
+
+      // 2. Spouse B
+      menuHtml += `<div class="nav-tree-item" data-target-tab="tab-profile">`;
+      menuHtml += `<div class="nav-tree-tab" data-tab="tab-profile" data-profile-segment="profile-b">
+                     <span style="font-size:1.1rem; opacity:0.8;">1-B.</span> 👤 배우자 B 입력
+                   </div>`;
+      menuHtml += `<div class="nav-tree-sub">`;
+      menuHtml += `<a class="nav-tree-link" data-scroll-to="spouse-b-container" data-parent-tab="tab-profile">👤 배우자 B 기본 소득정보</a>`;
+      menuHtml += `</div></div>`;
       sectionsData.push({ id: 'spouse-b-container', tabId: 'tab-profile', el: document.getElementById('spouse-b-container') });
+
+      // 3. Dependents
+      menuHtml += `<div class="nav-tree-item" data-target-tab="tab-profile">`;
+      menuHtml += `<div class="nav-tree-tab" data-tab="tab-profile" data-profile-segment="profile-dep">
+                     <span style="font-size:1.1rem; opacity:0.8;">1-C.</span> 👥 부양가족 설정
+                   </div>`;
+      menuHtml += `<div class="nav-tree-sub">`;
+      menuHtml += `<a class="nav-tree-link" data-scroll-to="profile-dep-container" data-parent-tab="tab-profile">👥 부양가족 및 지출조율</a>`;
+      menuHtml += `</div></div>`;
       sectionsData.push({ id: 'profile-dep-container', tabId: 'tab-profile', el: document.getElementById('profile-dep-container') });
+
     } else {
+      menuHtml += `<div class="nav-tree-item" data-target-tab="${tabId}">`;
+      menuHtml += `<div class="nav-tree-tab" data-tab="${tabId}">
+                     <span style="font-size:1.1rem; opacity:0.8;">${index + 1}.</span> ${tabName}
+                   </div>`;
+      menuHtml += `<div class="nav-tree-sub">`;
+
       // Find all titles in this tab
       const titles = tab.querySelectorAll('.card-title, .category-section-header h3');
       titles.forEach((titleEl, tIdx) => {
@@ -5038,9 +5063,8 @@ document.addEventListener('DOMContentLoaded', function() {
         menuHtml += `<a class="nav-tree-link" data-scroll-to="${targetId}" data-parent-tab="${tabId}">${titleText}</a>`;
         sectionsData.push({ id: targetId, tabId: tabId, el: document.getElementById(targetId) || titleEl });
       });
+      menuHtml += `</div></div>`;
     }
-    
-    menuHtml += `</div></div>`;
   });
   
   navTreeContainer.innerHTML = menuHtml;
@@ -5054,6 +5078,14 @@ document.addEventListener('DOMContentLoaded', function() {
       const topStepBtn = document.querySelector(`.nav-step-btn[data-tab="${targetTabId.replace('tab-', '')}"]`);
       if (topStepBtn) {
         topStepBtn.click();
+      }
+      
+      // Auto-toggle profile segment if specified
+      const segment = this.getAttribute('data-profile-segment');
+      if (segment && typeof selectProfileGroup === 'function') {
+        setTimeout(() => {
+          selectProfileGroup(segment);
+        }, 50);
       }
     });
   });
