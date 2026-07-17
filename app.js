@@ -2767,6 +2767,40 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // 🏥 의료비 세액공제 계산기
+  const btnCalcMedicalCredit = document.getElementById('btn-calc-medical-credit');
+  if (btnCalcMedicalCredit) {
+    btnCalcMedicalCredit.addEventListener('click', () => {
+      const target = document.getElementById('medical-target').value;
+      const totalSalary = getTargetSalary('medical-target');
+      const medicalAmount = parseVal('medical-amount') || 0;
+      
+      // 의료비 공제 문턱: 총급여의 3%
+      const threshold = Math.floor(totalSalary * 0.03);
+      const excessAmount = Math.max(0, medicalAmount - threshold);
+      const credit = Math.floor(excessAmount * 0.15);
+      const localTax = Math.floor(credit * 0.1);
+      const totalBenefit = credit + localTax;
+      
+      const resDiv = document.getElementById('medical-result');
+      const contentDiv = document.getElementById('medical-result-content');
+      if (resDiv && contentDiv) {
+        resDiv.style.display = 'block';
+        contentDiv.innerHTML = `
+          <div>총급여액 (3% 문턱): <strong>${totalSalary.toLocaleString()} 원</strong> (문턱 금액: ${threshold.toLocaleString()} 원)</div>
+          <div>연간 의료비 지출액: <strong>${medicalAmount.toLocaleString()} 원</strong></div>
+          <div>문턱 초과 공제대상액: <strong>${excessAmount.toLocaleString()} 원</strong></div>
+          <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
+          <div>세액공제율: 15%</div>
+          <div style="font-weight:bold;color:var(--accent-primary);font-size:0.95rem;">의료비 세액공제액: <strong>${credit.toLocaleString()} 원</strong></div>
+          <div style="color:var(--accent-warning);">지방소득세 환급분: ${localTax.toLocaleString()} 원</div>
+          <div style="font-weight:bold;color:var(--accent-secondary);font-size:1rem;">🎁 총 예상 환급 혜택: <strong>${totalBenefit.toLocaleString()} 원</strong></div>
+          ${excessAmount <= 0 ? `<div style="margin-top:6px;padding:6px;background:rgba(255,107,107,0.08);border-radius:6px;font-size:0.78rem;color:var(--accent-warning);">⚠️ 지출하신 의료비가 총급여의 3% 문턱(${threshold.toLocaleString()}원) 이하이므로 환급 혜택이 발생하지 않습니다.</div>` : ''}
+        `;
+      }
+    });
+  }
+
   // 📤 리포트 복사하기
   document.getElementById('btn-calc-insurance-credit').addEventListener('click', () => {
     const premium = parseVal('insurance-premium');

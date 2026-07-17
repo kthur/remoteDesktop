@@ -897,6 +897,38 @@
   </div>
 </div>
 
+<!-- 🏥 의료비(병원비) 세액공제 계산기 -->
+<div class="input-card" style="margin-top: 1.5rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03);">
+  <h2 class="card-title">🏥 의료비(병원비) 세액공제 계산기</h2>
+  <div class="grid-2col" style="display:grid; gap:1.5rem;">
+    <div>
+      <div class="form-group">
+        <label>대상 선택</label>
+        <select id="medical-target" class="form-input">
+          <option value="a">배우자 A</option>
+          <option value="b">배우자 B</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>연간 총급여 <span class="tooltip-icon" data-tooltip="의료비 공제 문턱(총급여의 3%) 계산에 사용되는 연간 총급여액입니다.">?</span></label>
+        <div style="display:flex; gap:6px;">
+          <input class="form-input money-input" id="medical-salary" inputmode="numeric" type="text" value="" readonly style="background:rgba(255,255,255,0.02); color:#aaa; cursor:not-allowed; flex:1;"/>
+          <a href="#" class="btn-edit-profile-salary" data-spouse-id="medical-target" style="font-size:0.75rem; text-decoration:none; color:var(--accent-primary); display:flex; align-items:center; white-space:nowrap; border:1px solid rgba(108,99,255,0.3); padding:4px 8px; border-radius:6px; background:rgba(108,99,255,0.05); transition:all 0.2s;">프로필 수정</a>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>본인 의료비 지출액 <span class="tooltip-icon" data-tooltip="본인 치료를 위해 올해 지출한 의료비 총액입니다. (실비 환급금 제외)">?</span></label>
+        <input class="form-input money-input" id="medical-amount" inputmode="numeric" type="text" value=""/>
+      </div>
+      <button class="btn-primary" id="btn-calc-medical-credit" style="margin-top:0.5rem;">🎯 의료비 공제 계산</button>
+    </div>
+    <div id="medical-result" style="background:rgba(56,189,248,0.05); padding:1.5rem; border-radius:12px; display:none;">
+      <h4 style="font-weight:700; margin-bottom:8px; font-size:0.85rem;">📋 의료비 세액공제 분석 결과</h4>
+      <div id="medical-result-content" style="font-size:0.82rem; line-height:1.6;"></div>
+    </div>
+  </div>
+</div>
+
 <!-- 🛡️ 보장성 보험료 세액공제 계산기 -->
 <div class="input-card" style="margin-top: 1.5rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03);">
   <h2 class="card-title">🛡️ 보장성 보험료 세액공제 계산기</h2>
