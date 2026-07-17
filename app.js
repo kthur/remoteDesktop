@@ -926,6 +926,14 @@ document.addEventListener('DOMContentLoaded', () => {
       isaSalaryEl.value = isaTarget === 'a' ? spouseASalary : spouseBSalary;
       isaSalaryEl.dispatchEvent(new Event('input'));
     }
+
+    // Venture
+    const ventureTarget = document.getElementById('venture-target')?.value || 'a';
+    const ventureIncomeEl = document.getElementById('venture-income');
+    if (ventureIncomeEl) {
+      ventureIncomeEl.value = ventureTarget === 'a' ? spouseASalary : spouseBSalary;
+      ventureIncomeEl.dispatchEvent(new Event('input'));
+    }
   }
 
   function checkSpouseIncomeWarnings(spouse) {
@@ -3168,11 +3176,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 📤 리포트 복사하기
   document.getElementById('btn-calc-venture').addEventListener('click', () => {
+    const target = document.getElementById('venture-target').value;
+    const spouseName = target === 'a' ? '배우자 A' : '배우자 B';
+    const annualIncome = getTargetSalary('venture-target');
     const ventureAmount = parseVal('venture-amount');
-    const annualIncome = parseVal('venture-income');
     const result = TaxCalculator.calculateVentureSimulation({ ventureAmount, annualIncome });
     document.getElementById('venture-result').style.display = 'block';
     document.getElementById('venture-result-content').innerHTML = `
+      <div>공제 대상: <strong>${spouseName}</strong></div>
       <div>벤처투자 금액: <strong>${result.ventureAmount.toLocaleString()} 원</strong></div>
       <div>연간 소득: ${result.annualIncome.toLocaleString()} 원</div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
@@ -3625,6 +3636,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) { el.addEventListener('input', debouncedGiftTimeline); el.addEventListener('change', debouncedGiftTimeline); }
   });
 
+  // 🚀 벤처투자 소득공제 시뮬레이터 실시간 계산
+  const debouncedVenture = debounce(() => { if (!isLoadingState) document.getElementById('btn-calc-venture').click(); });
+  ['venture-target','venture-amount','venture-income'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.addEventListener('input', debouncedVenture); el.addEventListener('change', debouncedVenture); }
+  });
   // Register warnings and sync
   function initRealtimeWarningsAndSync() {
     const spouses = ['a', 'b'];
