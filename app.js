@@ -3003,22 +3003,24 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-calc-housing-fund').addEventListener('click', () => {
     const totalSalary = getTargetSalary('housing-target');
     const subscriptionAmount = parseVal('housing-sub-amount');
+    const spouseSubscriptionAmount = parseVal('housing-spouse-sub-amount') || 0;
     const jeonseLoanRepay = parseVal('housing-jeonse-repay');
     const mortgageInterest = parseVal('housing-mortgage-interest');
-    const result = TaxCalculator.calculateHousingFundDeduction({ totalSalary, subscriptionAmount, jeonseLoanRepay, mortgageInterest });
+    const result = TaxCalculator.calculateHousingFundDeduction({ totalSalary, subscriptionAmount, spouseSubscriptionAmount, jeonseLoanRepay, mortgageInterest });
     document.getElementById('housing-result').style.display = 'block';
     document.getElementById('housing-result-content').innerHTML = `
-      <div>총급?? <strong>${result.totalSalary.toLocaleString()} ??/strong></div>
+      <div>총급여액: <strong>${result.totalSalary.toLocaleString()} 원</strong></div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
-      <div>· 주택청약종합저축</div>
-      <div>· 납입액: ${result.subscriptionAmount.toLocaleString()} 원</div>
-      ${result.subscriptionLimit > 0 ? `<div>· 공제한도: ${result.subscriptionLimit.toLocaleString()} 원</div><div>· 소득공제액: <strong>${result.subscriptionDeduction.toLocaleString()} 원</strong></div>` : '<div style="color:var(--accent-warning);">· 총급여 7,000만 원 초과로 소득공제 제외</div>'}
+      <div>· 주택청약종합저축 (2025 배우자 합산 개정)</div>
+      <div>· 본인 납입액: ${result.subscriptionAmount.toLocaleString()} 원</div>
+      <div>· 배우자 납입액: ${result.spouseSubscriptionAmount.toLocaleString()} 원</div>
+      ${result.subscriptionLimit > 0 ? `<div>· 합산인정액 (한도 ${result.subscriptionLimit.toLocaleString()}원): <strong>${result.combinedSubscription.toLocaleString()} 원</strong></div><div>· 소득공제액 (40%): <strong>${result.subscriptionDeduction.toLocaleString()} 원</strong></div>` : '<div style="color:var(--accent-warning);">· 총급여 7,000만 원 초과로 소득공제 제외</div>'}
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04);margin:6px 0;">
       <div>· 전세자금대출 원리금 상환액</div>
       <div>· 원리금 상환액: ${result.jeonseLoanRepay.toLocaleString()} 원</div>
       <div>· 소득공제액: <strong>${result.jeonseDeduction.toLocaleString()} 원</strong> (한도 ${result.jeonseLimit.toLocaleString()}원)</div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04);margin:6px 0;">
-      <div>📌 기부 내역</div>
+      <div>· 장기주택저당차입금 이자상환액</div>
       <div>· 연간 이자 상환액: ${result.mortgageInterest.toLocaleString()} 원</div>
       <div>· 소득공제액: <strong>${result.mortgageDeduction.toLocaleString()} 원</strong> (한도 ${result.mortgageLimit.toLocaleString()}원)</div>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;">
@@ -3366,7 +3368,8 @@ document.addEventListener('DOMContentLoaded', () => {
       'prop-public-price','prop-market-price','gift-amount','gift-past','stock-exchange-rate',
       'inc-a-irp','inc-b-irp','pension-salary','pension-amount','pension-irp-amount',
       'card-usage-amount','card-cash-amount',
-      'card-traditional','card-transit','card-book'
+      'card-traditional','card-transit','card-book',
+      'housing-spouse-sub-amount', 'education-expense-input', 'student-loan-repay-input'
     ];
   newMoneyFields.forEach(function (id) {
     var el = document.getElementById(id);
@@ -3384,7 +3387,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const debouncedCapital  = debounce(() => { if (!isLoadingState) btnCalcCapital.click(); });
   const debouncedGiftSell = debounce(() => { if (!isLoadingState) btnCalcOptGs.click(); });
 
-    // 추가 공제 내역
+  // 추가 공제 내역
   [
     'inc-a-salary','inc-a-card','inc-a-yellow','inc-a-pension','inc-a-irp',
     'inc-a-financial-gen','inc-a-financial-overseas','inc-a-isa','inc-a-isa-type','inc-a-bond',
@@ -3393,7 +3396,8 @@ document.addEventListener('DOMContentLoaded', () => {
     'inc-b-financial-gen','inc-b-financial-overseas','inc-b-isa','inc-b-isa-type','inc-b-bond',
     'inc-b-business-revenue','inc-b-business-expense','inc-b-pension-income','inc-b-other-revenue','inc-b-other-expense',
     'inc-a-venture','inc-a-housing-sub','inc-a-housing-loan',
-    'inc-b-venture','inc-b-housing-sub','inc-b-housing-loan'
+    'inc-b-venture','inc-b-housing-sub','inc-b-housing-loan',
+    'inc-a-married-this-year', 'inc-b-married-this-year'
   ].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('input', debouncedIncome); el.addEventListener('change', debouncedIncome); }

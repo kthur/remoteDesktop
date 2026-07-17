@@ -1379,12 +1379,15 @@ TaxCalculator.calculateEcoCarCredit = function(opts) {
 // ──────────────────────────────────────────────
 TaxCalculator.calculateHousingFundDeduction = function(opts) {
   var totalSalary = opts.totalSalary || 0;
-  var subscriptionAmount = opts.subscriptionAmount || 0;  // 주택청약 납입액
+  var subscriptionAmount = opts.subscriptionAmount || 0;  // 본인 청약 납입액
+  var spouseSubscriptionAmount = opts.spouseSubscriptionAmount || 0; // 배우자 청약 납입액
   var jeonseLoanRepay = opts.jeonseLoanRepay || 0;       // 전세대출 원리금
   var mortgageInterest = opts.mortgageInterest || 0;      // 장기주택저당 이자
 
-  var subscriptionLimit = totalSalary <= 70000000 ? 2400000 : 0;
-  var subscriptionDeduction = Math.min(subscriptionAmount, subscriptionLimit);
+  // 2025년 개정: 본인 + 배우자 납입분 합산하여 300만 원 한도로 40% 소득공제 (총급여 7천만 이하)
+  var subscriptionLimit = totalSalary <= 70000000 ? 3000000 : 0;
+  var combinedSubscription = Math.min(subscriptionAmount + spouseSubscriptionAmount, subscriptionLimit);
+  var subscriptionDeduction = Math.floor(combinedSubscription * 0.4);
 
   var jeonseLimit = 4000000;
   var jeonseDeduction = Math.min(jeonseLoanRepay, jeonseLimit);
@@ -1399,6 +1402,8 @@ TaxCalculator.calculateHousingFundDeduction = function(opts) {
   return {
     totalSalary: totalSalary,
     subscriptionAmount: subscriptionAmount,
+    spouseSubscriptionAmount: spouseSubscriptionAmount,
+    combinedSubscription: combinedSubscription,
     jeonseLoanRepay: jeonseLoanRepay,
     mortgageInterest: mortgageInterest,
     subscriptionLimit: subscriptionLimit,
