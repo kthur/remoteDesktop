@@ -1180,6 +1180,9 @@ document.addEventListener('DOMContentLoaded', () => {
           allTreeLinks.forEach(l => l.classList.remove('dimmed'));
         }
       }
+      
+      // Update floating bar display state based on tab
+      updateFloatingBar();
     });
   });
 
@@ -2583,29 +2586,91 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateFloatingBar(best, d) {
     const bar = document.getElementById('floating-result-bar');
-    const amtEl = document.getElementById('floating-bar-amount');
-    if (!bar || !amtEl) return;
+    if (!bar) return;
+
+    const currentTab = document.querySelector('.stepper-step[aria-selected="true"]');
+    if (currentTab && currentTab.dataset.tab === 'report') {
+      bar.style.display = 'none';
+      document.body.classList.remove('floating-bar-visible');
+      return;
+    }
+
+    const aSalary = d ? d.aSalary : (parseVal('inc-a-salary') || 0);
+    const bSalary = d ? d.bSalary : (parseVal('inc-b-salary') || 0);
+    if (aSalary <= 0 && bSalary <= 0) {
+      bar.style.display = 'none';
+      document.body.classList.remove('floating-bar-visible');
+      return;
+    }
+
+    bar.style.display = 'flex';
+    document.body.classList.add('floating-bar-visible');
+
+    const isSpouseBEnabled = document.getElementById('enable-spouse-b')?.checked;
+    const aDeds = {
+      totalSalary: aSalary,
+      dependents: 1,
+      cardUsage: parseVal('card-usage-amount'),
+      cashUsage: parseVal('card-cash-amount'),
+      traditionalMarket: parseVal('card-traditional'),
+      publicTransit: parseVal('card-transit'),
+      bookPerformance: parseVal('card-book'),
+      pensionSavings: parseVal('pension-target') === 'a' ? (parseVal('pension-amount') || 0) : 0,
+      irpSavings: parseVal('pension-target') === 'a' ? (parseVal('pension-irp-amount') || 0) : 0,
+      medicalExpense: parseVal('medical-target') === 'a' ? (parseVal('medical-amount') || 0) : 0,
+      educationExpense: parseVal('education-target') === 'a' ? (parseVal('education-expense-input') || 0) : 0,
+      monthlyRent: parseVal('rent-target') === 'a' ? (parseVal('rent-amount') || 0) : 0,
+      ventureInvestment: parseVal('venture-target') === 'a' ? (parseVal('venture-amount') || 0) : 0
+    };
+    const bDeds = {
+      totalSalary: bSalary,
+      dependents: 1,
+      cardUsage: parseVal('card-usage-amount'),
+      cashUsage: parseVal('card-cash-amount'),
+      traditionalMarket: parseVal('card-traditional'),
+      publicTransit: parseVal('card-transit'),
+      bookPerformance: parseVal('card-book'),
+      pensionSavings: parseVal('pension-target') === 'b' ? (parseVal('pension-amount') || 0) : 0,
+      irpSavings: parseVal('pension-target') === 'b' ? (parseVal('pension-irp-amount') || 0) : 0,
+      medicalExpense: parseVal('medical-target') === 'b' ? (parseVal('medical-amount') || 0) : 0,
+      educationExpense: parseVal('education-target') === 'b' ? (parseVal('education-expense-input') || 0) : 0,
+      monthlyRent: parseVal('rent-target') === 'b' ? (parseVal('rent-amount') || 0) : 0,
+      ventureInvestment: parseVal('venture-target') === 'b' ? (parseVal('venture-amount') || 0) : 0
+    };
+
+    const aSimpleResult = TaxCalculator.calculateYearEndTax(aDeds);
+    const bSimpleResult = isSpouseBEnabled ? TaxCalculator.calculateYearEndTax(bDeds) : { totalTax: 0 };
     
-    // R2: Add advanced financial investment tax (금투세) and virtual asset tax (가상자산세)
+    let simpleTotal = Math.max(0, aSimpleResult.totalTax) + Math.max(0, bSimpleResult.totalTax);
+    
     const fitStockGain = parseVal('fit-group-a') || 0;
     const fitOtherGain = parseVal('fit-group-b') || 0;
     const fitLoss = parseVal('fit-loss') || 0;
-    console.error('DEBUG inside updateFloatingBar values parsed:', fitStockGain, fitOtherGain, fitLoss);
     const fitRes = TaxCalculator.calculateFinancialInvestmentTax(fitStockGain, fitOtherGain, fitLoss);
 
     const cryptoGain = parseVal('crypto-gain') || 0;
     const cryptoLoss = parseVal('crypto-loss') || 0;
     const cryptoRes = TaxCalculator.calculateCryptoTax(cryptoGain, cryptoLoss);
 
-    let totalTax = best ? best.totalTax : 0;
-    totalTax += (fitRes.totalTax || 0) + (cryptoRes.totalTax || 0);
-    if (totalTax > 0) {
-      amtEl.textContent = totalTax.toLocaleString() + ' 원';
-      bar.classList.add('active');
-      document.body.classList.add('floating-bar-visible');
-    } else {
-      bar.classList.remove('active');
-      document.body.classList.remove('floating-bar-visible');
+    let optTotal = best ? best.totalTax : simpleTotal;
+    const additionalTaxes = (fitRes.totalTax || 0) + (cryptoRes.totalTax || 0);
+    simpleTotal += additionalTaxes;
+    optTotal += additionalTaxes;
+
+    const simpleEl = document.getElementById('float-simple-tax');
+    const optEl = document.getElementById('float-optimized-tax');
+    const savingsEl = document.getElementById('float-tax-savings');
+
+    if (simpleEl) simpleEl.textContent = simpleTotal.toLocaleString() + '원';
+    if (optEl) optEl.textContent = optTotal.toLocaleString() + '원';
+
+    if (savingsEl) {
+      const savings = simpleTotal - optTotal;
+      if (savings > 0) {
+        savingsEl.textContent = `(▼ ${savings.toLocaleString()}원 절세!)`;
+      } else {
+        savingsEl.textContent = '';
+      }
     }
   }
 
@@ -2616,6 +2681,19 @@ document.addEventListener('DOMContentLoaded', () => {
       resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   });
+
+  const btnFloatMenuMap = document.getElementById('btn-float-menu-map');
+  if (btnFloatMenuMap) {
+    btnFloatMenuMap.addEventListener('click', () => {
+      const sidebar = document.getElementById('sidebar-menu');
+      const overlay = document.getElementById('sidebar-overlay');
+      if (sidebar && overlay) {
+        sidebar.classList.add('open');
+        overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+      }
+    });
+  }
 
   // 🏠 간주임대료 계산
   document.getElementById('btn-share-report').addEventListener('click', () => {

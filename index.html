@@ -1956,12 +1956,20 @@
 </section>
 
 <!-- 🆕 P0: 플로팅 결과 요약 바 (모바일) -->
-<div class="floating-result-bar" id="floating-result-bar">
-<div class="floating-bar-left">
-<span class="floating-bar-label">최적화 합산 세액</span>
-<span class="floating-bar-amount" id="floating-bar-amount">0 원</span>
-</div>
-<button class="floating-bar-btn" id="floating-bar-btn">📊 결과 보기</button>
+<div class="floating-result-bar" id="floating-result-bar" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); width:92%; max-width:680px; background:rgba(30, 32, 41, 0.96); backdrop-filter:blur(12px); border:1px solid rgba(0, 212, 170, 0.35); padding:10px 18px; border-radius:24px; box-shadow:0 12px 36px rgba(0,0,0,0.6); z-index:1150; justify-content:space-between; align-items:center; transition:all 0.3s ease; gap:12px;">
+  <div class="floating-bar-left" style="display:flex; flex-direction:column; gap:2px;">
+    <div style="font-size:0.72rem; color:var(--text-secondary-dark); display:flex; align-items:center; gap:6px;">
+      <span>📊 현재 단순 합산: <span id="float-simple-tax" style="font-weight:700; color:#ff6b6b;">0원</span></span>
+    </div>
+    <div style="font-size:0.95rem; font-weight:800; color:#fff;">
+      최적화 최저 세액: <span id="float-optimized-tax" style="color:var(--accent-secondary);">0원</span> 
+      <span id="float-tax-savings" style="font-size:0.75rem; color:var(--accent-gold); font-weight:bold; margin-left:4px;"></span>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <button type="button" id="btn-float-menu-map" style="padding:6px 12px; font-size:0.78rem; margin:0; border-radius:14px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.05); color:#fff; display:flex; align-items:center; gap:4px; cursor:pointer;">🗺️ 맵</button>
+    <button class="btn-primary" id="floating-bar-btn" style="padding:8px 16px; font-size:0.8rem; font-weight:bold; border-radius:14px; margin:0; min-height:auto; height:32px; line-height:32px; display:flex; align-items:center; justify-content:center;">📊 결과보기</button>
+  </div>
 </div>
 <!-- 🆕 P1: 모바일 Bottom Sheet 결과창 -->
 <div class="bottom-sheet-dim" id="mobile-result-bottom-sheet-dim" style="display:none; position:fixed; inset:0; z-index:1200; background:rgba(0,0,0,0.5); backdrop-filter:blur(3px);"></div>
@@ -2010,17 +2018,6 @@
     }
   </script>
 </div>
-<!-- 하단 스티키 요약 바 (스크롤 반응형) -->
-<div id="sticky-tax-bar" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); width:90%; max-width:600px; background:rgba(30, 32, 41, 0.95); backdrop-filter:blur(10px); border:1px solid rgba(0, 212, 170, 0.3); padding:12px 20px; border-radius:24px; box-shadow:0 10px 30px rgba(0,0,0,0.5); z-index:1150; justify-content:space-between; align-items:center; transition:all 0.3s ease;">
-  <div style="display:flex; flex-direction:column;">
-    <span style="font-size:0.75rem; color:var(--text-secondary-dark);">현재까지 예상 환급(납부)액</span>
-    <span id="sticky-tax-amount" style="font-size:1.1rem; font-weight:800; color:var(--accent-secondary);">0원</span>
-  </div>
-  <button id="btn-sticky-report" style="background:var(--accent-primary); border:none; padding:8px 16px; border-radius:16px; color:#fff; font-weight:bold; font-size:0.8rem; cursor:pointer; box-shadow:0 4px 12px rgba(108, 99, 255, 0.3);">리포트 보기</button>
-</div>
-
-<!-- Floating Navigation/Menu Map Toggle Button -->
-<button type="button" id="btn-floating-menu" class="floating-menu-trigger" aria-label="메뉴 맵 열기" title="TAX NAVI 맵 열기">🗺️</button>
 
 <script>
   // Add direct interactivity for floating button and page header quick menu link injections
