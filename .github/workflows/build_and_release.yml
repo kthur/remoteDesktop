@@ -89,18 +89,26 @@ jobs:
           name: AnyRemote_Android_APK
           path: mobile_app/build/app/outputs/flutter-apk/app-release.apk
 
+      - name: Setup Firebase Authentication
+        env:
+          FIREBASE_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+        if: ${{ env.FIREBASE_KEY != '' }}
+        uses: w9jds/setup-firebase@v2
+        with:
+          gcp_sa_key: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+
       - name: Deploy Android to Firebase App Distribution
         env:
           FIREBASE_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
         if: ${{ env.FIREBASE_KEY != '' && env.FIREBASE_APP_ID != '' }}
         run: |
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}" > firebase_sa_key.json
-          export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/firebase_sa_key.json
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}" > /tmp/firebase_sa_key.json
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase_sa_key.json
           npx firebase-tools appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk \
             --app "${{ secrets.FIREBASE_APP_ID_ANDROID }}" \
             --release-notes "Automated GitHub Actions Android Build" || true
-          rm -f firebase_sa_key.json
+          rm -f /tmp/firebase_sa_key.json
 
   # ---------------------------------------------------------------
   # 3. Build Mobile App (iOS Bundle & Firebase Upload)
@@ -145,18 +153,26 @@ jobs:
           name: AnyRemote_iOS_Runner
           path: mobile_app/build/ios_output/AnyRemote_iOS_Runner.zip
 
+      - name: Setup Firebase Authentication
+        env:
+          FIREBASE_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+        if: ${{ env.FIREBASE_KEY != '' }}
+        uses: w9jds/setup-firebase@v2
+        with:
+          gcp_sa_key: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+
       - name: Upload iOS to Firebase App Distribution
         env:
           FIREBASE_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID_IOS }}
         if: ${{ env.FIREBASE_KEY != '' && env.FIREBASE_APP_ID != '' }}
         run: |
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}" > firebase_sa_key.json
-          export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/firebase_sa_key.json
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}" > /tmp/firebase_sa_key.json
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase_sa_key.json
           npx firebase-tools appdistribution:distribute build/ios_output/AnyRemote_iOS_Runner.zip \
             --app "${{ secrets.FIREBASE_APP_ID_IOS }}" \
             --release-notes "Automated GitHub Actions iOS Build" || true
-          rm -f firebase_sa_key.json
+          rm -f /tmp/firebase_sa_key.json
 
   # ---------------------------------------------------------------
   # 4. Package Chrome & Firefox WebExtension
