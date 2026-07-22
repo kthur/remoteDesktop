@@ -1,6 +1,6 @@
 # AnyRemote PC - Cross-Platform Remote Control System
 
-A complete Remote PC Screen & Window Control system for Windows and Linux hosts, controlled via Flutter Mobile App (Android & iOS) with Google Sign-In device discovery.
+A complete Remote PC Screen & Window Control system for Windows and Linux hosts, controlled via Flutter Mobile App (Android & iOS) or Chrome/Firefox Extension with Google Sign-In device discovery.
 
 ---
 
@@ -23,8 +23,14 @@ A complete Remote PC Screen & Window Control system for Windows and Linux hosts,
    - Pauses heavy video frame encoding and switches to a low-bandwidth heartbeat (~1 KB/s) to save mobile data.
    - Instantly resumes high FPS streaming when returned to foreground without reconnecting.
 
-5. **Cross-Platform Mobile App (Android & iOS)**:
-   - Built with **Flutter** for smooth 60fps canvas rendering, responsive touch gestures, and single codebase targeting both Android and iOS.
+5. **1-Click Standalone PC Executable (`AnyRemote_Host.exe`)**:
+   - Zero-dependency desktop application. No `npm`, `node`, or `python` command line setup required for PC users.
+
+6. **Chrome & Firefox Extension Host Agent (`browser_extension/`)**:
+   - WebExtension Manifest V3 capturing screens, windows, or browser tabs directly from your web browser.
+
+7. **🤖 GitHub Actions Automated CI/CD Release**:
+   - Automated workflows build PC Host App, Android APK, iOS App, and Extension zip files automatically on Git tag push (`v*`) and publish them directly to **GitHub Releases**.
 
 ---
 
@@ -32,61 +38,41 @@ A complete Remote PC Screen & Window Control system for Windows and Linux hosts,
 
 ```
 d:\project\remote_pc/
-├── server/               # Node.js Express & WebSocket Signaling / Auth Server
-│   ├── index.js
-│   └── package.json
-├── host_agent/           # Python Windows/Linux PC Host Daemon
+├── .github/workflows/
+│   └── build_and_release.yml  # Automated GitHub Actions CI/CD Build & Release
+├── build_standalone.py        # Automated script to build AnyRemote_Host.exe
+├── host_agent/                # Standalone Desktop PC Host Agent
+│   ├── gui_launcher.py        # 1-Click GUI launcher
 │   ├── main.py
 │   ├── screen_capturer.py
 │   ├── display_manager.py
 │   ├── input_handler.py
-│   ├── auth_host.py
-│   └── requirements.txt
-└── mobile_app/           # Flutter Mobile App (Android & iOS)
+│   └── auth_host.py
+├── browser_extension/         # Chrome & Firefox Extension Host Agent
+│   ├── manifest.json
+│   ├── background.js
+│   ├── offscreen.html / .js
+│   └── popup.html / .js
+├── server/                    # Node.js Express & WebSocket Signaling Server
+│   ├── index.js
+│   └── package.json
+└── mobile_app/                # Flutter Mobile App (Android & iOS)
     ├── pubspec.yaml
     └── lib/
-        ├── main.dart
-        ├── services/
-        │   ├── auth_service.dart
-        │   └── remote_service.dart
-        └── screens/
-            ├── login_screen.dart
-            ├── device_list_screen.dart
-            └── remote_control_screen.dart
 ```
 
 ---
 
-## 🚀 How to Run
+## 🚀 GitHub Actions Release Trigger
 
-### 1. Start Signaling & Auth Server
+To automatically trigger the build pipeline and publish binaries to GitHub Releases:
 ```bash
-cd server
-npm install
-npm start
+git tag v1.0.0
+git push origin v1.0.0
 ```
-*Server runs at `ws://localhost:8080` (HTTP port 8080)*
-
-### 2. Start PC Host Agent (Windows / Linux)
-```bash
-cd host_agent
-pip install -r requirements.txt
-python main.py
-```
-*Host agent will automatically register active windows, current resolution, and connect to the signaling server.*
-
-### 3. Run Flutter Mobile App (Android / iOS)
-```bash
-cd mobile_app
-flutter pub get
-flutter run
-```
-
----
-
-## 🛠️ Verification & Diagnostic Script
-
-You can verify the Host Agent screen capturer, display manager, and window enumeration locally by running:
-```bash
-python -c "from host_agent.screen_capturer import ScreenCapturer; sc = ScreenCapturer(); print(sc.list_windows())"
-```
+This automatically compiles and attaches:
+- `AnyRemote_PC_Host_Windows.zip` (PC Host Standalone `.exe`)
+- `app-release.apk` (Android Mobile App)
+- `AnyRemote_iOS_Runner.zip` (iOS Mobile App)
+- `AnyRemote_Browser_Extension.zip` (Chrome & Firefox Extension)
+to your repository's GitHub Releases page!

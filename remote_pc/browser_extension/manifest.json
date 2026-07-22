@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "AnyRemote PC Host Extension",
+  "version": "1.0.0",
+  "description": "Chrome & Firefox Extension Host Agent for Remote Screen & Window Control",
+  "permissions": [
+    "desktopCapture",
+    "activeTab",
+    "storage",
+    "offscreen"
+  ],
+  "host_permissions": [
+    "ws://localhost:8080/*",
+    "http://localhost:8080/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "AnyRemote PC Host Agent"
+  }
+}

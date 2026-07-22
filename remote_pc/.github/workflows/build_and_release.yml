@@ -1,0 +1,179 @@
+name: Build & Release AnyRemote (PC Host + Mobile APK/iOS + Extension)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  # ---------------------------------------------------------------
+  # 1. Build Standalone PC Host Executable (Windows)
+  # ---------------------------------------------------------------
+  build-pc-host:
+    name: Build PC Host (.exe)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r host_agent/requirements.txt
+          pip install pyinstaller
+
+      - name: Build Standalone Executable
+        run: |
+          python build_standalone.py
+
+      - name: Compress PC Host Artifact
+        run: |
+          Compress-Archive -Path dist/AnyRemote_Host/* -DestinationPath AnyRemote_PC_Host_Windows.zip
+
+      - name: Upload PC Host Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnyRemote_PC_Host_Windows
+          path: AnyRemote_PC_Host_Windows.zip
+
+  # ---------------------------------------------------------------
+  # 2. Build Mobile App (Android APK & iOS)
+  # ---------------------------------------------------------------
+  build-mobile-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile_app
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Release APK
+        run: flutter build apk --release
+
+      - name: Upload Android APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnyRemote_Android_APK
+          path: mobile_app/build/app/outputs/flutter-apk/app-release.apk
+
+  build-mobile-ios:
+    name: Build iOS Bundle
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: mobile_app
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build iOS (No Codesign for CI)
+        run: flutter build ios --release --no-codesign
+
+      - name: Compress iOS Build
+        run: |
+          cd build/ios/iphoneos
+          zip -r ../../../AnyRemote_iOS_Runner.zip Runner.app
+
+      - name: Upload iOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnyRemote_iOS_Runner
+          path: mobile_app/AnyRemote_iOS_Runner.zip
+
+  # ---------------------------------------------------------------
+  # 3. Package Chrome & Firefox WebExtension
+  # ---------------------------------------------------------------
+  package-extension:
+    name: Package WebExtension
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Zip Extension Directory
+        run: |
+          cd browser_extension
+          zip -r ../AnyRemote_Browser_Extension.zip ./*
+
+      - name: Upload Extension Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnyRemote_Browser_Extension
+          path: AnyRemote_Browser_Extension.zip
+
+  # ---------------------------------------------------------------
+  # 4. Create GitHub Release & Upload All Assets
+  # ---------------------------------------------------------------
+  release:
+    name: Publish GitHub Release
+    needs: [build-pc-host, build-mobile-android, build-mobile-ios, package-extension]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download All Build Artifacts
+        uses: actions/download-artifact@v4
+
+      - name: List Downloaded Files
+        run: ls -R
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            AnyRemote_PC_Host_Windows/AnyRemote_PC_Host_Windows.zip
+            AnyRemote_Android_APK/app-release.apk
+            AnyRemote_iOS_Runner/AnyRemote_iOS_Runner.zip
+            AnyRemote_Browser_Extension/AnyRemote_Browser_Extension.zip
+          name: AnyRemote Release ${{ github.ref_name }}
+          body: |
+            ## 🚀 AnyRemote Cross-Platform Release
+            
+            ### Included Release Packages:
+            - **💻 Windows PC Host App**: `AnyRemote_PC_Host_Windows.zip` (1-Click Standalone Executable)
+            - **📱 Android App**: `app-release.apk`
+            - **🍎 iOS App**: `AnyRemote_iOS_Runner.zip`
+            - **🌐 Chrome & Firefox Extension**: `AnyRemote_Browser_Extension.zip`
+            
+            *Automated CI/CD Release via GitHub Actions.*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
