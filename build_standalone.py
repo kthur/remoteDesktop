@@ -2,9 +2,15 @@ import os
 import sys
 import subprocess
 
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 def build_exe():
     print("==================================================")
-    print(" 🛠️  Building Standalone PC Host Executable (.exe)")
+    print(" [BUILD] Building Standalone PC Host Executable (.exe)")
     print("==================================================")
 
     try:
@@ -16,7 +22,7 @@ def build_exe():
     host_agent_dir = os.path.abspath("host_agent")
     script_path = os.path.join(host_agent_dir, "gui_launcher.py")
 
-    add_data_arg = f"--add-data={host_agent_dir}{os.pathsep}host_agent"
+    add_data_arg = f"--add-data=host_agent{os.pathsep}host_agent"
 
     cmd = [
         sys.executable, "-m", "PyInstaller",
@@ -37,7 +43,7 @@ def build_exe():
     subprocess.check_call(cmd, env=env)
 
     print("\n==================================================")
-    print(" 🎉 SUCCESS! Standalone App executable created at:")
+    print(" [SUCCESS] Standalone App executable created at:")
     print(f"    {os.path.abspath('dist/AnyRemote_Host/AnyRemote_Host.exe')}")
     print("==================================================")
 
