@@ -5,7 +5,7 @@ let googleUserId = "google_user_12345";
 let googleEmail = "demo.user@gmail.com";
 let deviceId = "browser_ext_" + Math.random().toString(36).substr(2, 6);
 
-// Handle extension lifecycle messages
+// Handle extension lifecycle and internal offscreen messages
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "START_HOST") {
     startHostAgent(message.serverUrl || "ws://localhost:8080");
@@ -15,6 +15,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ status: "STOPPED" });
   } else if (message.type === "GET_STATUS") {
     sendResponse({ isConnected: isConnected, deviceId: deviceId, email: googleEmail });
+  } else if (message.type === "OFFSCREEN_FRAME") {
+    // Relay frame from offscreen capturer to WebSocket
+    if (socket && socket.readyState === WebSocket.OPEN && isConnected) {
+      socket.send(JSON.stringify({
+        type: "screen_frame",
+        device_id: deviceId,
+        frame: message.frame
+      }));
+    }
   }
   return true;
 });
@@ -29,7 +38,6 @@ function startHostAgent(serverUrl) {
       isConnected = true;
       console.log("🚀 Extension Host Agent connected to signaling server.");
 
-      // Register Browser Host
       const regMsg = {
         type: "register_host",
         google_user_id: googleUserId,
@@ -37,7 +45,7 @@ function startHostAgent(serverUrl) {
         device_id: deviceId,
         device_name: "Chrome/Firefox Browser Host",
         os: "WebExtension (Browser Host)",
-        resolution: { width: window.screen ? window.screen.width : 1920, height: window.screen ? window.screen.height : 1080 },
+        resolution: { width: 1920, height: 1080 },
         windows: [
           { handle: 0, title: "🖥️ Full Desktop (Browser Stream)", is_desktop: true },
           { handle: 100, title: "🌐 Active Browser Tab Stream", is_desktop: false }
@@ -48,8 +56,21 @@ function startHostAgent(serverUrl) {
     };
 
     socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log("WS Received:", data.type);
+      try {
+        const data = JSON.parse(event.data);
+        console.log("Extension WS Received:", data.type);
+
+        if (data.type === "input_event") {
+          // Dispatch input event to active tab if needed
+          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0] && tabs[0].id) {
+              chrome.tabs.sendMessage(tabs[0].id, { type: "REMOTE_INPUT", payload: data.payload });
+            }
+          });
+        }
+      } catch (e) {
+        console.error("Error processing WS message:", e);
+      }
     };
 
     socket.onclose = () => {

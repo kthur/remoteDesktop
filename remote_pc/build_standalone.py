@@ -7,7 +7,6 @@ def build_exe():
     print(" 🛠️  Building Standalone PC Host Executable (.exe)")
     print("==================================================")
 
-    # Check if PyInstaller is installed
     try:
         import PyInstaller
     except ImportError:
@@ -16,13 +15,15 @@ def build_exe():
 
     script_path = os.path.join("host_agent", "gui_launcher.py")
 
+    add_data_arg = f"--add-data=host_agent{os.pathsep}host_agent"
+
     cmd = [
         sys.executable, "-m", "PyInstaller",
         "--noconfirm",
         "--onedir",
         "--windowed",
         "--name=AnyRemote_Host",
-        "--add-data=host_agent;host_agent",
+        add_data_arg,
         "--clean",
         script_path
     ]
