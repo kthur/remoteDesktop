@@ -2,6 +2,8 @@ name: Build & Release AnyRemote (PC Host + Mobile APK/iOS + Extension)
 
 on:
   push:
+    branches:
+      - 'main'
     tags:
       - 'v*'
   workflow_dispatch:
@@ -154,17 +156,28 @@ jobs:
       - name: List Downloaded Files
         run: ls -R
 
+      - name: Set Release Tag Name
+        id: tag_name
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${{ github.ref_name }}"
+          else
+            TAG="v1.0.0"
+          fi
+          echo "TAG=$TAG" >> $GITHUB_OUTPUT
+
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ steps.tag_name.outputs.TAG }}
           files: |
             AnyRemote_PC_Host_Windows/AnyRemote_PC_Host_Windows.zip
             AnyRemote_Android_APK/app-release.apk
             AnyRemote_iOS_Runner/AnyRemote_iOS_Runner.zip
             AnyRemote_Browser_Extension/AnyRemote_Browser_Extension.zip
-          name: AnyRemote Release ${{ github.ref_name }}
+          name: AnyRemote Release ${{ steps.tag_name.outputs.TAG }}
           body: |
-            ## 🚀 AnyRemote Cross-Platform Release
+            ## 🚀 AnyRemote Cross-Platform Release (${{ steps.tag_name.outputs.TAG }})
             
             ### Included Release Packages:
             - **💻 Windows PC Host App**: `AnyRemote_PC_Host_Windows.zip` (1-Click Standalone Executable)
