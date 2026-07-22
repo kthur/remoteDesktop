@@ -45,7 +45,7 @@ jobs:
           path: AnyRemote_PC_Host_Windows.zip
 
   # ---------------------------------------------------------------
-  # 2. Build Mobile App (Android APK & iOS)
+  # 2. Build Mobile App (Android APK & Firebase Upload)
   # ---------------------------------------------------------------
   build-mobile-android:
     name: Build Android APK
@@ -82,6 +82,22 @@ jobs:
           name: AnyRemote_Android_APK
           path: mobile_app/build/app/outputs/flutter-apk/app-release.apk
 
+      - name: Deploy Android to Firebase App Distribution (Optional)
+        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY != '' && secrets.FIREBASE_APP_ID_ANDROID != '' }}
+        uses: w9jds/setup-firebase@v2
+        with:
+          gcp_sa_key: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+
+      - name: Upload APK to Firebase
+        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY != '' && secrets.FIREBASE_APP_ID_ANDROID != '' }}
+        run: |
+          npx firebase-tools appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk \
+            --app "${{ secrets.FIREBASE_APP_ID_ANDROID }}" \
+            --release-notes "Automated GitHub Actions Android Build"
+
+  # ---------------------------------------------------------------
+  # 3. Build Mobile App (iOS Bundle & Firebase Upload)
+  # ---------------------------------------------------------------
   build-mobile-ios:
     name: Build iOS Bundle
     runs-on: macos-latest
@@ -105,19 +121,32 @@ jobs:
       - name: Build iOS (No Codesign for CI)
         run: flutter build ios --release --no-codesign
 
-      - name: Compress iOS Build
+      - name: Compress iOS Runner Build
         run: |
-          cd build/ios/iphoneos
-          zip -r ../../../AnyRemote_iOS_Runner.zip Runner.app
+          mkdir -p build/ios_output
+          if [ -d "build/ios/iphoneos/Runner.app" ]; then
+            zip -r build/ios_output/AnyRemote_iOS_Runner.zip build/ios/iphoneos/Runner.app
+          elif [ -d "build/ios/Release-iphoneos/Runner.app" ]; then
+            zip -r build/ios_output/AnyRemote_iOS_Runner.zip build/ios/Release-iphoneos/Runner.app
+          else
+            zip -r build/ios_output/AnyRemote_iOS_Runner.zip build/ios/
+          fi
 
       - name: Upload iOS Artifact
         uses: actions/upload-artifact@v4
         with:
           name: AnyRemote_iOS_Runner
-          path: mobile_app/AnyRemote_iOS_Runner.zip
+          path: mobile_app/build/ios_output/AnyRemote_iOS_Runner.zip
+
+      - name: Upload iOS to Firebase App Distribution (Optional)
+        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY != '' && secrets.FIREBASE_APP_ID_IOS != '' && hashFiles('mobile_app/build/ios_output/*.ipa') != '' }}
+        run: |
+          npx firebase-tools appdistribution:distribute build/ios_output/Runner.ipa \
+            --app "${{ secrets.FIREBASE_APP_ID_IOS }}" \
+            --release-notes "Automated GitHub Actions iOS Build"
 
   # ---------------------------------------------------------------
-  # 3. Package Chrome & Firefox WebExtension
+  # 4. Package Chrome & Firefox WebExtension
   # ---------------------------------------------------------------
   package-extension:
     name: Package WebExtension
@@ -138,7 +167,7 @@ jobs:
           path: AnyRemote_Browser_Extension.zip
 
   # ---------------------------------------------------------------
-  # 4. Create GitHub Release & Upload All Assets
+  # 5. Create GitHub Release & Upload All Assets
   # ---------------------------------------------------------------
   release:
     name: Publish GitHub Release
@@ -185,7 +214,7 @@ jobs:
             - **🍎 iOS App**: `AnyRemote_iOS_Runner.zip`
             - **🌐 Chrome & Firefox Extension**: `AnyRemote_Browser_Extension.zip`
             
-            *Automated CI/CD Release via GitHub Actions.*
+            *Automated CI/CD Release via GitHub Actions & Firebase Integration.*
           draft: false
           prerelease: false
         env:
