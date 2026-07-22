@@ -89,14 +89,6 @@ jobs:
           name: AnyRemote_Android_APK
           path: mobile_app/build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Setup Firebase Authentication
-        env:
-          FIREBASE_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
-        if: ${{ env.FIREBASE_KEY != '' }}
-        uses: w9jds/setup-firebase@v2
-        with:
-          gcp_sa_key: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
-
       - name: Deploy Android to Firebase App Distribution
         env:
           FIREBASE_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
@@ -152,14 +144,6 @@ jobs:
         with:
           name: AnyRemote_iOS_Runner
           path: mobile_app/build/ios_output/AnyRemote_iOS_Runner.zip
-
-      - name: Setup Firebase Authentication
-        env:
-          FIREBASE_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
-        if: ${{ env.FIREBASE_KEY != '' }}
-        uses: w9jds/setup-firebase@v2
-        with:
-          gcp_sa_key: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
 
       - name: Upload iOS to Firebase App Distribution
         env:
