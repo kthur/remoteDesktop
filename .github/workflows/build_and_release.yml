@@ -92,14 +92,20 @@ jobs:
       - name: Deploy Android to Firebase App Distribution
         env:
           FIREBASE_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+          FIREBASE_CI_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
-        if: ${{ env.FIREBASE_KEY != '' && env.FIREBASE_APP_ID != '' }}
+        if: ${{ (env.FIREBASE_KEY != '' || env.FIREBASE_CI_TOKEN != '') && env.FIREBASE_APP_ID != '' }}
         run: |
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}" > /tmp/firebase_sa_key.json
-          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase_sa_key.json
+          if [ -n "$FIREBASE_KEY" ]; then
+            echo "$FIREBASE_KEY" > /tmp/firebase_sa_key.json
+            export GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase_sa_key.json
+          fi
+          if [ -n "$FIREBASE_CI_TOKEN" ]; then
+            export FIREBASE_TOKEN="$FIREBASE_CI_TOKEN"
+          fi
           npx firebase-tools appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk \
             --app "${{ secrets.FIREBASE_APP_ID_ANDROID }}" \
-            --release-notes "Automated GitHub Actions Android Build" || true
+            --release-notes "Automated GitHub Actions Android Build" || echo "⚠️ Firebase App Distribution deployment skipped or authentication failed."
           rm -f /tmp/firebase_sa_key.json
 
   # ---------------------------------------------------------------
@@ -148,14 +154,20 @@ jobs:
       - name: Upload iOS to Firebase App Distribution
         env:
           FIREBASE_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+          FIREBASE_CI_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID_IOS }}
-        if: ${{ env.FIREBASE_KEY != '' && env.FIREBASE_APP_ID != '' }}
+        if: ${{ (env.FIREBASE_KEY != '' || env.FIREBASE_CI_TOKEN != '') && env.FIREBASE_APP_ID != '' }}
         run: |
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}" > /tmp/firebase_sa_key.json
-          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase_sa_key.json
+          if [ -n "$FIREBASE_KEY" ]; then
+            echo "$FIREBASE_KEY" > /tmp/firebase_sa_key.json
+            export GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase_sa_key.json
+          fi
+          if [ -n "$FIREBASE_CI_TOKEN" ]; then
+            export FIREBASE_TOKEN="$FIREBASE_CI_TOKEN"
+          fi
           npx firebase-tools appdistribution:distribute build/ios_output/AnyRemote_iOS_Runner.zip \
             --app "${{ secrets.FIREBASE_APP_ID_IOS }}" \
-            --release-notes "Automated GitHub Actions iOS Build" || true
+            --release-notes "Automated GitHub Actions iOS Build" || echo "⚠️ Firebase App Distribution deployment skipped or authentication failed."
           rm -f /tmp/firebase_sa_key.json
 
   # ---------------------------------------------------------------
