@@ -336,7 +336,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                         border: Border.all(color: Colors.white.withOpacity(0.15)),
                       ),
                       child: Row(
-                        mainAxisAlignment: Main.spaceAround,
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           IconButton(
                             icon: const Icon(Icons.mouse_rounded, color: Color(0xFF38BDF8)),
