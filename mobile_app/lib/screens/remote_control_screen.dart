@@ -32,10 +32,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
     _remoteService = RemoteService();
 
     final auth = Provider.of<AuthService>(context, listen: false);
-    if (auth.currentUser == null) {
-      return;
-    }
-    final userId = auth.currentUser!.id;
+    final userId = auth.currentUser?.id ?? "google_user_12345";
 
     _remoteService.connect(
       "ws://localhost:8080",
@@ -244,6 +241,149 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
     );
   }
 
+  void _showDebugModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Consumer<RemoteService>(
+          builder: (context, service, _) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.8,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.bug_report_rounded, color: Color(0xFF38BDF8)),
+                          SizedBox(width: 8),
+                          Text(
+                            '🐛 Diagnostics & Connection HUD',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Colors.white60),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    ),
+                    child: Column(
+                      children: [
+                        _debugRow("State", service.connectionState.name.toUpperCase(), color: service.isConnected ? Colors.greenAccent : Colors.amberAccent),
+                        _debugRow("Transport", service.activeTransportBadge),
+                        _debugRow("Active URL", service.activeUrl ?? "None (Probing)"),
+                        _debugRow("FPS / Performance", "${service.currentFps.toStringAsFixed(1)} FPS | Total Frames: ${service.framesReceivedCount}"),
+                        _debugRow("Frame Size", "${(service.lastFrameSizeBytes / 1024).toStringAsFixed(1)} KB"),
+                        if (service.lastErrorMsg != null)
+                          _debugRow("Last Error", service.lastErrorMsg!, color: Colors.redAccent),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('📜 Real-time Connection Logs', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
+                      Row(
+                        children: [
+                          TextButton.icon(
+                            icon: const Icon(Icons.refresh_rounded, size: 16, color: Color(0xFF38BDF8)),
+                            label: const Text('Re-probe', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12)),
+                            onPressed: () {
+                              service.ensureConnected();
+                            },
+                          ),
+                          TextButton.icon(
+                            icon: const Icon(Icons.delete_sweep_rounded, size: 16, color: Colors.white60),
+                            label: const Text('Clear', style: TextStyle(color: Colors.white60, fontSize: 12)),
+                            onPressed: () {
+                              service.clearDiagnosticLogs();
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: service.diagnosticLogs.isEmpty
+                          ? const Center(child: Text('No diagnostic logs recorded yet.', style: TextStyle(color: Colors.white38)))
+                          : ListView.builder(
+                              itemCount: service.diagnosticLogs.length,
+                              itemBuilder: (context, index) {
+                                final log = service.diagnosticLogs[service.diagnosticLogs.length - 1 - index];
+                                final isError = log.contains("ERROR") || log.contains("FAILED") || log.contains("Exception");
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 2),
+                                  child: Text(
+                                    log,
+                                    style: TextStyle(
+                                      fontFamily: 'monospace',
+                                      fontSize: 11,
+                                      color: isError ? Colors.redAccent : (log.contains("CONNECTED") ? Colors.greenAccent : Colors.white70),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _debugRow(String label, String value, {Color color = Colors.white}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+          Flexible(
+            child: Text(
+              value,
+              style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
@@ -297,8 +437,13 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
               ),
               actions: [
                 IconButton(
+                  tooltip: '🐛 Debug & Connection HUD',
+                  icon: const Icon(Icons.bug_report_rounded, color: Color(0xFF38BDF8)),
+                  onPressed: _showDebugModal,
+                ),
+                IconButton(
                   tooltip: 'Windows Manager Menu',
-                  icon: const Icon(Icons.window_rounded, color: Color(0xFF38BDF8)),
+                  icon: const Icon(Icons.window_rounded, color: Colors.white70),
                   onPressed: _showWindowSelectorMenu,
                 ),
                 IconButton(

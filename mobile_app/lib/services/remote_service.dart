@@ -34,6 +34,16 @@ class RemoteService extends ChangeNotifier {
   int _selectedWindowHandle = 0;
   bool _isBackground = false;
 
+  // Diagnostics & Debug HUD
+  int _framesReceivedCount = 0;
+  int _framesInLastSecond = 0;
+  double _currentFps = 0.0;
+  int _lastFrameSizeBytes = 0;
+  String? _lastErrorMsg;
+  final List<String> _diagnosticLogs = [];
+  List<String> _testedCandidateUrls = [];
+  Timer? _fpsTimer;
+
   String? _serverUrl;
   String? _googleUserId;
   String? _targetDeviceId;
@@ -62,6 +72,30 @@ class RemoteService extends ChangeNotifier {
   List<Map<String, dynamic>> get supportedResolutions => _supportedResolutions;
   int get selectedWindowHandle => _selectedWindowHandle;
   bool get isBackground => _isBackground;
+
+  // Diagnostic Getters
+  int get framesReceivedCount => _framesReceivedCount;
+  double get currentFps => _currentFps;
+  int get lastFrameSizeBytes => _lastFrameSizeBytes;
+  String? get lastErrorMsg => _lastErrorMsg;
+  List<String> get diagnosticLogs => List.unmodifiable(_diagnosticLogs);
+  List<String> get testedCandidateUrls => List.unmodifiable(_testedCandidateUrls);
+
+  void logDiagnostic(String message) {
+    final timestamp = DateTime.now().toIso8601String().substring(11, 19);
+    final formatted = "[$timestamp] $message";
+    _diagnosticLogs.add(formatted);
+    if (_diagnosticLogs.length > 120) {
+      _diagnosticLogs.removeAt(0);
+    }
+    debugPrint(formatted);
+    notifyListeners();
+  }
+
+  void clearDiagnosticLogs() {
+    _diagnosticLogs.clear();
+    notifyListeners();
+  }
 
   String get activeTransportBadge {
     switch (_activeTransport) {
@@ -159,7 +193,8 @@ class RemoteService extends ChangeNotifier {
     }
 
     final candidateUrls = overrideCandidates ?? await _buildCandidateUrls();
-    debugPrint('Starting candidate connection probing across ${candidateUrls.length} targets: $candidateUrls');
+    _testedCandidateUrls = List.from(candidateUrls);
+    logDiagnostic("Starting candidate connection probing across ${candidateUrls.length} targets: $candidateUrls");
 
     bool winnerFound = false;
     final List<WebSocketChannel> openProbingChannels = [];
@@ -171,6 +206,7 @@ class RemoteService extends ChangeNotifier {
       if (winnerFound) break;
 
       try {
+        logDiagnostic("Probing candidate endpoint: $candidateUrl");
         final uri = Uri.parse(candidateUrl);
         final channel = WebSocketChannel.connect(uri);
         openProbingChannels.add(channel);
@@ -217,17 +253,17 @@ class RemoteService extends ChangeNotifier {
                 _handleServerMessage(data);
               }
             } catch (e) {
-              debugPrint("Error reading probe frame: $e");
+              logDiagnostic("Error reading probe frame on $candidateUrl: $e");
             }
           },
           onError: (err) {
-            debugPrint("Probe error on $candidateUrl: $err");
+            logDiagnostic("Probe error on $candidateUrl: $err");
             if (channel == _activeChannel && !winnerFound) {
               _handleDisconnectOrError();
             }
           },
           onDone: () {
-            debugPrint("Probe closed on $candidateUrl");
+            logDiagnostic("Probe closed on $candidateUrl");
             if (channel == _activeChannel) {
               _handleDisconnectOrError();
             }
@@ -236,12 +272,13 @@ class RemoteService extends ChangeNotifier {
 
         probingSubscriptions.add(sub);
       } catch (e) {
-        debugPrint("Exception probing $candidateUrl: $e");
+        logDiagnostic("Exception probing $candidateUrl: $e");
       }
     }
 
     Timer(const Duration(seconds: 4), () {
       if (!winnerFound && !probeCompleter.isCompleted) {
+        logDiagnostic("Candidate probing timeout reached (4s). Cleaning channels.");
         for (var ch in openProbingChannels) {
           try {
             ch.sink.close();
@@ -256,6 +293,8 @@ class RemoteService extends ChangeNotifier {
 
     final success = await probeCompleter.future;
     if (!success && !winnerFound) {
+      _lastErrorMsg = "All candidate endpoints failed to establish stream connection.";
+      logDiagnostic("ERROR: $_lastErrorMsg");
       _handleDisconnectOrError();
     }
   }
@@ -268,8 +307,9 @@ class RemoteService extends ChangeNotifier {
     _reconnectAttempts = 0;
     _lastPongReceived = DateTime.now();
     _startPingTimer();
+    _startFpsTimer();
 
-    debugPrint('Successfully connected to $_activeUrl via $_activeTransport badge: $activeTransportBadge');
+    logDiagnostic('Successfully connected to $_activeUrl via $activeTransportBadge');
 
     _handleServerMessage(jsonEncode(firstMsg));
     _reSynchronizeSessionState();
@@ -278,6 +318,7 @@ class RemoteService extends ChangeNotifier {
 
   void _handleDisconnectOrError() {
     _stopPingTimer();
+    _stopFpsTimer();
     _cleanupActiveChannel();
 
     if (_isManualDisconnect || _connectionState == RemoteConnectionState.disconnected) return;
@@ -288,15 +329,32 @@ class RemoteService extends ChangeNotifier {
       notifyListeners();
 
       final delay = _calculateBackoffDelay(_reconnectAttempts);
-      debugPrint("Scheduling reconnect attempt $_reconnectAttempts in ${delay.inMilliseconds}ms");
+      logDiagnostic("Scheduling reconnect attempt $_reconnectAttempts in ${delay.inMilliseconds}ms");
 
       _reconnectTimer = Timer(delay, () {
         _startConnectionProbing();
       });
     } else {
       _connectionState = RemoteConnectionState.failed;
+      _lastErrorMsg = "Max reconnect attempts reached ($maxReconnectAttempts).";
+      logDiagnostic("FAILED: $_lastErrorMsg");
       notifyListeners();
     }
+  }
+
+  void _startFpsTimer() {
+    _fpsTimer?.cancel();
+    _fpsTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _currentFps = _framesInLastSecond.toDouble();
+      _framesInLastSecond = 0;
+      notifyListeners();
+    });
+  }
+
+  void _stopFpsTimer() {
+    _fpsTimer?.cancel();
+    _fpsTimer = null;
+    _currentFps = 0.0;
   }
 
   Duration _calculateBackoffDelay(int attempt) {
@@ -317,6 +375,7 @@ class RemoteService extends ChangeNotifier {
         _reconnectAttempts = 0;
         _lastPongReceived = DateTime.now();
         _startPingTimer();
+        _startFpsTimer();
         notifyListeners();
 
         _reSynchronizeSessionState();
@@ -325,7 +384,11 @@ class RemoteService extends ChangeNotifier {
       } else if (msgType == "screen_frame") {
         _lastPongReceived = DateTime.now();
         if (!_isBackground && data["frame"] != null) {
-          _latestFrameBytes = base64Decode(data["frame"]);
+          final decodedBytes = base64Decode(data["frame"]);
+          _latestFrameBytes = decodedBytes;
+          _framesReceivedCount++;
+          _framesInLastSecond++;
+          _lastFrameSizeBytes = decodedBytes.length;
           notifyListeners();
         }
       } else if (msgType == "windows_list_update") {
