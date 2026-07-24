@@ -10,6 +10,9 @@ from display_manager import DisplayManager
 from input_handler import InputHandler
 from auth_host import HostAuth
 
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
 SERVER_URI = os.getenv("SIGNALING_SERVER", "ws://localhost:8080")
 
 async def run_host_agent():
@@ -102,6 +105,7 @@ async def run_host_agent():
                         print(f"Listener error: {e}")
 
                 listener_task = asyncio.create_task(message_listener())
+                frame_count = 0
 
                 while True:
                     if capturer.is_background:
@@ -117,6 +121,11 @@ async def run_host_agent():
                                 "frame": b64_frame
                             }
                             await ws.send(json.dumps(frame_packet))
+                            frame_count += 1
+                            if frame_count % 50 == 0:
+                                print(f" 🎬 Streaming active: {frame_count} frames sent ({len(frame_bytes)} bytes/frame)")
+                        else:
+                            print(" ⚠️ Frame capture returned None. Retrying...")
                         await asyncio.sleep(0.04)
 
         except (websockets.exceptions.ConnectionClosed, OSError) as err:

@@ -119,8 +119,12 @@ wss.on('connection', (ws) => {
 
                 console.log(`[CLIENT CONNECTED] Client ${clientId} watching Device ${data.target_device_id}`);
                 ws.send(jsonStr({ type: 'client_registered', client_id: clientId }));
+                notifyClientsDeviceList(userId);
 
-                const host = registeredHosts.get(data.target_device_id);
+                let host = registeredHosts.get(data.target_device_id);
+                if (!host && registeredHosts.size === 1) {
+                    host = registeredHosts.values().next().value;
+                }
                 if (host && host.ws.readyState === WebSocket.OPEN) {
                     host.ws.send(jsonStr({ type: 'request_windows' }));
                 }
@@ -129,15 +133,18 @@ wss.on('connection', (ws) => {
             else if (msgType === 'screen_frame') {
                 const devId = data.device_id;
                 activeClients.forEach((cData) => {
-                    if (cData.target_device_id === devId && cData.ws.readyState === WebSocket.OPEN) {
+                    if ((cData.target_device_id === devId || cData.target_device_id === 'pc_win_desktop_01' || registeredHosts.size === 1) && cData.ws.readyState === WebSocket.OPEN) {
                         cData.ws.send(message.toString());
                     }
                 });
             }
 
             else if (['input_event', 'select_window', 'change_resolution', 'fit_resolution', 'app_state'].includes(msgType)) {
-                const targetDevId = data.target_device_id;
-                const host = registeredHosts.get(targetDevId);
+                let targetDevId = data.target_device_id;
+                let host = registeredHosts.get(targetDevId);
+                if (!host && registeredHosts.size === 1) {
+                    host = registeredHosts.values().next().value;
+                }
                 if (host && host.ws.readyState === WebSocket.OPEN) {
                     host.ws.send(message.toString());
                 }

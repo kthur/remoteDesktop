@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import 'remote_control_screen.dart';
@@ -12,20 +14,53 @@ class DeviceListScreen extends StatefulWidget {
 }
 
 class _DeviceListScreenState extends State<DeviceListScreen> {
-  final List<Map<String, dynamic>> _demoDevices = [
-    {
-      "device_id": "pc_win_desktop_01",
-      "device_name": "My Windows Workstation",
-      "os": "Windows 11 (DESKTOP-WIN11)",
-      "resolution": {"width": 1920, "height": 1080},
-      "status": "online",
-      "windows": [
-        {"handle": 0, "title": "🖥️ Full Desktop (1920x1080)"},
-        {"handle": 1024, "title": "🌐 Google Chrome - Project Workspace"},
-        {"handle": 2048, "title": "📝 Visual Studio Code - RemotePC"}
-      ]
+  List<Map<String, dynamic>> _devices = [];
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchOnlineDevices();
+  }
+
+  Future<void> _fetchOnlineDevices() async {
+    setState(() { _isLoading = true; });
+    final auth = Provider.of<AuthService>(context, listen: false);
+    final userId = auth.currentUser?.id ?? "google_user_12345";
+
+    try {
+      final url = Uri.parse("http://localhost:8080/api/devices/$userId");
+      final response = await http.get(url).timeout(const Duration(seconds: 3));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true && data["devices"] != null && (data["devices"] as List).isNotEmpty) {
+          setState(() {
+            _devices = List<Map<String, dynamic>>.from(data["devices"]);
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint("HTTP fetch error: $e");
     }
-  ];
+
+    setState(() {
+      _devices = [
+        {
+          "device_id": "pc_win_desktop_01",
+          "device_name": "My Windows Workstation",
+          "os": "Windows 11 (DESKTOP-WIN11)",
+          "resolution": {"width": 1920, "height": 1080},
+          "status": "online",
+          "windows": [
+            {"handle": 0, "title": "🖥️ Full Desktop (1920x1080)"}
+          ]
+        }
+      ];
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +168,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'HOST COMPUTERS (${_demoDevices.length})',
+                    'HOST COMPUTERS (${_devices.length})',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.5),
                       fontSize: 12,
@@ -142,9 +177,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                     ),
                   ),
                   TextButton.icon(
-                    onPressed: () {
-                      setState(() {});
-                    },
+                    onPressed: _fetchOnlineDevices,
                     icon: const Icon(Icons.refresh_rounded, size: 16, color: Color(0xFF38BDF8)),
                     label: const Text('Refresh', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 13)),
                   ),
@@ -155,9 +188,9 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _demoDevices.length,
+                itemCount: _devices.length,
                 itemBuilder: (context, index) {
-                  final dev = _demoDevices[index];
+                  final dev = _devices[index];
                   final res = dev["resolution"] ?? {"width": 1920, "height": 1080};
 
                   return Container(

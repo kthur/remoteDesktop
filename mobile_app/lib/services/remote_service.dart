@@ -26,7 +26,10 @@ class RemoteService extends ChangeNotifier {
   void connect(String serverUrl, String googleUserId, String targetDeviceId) {
     _targetDeviceId = targetDeviceId;
     _googleUserId = googleUserId;
+    _tryConnect(serverUrl, googleUserId, targetDeviceId);
+  }
 
+  void _tryConnect(String serverUrl, String googleUserId, String targetDeviceId, {bool isFallback = false}) {
     try {
       final uri = Uri.parse(serverUrl);
       _channel = WebSocketChannel.connect(uri);
@@ -43,12 +46,16 @@ class RemoteService extends ChangeNotifier {
       _channel?.stream.listen(
         (data) => _handleServerMessage(data),
         onError: (err) {
-          debugPrint("WS Error: $err");
+          debugPrint("WS Error on $serverUrl: $err");
           _isConnected = false;
           notifyListeners();
+          if (!isFallback && serverUrl.contains("localhost")) {
+            debugPrint("Retrying connection with fallback ws://10.0.2.2:8080...");
+            _tryConnect("ws://10.0.2.2:8080", googleUserId, targetDeviceId, isFallback: true);
+          }
         },
         onDone: () {
-          debugPrint("WS Connection closed");
+          debugPrint("WS Connection closed on $serverUrl");
           _isConnected = false;
           notifyListeners();
         },
