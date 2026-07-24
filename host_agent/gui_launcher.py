@@ -1,11 +1,5 @@
 import sys
 import os
-
-# Ensure host_agent directory is in sys.path for PyInstaller & standalone execution
-host_agent_dir = os.path.dirname(os.path.abspath(__file__))
-if host_agent_dir not in sys.path:
-    sys.path.insert(0, host_agent_dir)
-
 import threading
 import asyncio
 import tkinter as tk
@@ -29,6 +23,7 @@ class AnyRemoteHostGUI:
         self._setup_ui()
 
     def _setup_ui(self):
+        # Header Banner
         header = tk.Frame(self.root, bg="#1E293B", height=70)
         header.pack(fill="x")
 
@@ -50,9 +45,11 @@ class AnyRemoteHostGUI:
         )
         lbl_sub.pack(side="right", padx=20, pady=20)
 
+        # Content Card
         content = tk.Frame(self.root, bg="#0F172A", padx=25, pady=20)
         content.pack(fill="both", expand=True)
 
+        # Google Auth Info Box
         auth_box = tk.LabelFrame(
             content,
             text=" Synced Google Account ",
@@ -64,7 +61,7 @@ class AnyRemoteHostGUI:
         )
         auth_box.pack(fill="x", pady=5)
 
-        user_email = self.auth.google_email or "demo.user@gmail.com"
+        user_email = self.auth.google_email or "Not Logged In (Unpaired)"
         self.lbl_email = tk.Label(
             auth_box,
             text=f"📧 {user_email}",
@@ -83,6 +80,7 @@ class AnyRemoteHostGUI:
         )
         self.lbl_device.pack(anchor="w", pady=(4, 0))
 
+        # Status Indicator Box
         status_box = tk.Frame(content, bg="#1E293B", padx=15, pady=12)
         status_box.pack(fill="x", pady=15)
 
@@ -103,6 +101,7 @@ class AnyRemoteHostGUI:
         )
         self.lbl_status_text.pack(side="left", padx=10)
 
+        # Control Buttons
         btn_frame = tk.Frame(content, bg="#0F172A")
         btn_frame.pack(fill="x", pady=10)
 

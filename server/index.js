@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
 const cors = require('cors');
+const os = require('os');
 const { OAuth2Client } = require('google-auth-library');
 
 const app = express();
@@ -16,6 +17,24 @@ const googleClient = new OAuth2Client();
 const registeredHosts = new Map();
 const activeClients = new Map();
 
+function getServerNetworkInterfaces() {
+    const interfaces = os.networkInterfaces();
+    const results = [];
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+            if (iface.family === 'IPv4' && !iface.internal) {
+                results.push({
+                    interface: name,
+                    address: iface.address,
+                    netmask: iface.netmask,
+                    mac: iface.mac
+                });
+            }
+        }
+    }
+    return results;
+}
+
 app.post('/api/auth/verify-google', async (req, res) => {
     const { id_token } = req.body;
     if (!id_token) {
@@ -23,17 +42,6 @@ app.post('/api/auth/verify-google', async (req, res) => {
     }
 
     try {
-        if (process.env.ALLOW_DEMO_TOKEN === 'true' && (id_token === 'demo_token' || id_token.startsWith('mock_'))) {
-            return res.json({
-                success: true,
-                user: {
-                    id: 'google_user_12345',
-                    email: 'demo.user@gmail.com',
-                    name: 'Demo User'
-                }
-            });
-        }
-
         const ticket = await googleClient.verifyIdToken({ idToken: id_token });
         const payload = ticket.getPayload();
         return res.json({
@@ -51,6 +59,14 @@ app.post('/api/auth/verify-google', async (req, res) => {
     }
 });
 
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: "ok",
+        service: "anyremote",
+        server_interfaces: getServerNetworkInterfaces()
+    });
+});
+
 app.get('/api/devices/:google_user_id', (req, res) => {
     const userId = req.params.google_user_id;
     const userDevices = [];
@@ -64,7 +80,11 @@ app.get('/api/devices/:google_user_id', (req, res) => {
                 resolution: hostData.info.resolution,
                 windows: hostData.info.windows || [],
                 supported_resolutions: hostData.info.supported_resolutions || [],
-                status: 'online'
+                status: 'online',
+                local_ips: hostData.info.local_ips || [],
+                remote_ip: hostData.info.remote_ip || '',
+                usb_available: hostData.info.usb_available || false,
+                direct_ws_urls: hostData.info.direct_ws_urls || []
             });
         }
     });
@@ -87,6 +107,17 @@ wss.on('connection', (ws) => {
                 clientId = data.device_id;
                 userId = data.google_user_id;
 
+                const localIps = data.network_info?.local_ips || [];
+                const wsPort = data.network_info?.ws_port || 8080;
+                const rawRemoteIp = ws._socket ? ws._socket.remoteAddress : '';
+                const remoteIp = rawRemoteIp ? rawRemoteIp.replace(/^.*:/, '') : '127.0.0.1';
+                const isUsbAvailable = data.network_info?.usb_available || (remoteIp === '127.0.0.1' || remoteIp === 'localhost');
+
+                const directWsUrls = [
+                    `ws://127.0.0.1:${wsPort}`,
+                    ...localIps.map(ip => `ws://${ip}:${wsPort}`)
+                ];
+
                 registeredHosts.set(clientId, {
                     ws: ws,
                     google_user_id: userId,
@@ -97,7 +128,11 @@ wss.on('connection', (ws) => {
                         resolution: data.resolution,
                         windows: data.windows,
                         supported_resolutions: data.supported_resolutions,
-                        google_email: data.google_email
+                        google_email: data.google_email,
+                        local_ips: localIps,
+                        remote_ip: remoteIp,
+                        usb_available: isUsbAvailable,
+                        direct_ws_urls: directWsUrls
                     }
                 });
 
@@ -119,12 +154,8 @@ wss.on('connection', (ws) => {
 
                 console.log(`[CLIENT CONNECTED] Client ${clientId} watching Device ${data.target_device_id}`);
                 ws.send(jsonStr({ type: 'client_registered', client_id: clientId }));
-                notifyClientsDeviceList(userId);
 
-                let host = registeredHosts.get(data.target_device_id);
-                if (!host && registeredHosts.size === 1) {
-                    host = registeredHosts.values().next().value;
-                }
+                const host = registeredHosts.get(data.target_device_id);
                 if (host && host.ws.readyState === WebSocket.OPEN) {
                     host.ws.send(jsonStr({ type: 'request_windows' }));
                 }
@@ -133,18 +164,15 @@ wss.on('connection', (ws) => {
             else if (msgType === 'screen_frame') {
                 const devId = data.device_id;
                 activeClients.forEach((cData) => {
-                    if ((cData.target_device_id === devId || cData.target_device_id === 'pc_win_desktop_01' || registeredHosts.size === 1) && cData.ws.readyState === WebSocket.OPEN) {
+                    if (cData.target_device_id === devId && cData.ws.readyState === WebSocket.OPEN) {
                         cData.ws.send(message.toString());
                     }
                 });
             }
 
             else if (['input_event', 'select_window', 'change_resolution', 'fit_resolution', 'app_state'].includes(msgType)) {
-                let targetDevId = data.target_device_id;
-                let host = registeredHosts.get(targetDevId);
-                if (!host && registeredHosts.size === 1) {
-                    host = registeredHosts.values().next().value;
-                }
+                const targetDevId = data.target_device_id;
+                const host = registeredHosts.get(targetDevId);
                 if (host && host.ws.readyState === WebSocket.OPEN) {
                     host.ws.send(message.toString());
                 }
@@ -195,7 +223,11 @@ function notifyClientsDeviceList(userId) {
                 resolution: hData.info.resolution,
                 windows: hData.info.windows || [],
                 supported_resolutions: hData.info.supported_resolutions || [],
-                status: 'online'
+                status: 'online',
+                local_ips: hData.info.local_ips || [],
+                remote_ip: hData.info.remote_ip || '',
+                usb_available: hData.info.usb_available || false,
+                direct_ws_urls: hData.info.direct_ws_urls || []
             });
         }
     });
@@ -214,11 +246,12 @@ function jsonStr(obj) {
     return JSON.stringify(obj);
 }
 
+const HOST = process.env.HOST || '0.0.0.0';
 const PORT = process.env.PORT || 8080;
-server.listen(PORT, () => {
+server.listen(PORT, HOST, () => {
     console.log(`==================================================`);
     console.log(` 🌐 Remote PC Signaling & Auth Server Running`);
-    console.log(` Port: ${PORT}`);
-    console.log(` WebSocket URL: ws://localhost:${PORT}`);
+    console.log(` Host: ${HOST} | Port: ${PORT}`);
+    console.log(` WebSocket URL: ws://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
     console.log(`==================================================`);
 });

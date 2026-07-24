@@ -6,11 +6,15 @@ import '../services/remote_service.dart';
 class RemoteControlScreen extends StatefulWidget {
   final String targetDeviceId;
   final String deviceName;
+  final List<String>? directWsUrls;
+  final List<String>? knownLocalIps;
 
   const RemoteControlScreen({
     Key? key,
     required this.targetDeviceId,
     required this.deviceName,
+    this.directWsUrls,
+    this.knownLocalIps,
   }) : super(key: key);
 
   @override
@@ -28,8 +32,18 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
     _remoteService = RemoteService();
 
     final auth = Provider.of<AuthService>(context, listen: false);
-    final userId = auth.currentUser?.id ?? "google_user_12345";
-    _remoteService.connect("ws://localhost:8080", userId, widget.targetDeviceId);
+    if (auth.currentUser == null) {
+      return;
+    }
+    final userId = auth.currentUser!.id;
+
+    _remoteService.connect(
+      "ws://localhost:8080",
+      userId,
+      widget.targetDeviceId,
+      candidateUrls: widget.directWsUrls,
+      knownLocalIps: widget.knownLocalIps,
+    );
   }
 
   @override
@@ -45,6 +59,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
       _remoteService.updateAppState(true);
     } else if (state == AppLifecycleState.resumed) {
       _remoteService.updateAppState(false);
+      _remoteService.ensureConnected();
     }
   }
 
@@ -64,11 +79,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
 
   void _showWindowSelectorMenu() {
     final windows = _remoteService.openWindows;
-    final displayList = windows.isNotEmpty ? windows : [
-      {"handle": 0, "title": "🖥️ Full Desktop"},
-      {"handle": 1024, "title": "🌐 Google Chrome"},
-      {"handle": 2048, "title": "📝 Visual Studio Code"}
-    ];
+    final displayList = windows;
 
     showModalBottomSheet(
       context: context,
@@ -97,46 +108,57 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                 ],
               ),
               const SizedBox(height: 12),
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: displayList.length,
-                  itemBuilder: (context, index) {
-                    final win = displayList[index];
-                    final handle = win["handle"] as int;
-                    final isSelected = handle == _remoteService.selectedWindowHandle;
+              if (displayList.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                    child: Text(
+                      'No open windows reported by host.',
+                      style: TextStyle(color: Colors.white60),
+                    ),
+                  ),
+                )
+              else
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: displayList.length,
+                    itemBuilder: (context, index) {
+                      final win = displayList[index];
+                      final handle = win["handle"] as int;
+                      final isSelected = handle == _remoteService.selectedWindowHandle;
 
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFF0284C7).withOpacity(0.25) : Colors.white.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected ? const Color(0xFF38BDF8) : Colors.white.withOpacity(0.08),
-                        ),
-                      ),
-                      child: ListTile(
-                        leading: Icon(
-                          win["is_desktop"] == true ? Icons.desktop_windows_rounded : Icons.window_rounded,
-                          color: isSelected ? const Color(0xFF38BDF8) : Colors.white70,
-                        ),
-                        title: Text(
-                          win["title"],
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected ? const Color(0xFF0284C7).withOpacity(0.25) : Colors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected ? const Color(0xFF38BDF8) : Colors.white.withOpacity(0.08),
                           ),
                         ),
-                        trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: Color(0xFF38BDF8)) : null,
-                        onTap: () {
-                          _remoteService.selectWindow(handle);
-                          Navigator.pop(context);
-                        },
-                      ),
-                    );
-                  },
+                        child: ListTile(
+                          leading: Icon(
+                            win["is_desktop"] == true ? Icons.desktop_windows_rounded : Icons.window_rounded,
+                            color: isSelected ? const Color(0xFF38BDF8) : Colors.white70,
+                          ),
+                          title: Text(
+                            win["title"] ?? "Window",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                          trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: Color(0xFF38BDF8)) : null,
+                          onTap: () {
+                            _remoteService.selectWindow(handle);
+                            Navigator.pop(context);
+                          },
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
             ],
           ),
         );
@@ -236,17 +258,39 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    widget.deviceName,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  Row(
+                    children: [
+                      Text(
+                        widget.deviceName,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          service.activeTransportBadge,
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF38BDF8), fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
                   ),
                   Text(
                     service.isBackground
                         ? '⏸️ Background Mode (Data Saver)'
-                        : (service.isConnected ? '🟢 Live Connected' : '🔴 Connecting...'),
+                        : (service.isConnected
+                            ? '🟢 Connected (${service.activeUrl ?? "Live"})'
+                            : (service.connectionState == RemoteConnectionState.reconnecting
+                                ? '🟠 Reconnecting (${service.reconnectAttempts}/${RemoteService.maxReconnectAttempts})...'
+                                : '🔴 ${service.connectionState.name.toUpperCase()}')),
                     style: TextStyle(
                       fontSize: 11,
-                      color: service.isBackground ? Colors.orangeAccent : Colors.greenAccent,
+                      color: service.isBackground
+                          ? Colors.orangeAccent
+                          : (service.isConnected ? Colors.greenAccent : Colors.amberAccent),
                     ),
                   ),
                 ],
@@ -297,6 +341,42 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                           )
                         : _buildPlaceholderView(service),
                   ),
+
+                  // Reconnection Banner Overlay
+                  if (service.connectionState == RemoteConnectionState.reconnecting ||
+                      service.connectionState == RemoteConnectionState.connecting)
+                    Positioned(
+                      top: 10,
+                      left: 16,
+                      right: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0F172A).withOpacity(0.92),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.amber.withOpacity(0.6)),
+                          boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 8)],
+                        ),
+                        child: Row(
+                          children: [
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amberAccent),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                service.connectionState == RemoteConnectionState.connecting
+                                    ? 'Connecting to Host (${service.activeTransportBadge})...'
+                                    : 'Reconnecting (Attempt ${service.reconnectAttempts}/${RemoteService.maxReconnectAttempts}) via ${service.activeTransportBadge}...',
+                                style: const TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
 
                   if (service.isBackground)
                     Positioned(
@@ -382,9 +462,11 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
           children: [
             const CircularProgressIndicator(color: Color(0xFF38BDF8)),
             const SizedBox(height: 20),
-            const Text(
-              'Connecting Stream & Fetching Host Screen...',
-              style: TextStyle(color: Colors.white70, fontSize: 14),
+            Text(
+              service.connectionState == RemoteConnectionState.reconnecting
+                  ? 'Reconnecting to Host... (Attempt ${service.reconnectAttempts}/${RemoteService.maxReconnectAttempts})'
+                  : 'Connecting Stream (${service.activeTransportBadge})...',
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
           ],
         ),

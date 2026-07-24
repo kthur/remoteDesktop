@@ -26,19 +26,7 @@ class AuthService extends ChangeNotifier {
   GoogleUserModel? get currentUser => _currentUser;
   bool get isLoggedIn => _currentUser != null;
 
-  AuthService() {
-    _autoInitDemoUser();
-  }
-
-  void _autoInitDemoUser() {
-    _currentUser = GoogleUserModel(
-      id: 'google_user_12345',
-      email: 'demo.user@gmail.com',
-      displayName: 'Google Account User',
-      photoUrl: 'https://lh3.googleusercontent.com/a/default-user',
-      idToken: 'demo_token',
-    );
-  }
+  AuthService();
 
   Future<bool> signInWithGoogle() async {
     try {
@@ -50,7 +38,7 @@ class AuthService extends ChangeNotifier {
           email: account.email,
           displayName: account.displayName ?? account.email.split('@')[0],
           photoUrl: account.photoUrl ?? '',
-          idToken: auth.idToken ?? 'demo_token',
+          idToken: auth.idToken ?? '',
         );
         notifyListeners();
         return true;
@@ -58,15 +46,9 @@ class AuthService extends ChangeNotifier {
     } catch (e) {
       debugPrint('Google Sign In Error: $e');
     }
-    _currentUser = GoogleUserModel(
-      id: 'google_user_12345',
-      email: 'demo.user@gmail.com',
-      displayName: 'Google Account User',
-      photoUrl: '',
-      idToken: 'demo_token',
-    );
+    _currentUser = null;
     notifyListeners();
-    return true;
+    return false;
   }
 
   Future<void> signOut() async {

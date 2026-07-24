@@ -121,17 +121,5 @@ class ScreenCapturer:
             _, jpeg_buffer = cv2.imencode('.jpg', img_bgr, encode_param)
             return jpeg_buffer.tobytes()
         except Exception as e:
-            try:
-                from PIL import ImageGrab
-                pil_img = ImageGrab.grab()
-                img_bgr = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
-                h, w = img_bgr.shape[:2]
-                if target_width and target_width < w:
-                    target_height = int(h * (target_width / w))
-                    img_bgr = cv2.resize(img_bgr, (target_width, target_height), interpolation=cv2.INTER_AREA)
-                encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), quality]
-                _, jpeg_buffer = cv2.imencode('.jpg', img_bgr, encode_param)
-                return jpeg_buffer.tobytes()
-            except Exception as ex:
-                print(f"Capture error: {e} | Fallback error: {ex}")
-                return None
+            print(f"Capture error: {e}")
+            return None

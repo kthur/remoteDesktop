@@ -1,8 +1,8 @@
 // AnyRemote PC Host Extension Service Worker (Chrome & Firefox MV3)
 let socket = null;
 let isConnected = false;
-let googleUserId = "google_user_12345";
-let googleEmail = "demo.user@gmail.com";
+let googleUserId = "";
+let googleEmail = "";
 let deviceId = "browser_ext_" + Math.random().toString(36).substr(2, 6);
 
 // Handle extension lifecycle and internal offscreen messages

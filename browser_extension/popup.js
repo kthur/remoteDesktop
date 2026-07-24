@@ -5,8 +5,14 @@ document.addEventListener("DOMContentLoaded", () => {
   let isRunning = false;
 
   chrome.runtime.sendMessage({ type: "GET_STATUS" }, (response) => {
-    if (response && response.isConnected) {
-      setRunningState(true);
+    if (response) {
+      if (response.isConnected) {
+        setRunningState(true);
+      }
+      const txtAccount = document.getElementById("txtAccount");
+      if (txtAccount) {
+        txtAccount.textContent = response.email || "Not Logged In";
+      }
     }
   });
 

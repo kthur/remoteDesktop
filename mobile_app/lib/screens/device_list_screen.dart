@@ -1,8 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../services/network_discovery_service.dart';
 import 'remote_control_screen.dart';
 import 'login_screen.dart';
 
@@ -14,52 +13,115 @@ class DeviceListScreen extends StatefulWidget {
 }
 
 class _DeviceListScreenState extends State<DeviceListScreen> {
-  List<Map<String, dynamic>> _devices = [];
   bool _isLoading = false;
+  List<Map<String, dynamic>> _devices = [];
 
   @override
   void initState() {
     super.initState();
-    _fetchOnlineDevices();
+    _refreshDeviceList();
   }
 
-  Future<void> _fetchOnlineDevices() async {
-    setState(() { _isLoading = true; });
+  Future<void> _refreshDeviceList() async {
     final auth = Provider.of<AuthService>(context, listen: false);
-    final userId = auth.currentUser?.id ?? "google_user_12345";
-
-    try {
-      final url = Uri.parse("http://localhost:8080/api/devices/$userId");
-      final response = await http.get(url).timeout(const Duration(seconds: 3));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data["success"] == true && data["devices"] != null && (data["devices"] as List).isNotEmpty) {
-          setState(() {
-            _devices = List<Map<String, dynamic>>.from(data["devices"]);
-            _isLoading = false;
-          });
-          return;
-        }
+    if (auth.currentUser == null) {
+      if (mounted) {
+        setState(() {
+          _devices = [];
+          _isLoading = false;
+        });
       }
-    } catch (e) {
-      debugPrint("HTTP fetch error: $e");
+      return;
     }
 
     setState(() {
-      _devices = [
-        {
-          "device_id": "pc_win_desktop_01",
-          "device_name": "My Windows Workstation",
-          "os": "Windows 11 (DESKTOP-WIN11)",
-          "resolution": {"width": 1920, "height": 1080},
-          "status": "online",
-          "windows": [
-            {"handle": 0, "title": "🖥️ Full Desktop (1920x1080)"}
-          ]
-        }
-      ];
-      _isLoading = false;
+      _isLoading = true;
     });
+
+    final userId = auth.currentUser!.id;
+
+    try {
+      final serverHosts = await NetworkDiscoveryService.fetchServerRegisteredDevices(
+        "http://localhost:8080",
+        userId,
+      );
+
+      final udpHosts = await NetworkDiscoveryService.discoverViaUdpBroadcast();
+
+      final List<Map<String, dynamic>> combined = [];
+
+      for (var host in serverHosts) {
+        combined.add({
+          "device_id": host.deviceId,
+          "device_name": host.deviceName,
+          "os": host.os,
+          "resolution": host.resolution,
+          "status": host.status,
+          "usb_available": host.usbAvailable,
+          "local_ips": host.localIps,
+          "direct_ws_urls": host.directWsUrls,
+          "windows": host.windows,
+        });
+      }
+
+      for (var host in udpHosts) {
+        if (!combined.any((d) => d["device_id"] == host.deviceId)) {
+          combined.add({
+            "device_id": host.deviceId,
+            "device_name": host.deviceName,
+            "os": host.os,
+            "resolution": host.resolution,
+            "status": host.status,
+            "usb_available": host.usbAvailable,
+            "local_ips": host.localIps,
+            "direct_ws_urls": host.directWsUrls,
+            "windows": host.windows,
+          });
+        }
+      }
+
+      _devices = combined;
+    } catch (e) {
+      debugPrint("Error refreshing devices: $e");
+      _devices = [];
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildTransportBadges(Map<String, dynamic> dev) {
+    final bool usb = dev["usb_available"] == true ||
+        (dev["direct_ws_urls"] as List<dynamic>?)?.any((u) => u.toString().contains("127.0.0.1")) == true;
+    final bool wifi = (dev["local_ips"] as List<dynamic>?)?.isNotEmpty == true;
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 4,
+      children: [
+        if (usb) _badge('🔌 USB ADB', Colors.purpleAccent),
+        if (wifi) _badge('📶 LAN Wi-Fi', Colors.cyanAccent),
+        _badge('🌐 Cloud Relay', Colors.blueAccent),
+      ],
+    );
+  }
+
+  Widget _badge(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.4)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+      ),
+    );
   }
 
   @override
@@ -177,8 +239,14 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                     ),
                   ),
                   TextButton.icon(
-                    onPressed: _fetchOnlineDevices,
-                    icon: const Icon(Icons.refresh_rounded, size: 16, color: Color(0xFF38BDF8)),
+                    onPressed: _isLoading ? null : _refreshDeviceList,
+                    icon: _isLoading
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF38BDF8)),
+                          )
+                        : const Icon(Icons.refresh_rounded, size: 16, color: Color(0xFF38BDF8)),
                     label: const Text('Refresh', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 13)),
                   ),
                 ],
@@ -215,7 +283,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                         ),
                       ),
                       title: Text(
-                        dev["device_name"],
+                        dev["device_name"] ?? "Remote Host PC",
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -227,10 +295,12 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                         children: [
                           const SizedBox(height: 4),
                           Text(
-                            dev["os"],
+                            dev["os"] ?? "Windows",
                             style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 4),
+                          _buildTransportBadges(dev),
+                          const SizedBox(height: 4),
                           Text(
                             'Res: ${res["width"]}x${res["height"]}',
                             style: TextStyle(color: const Color(0xFF38BDF8).withOpacity(0.8), fontSize: 12),
@@ -247,11 +317,16 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         ),
                         onPressed: () {
+                          final directUrls = (dev["direct_ws_urls"] as List<dynamic>?)?.map((e) => e.toString()).toList();
+                          final localIps = (dev["local_ips"] as List<dynamic>?)?.map((e) => e.toString()).toList();
+
                           Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (_) => RemoteControlScreen(
                                 targetDeviceId: dev["device_id"],
                                 deviceName: dev["device_name"],
+                                directWsUrls: directUrls,
+                                knownLocalIps: localIps,
                               ),
                             ),
                           );
