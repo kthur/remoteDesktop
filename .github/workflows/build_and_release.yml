@@ -92,6 +92,8 @@ jobs:
           FIREBASE_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
           FIREBASE_CI_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
+          FIREBASE_TESTERS: ${{ secrets.FIREBASE_TESTERS }}
+          FIREBASE_TESTER_GROUPS: ${{ secrets.FIREBASE_TESTER_GROUPS }}
         if: ${{ (env.FIREBASE_KEY != '' || env.FIREBASE_CI_TOKEN != '') && env.FIREBASE_APP_ID != '' }}
         run: |
           APK_FILE="build/app/outputs/flutter-apk/app-release.apk"
@@ -103,9 +105,18 @@ jobs:
             if [ -n "$FIREBASE_CI_TOKEN" ]; then
               export FIREBASE_TOKEN="$FIREBASE_CI_TOKEN"
             fi
-            npx firebase-tools appdistribution:distribute "$APK_FILE" \
-              --app "${{ secrets.FIREBASE_APP_ID_ANDROID }}" \
-              --release-notes "Automated GitHub Actions Android Build" || echo "⚠️ Firebase Android upload skipped."
+
+            CMD="npx firebase-tools appdistribution:distribute \"$APK_FILE\" --app \"${{ secrets.FIREBASE_APP_ID_ANDROID }}\" --release-notes \"Automated GitHub Actions Android Build\""
+            if [ -n "$FIREBASE_TESTERS" ]; then
+              CMD="$CMD --testers \"$FIREBASE_TESTERS\""
+            fi
+            if [ -n "$FIREBASE_TESTER_GROUPS" ]; then
+              CMD="$CMD --groups \"$FIREBASE_TESTER_GROUPS\""
+            else
+              CMD="$CMD --groups \"testers\""
+            fi
+
+            eval $CMD || echo "⚠️ Firebase Android upload skipped."
             rm -f /tmp/firebase_sa_key.json
           else
             echo "ℹ️ Skipping Firebase Android App Distribution: Valid binary APK not found."
@@ -158,6 +169,8 @@ jobs:
           FIREBASE_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
           FIREBASE_CI_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID_IOS }}
+          FIREBASE_TESTERS: ${{ secrets.FIREBASE_TESTERS }}
+          FIREBASE_TESTER_GROUPS: ${{ secrets.FIREBASE_TESTER_GROUPS }}
         if: ${{ (env.FIREBASE_KEY != '' || env.FIREBASE_CI_TOKEN != '') && env.FIREBASE_APP_ID != '' }}
         run: |
           IPA_FILE=$(find build/ -name "*.ipa" 2>/dev/null | head -n 1)
@@ -169,9 +182,18 @@ jobs:
             if [ -n "$FIREBASE_CI_TOKEN" ]; then
               export FIREBASE_TOKEN="$FIREBASE_CI_TOKEN"
             fi
-            npx firebase-tools appdistribution:distribute "$IPA_FILE" \
-              --app "${{ secrets.FIREBASE_APP_ID_IOS }}" \
-              --release-notes "Automated GitHub Actions iOS Build" || echo "⚠️ Firebase iOS upload skipped."
+
+            CMD="npx firebase-tools appdistribution:distribute \"$IPA_FILE\" --app \"${{ secrets.FIREBASE_APP_ID_IOS }}\" --release-notes \"Automated GitHub Actions iOS Build\""
+            if [ -n "$FIREBASE_TESTERS" ]; then
+              CMD="$CMD --testers \"$FIREBASE_TESTERS\""
+            fi
+            if [ -n "$FIREBASE_TESTER_GROUPS" ]; then
+              CMD="$CMD --groups \"$FIREBASE_TESTER_GROUPS\""
+            else
+              CMD="$CMD --groups \"testers\""
+            fi
+
+            eval $CMD || echo "⚠️ Firebase iOS upload skipped."
             rm -f /tmp/firebase_sa_key.json
           else
             echo "ℹ️ Skipping Firebase iOS App Distribution: No signed .ipa file found in un-codesigned CI build. (Raw Runner zip is attached to GitHub Release)."
