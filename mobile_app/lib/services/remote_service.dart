@@ -543,6 +543,16 @@ class RemoteService extends ChangeNotifier {
     });
   }
 
+  void sendShortcut(String action) {
+    sendInputEvent({"type": "shortcut", "action": action});
+  }
+
+  void retryConnectionNow() {
+    _isManualDisconnect = false;
+    _reconnectAttempts = 0;
+    _startConnectionProbing();
+  }
+
   void updateAppState(bool isBg) {
     _isBackground = isBg;
     _sendMsg({

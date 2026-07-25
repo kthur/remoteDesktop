@@ -1,0 +1,62 @@
+# AnyRemote PC Control - Navigation Menu Tree Map
+
+## 📑 Step/Route UX Structures
+├── 1. [login-screen] Authentication & Onboarding
+│   ├── Google OAuth Sign-In [btn-google-signin]
+│   └── Guest / Demo User Login [btn-guest-signin]
+│
+├── 2. [device-list-screen] Host PC Device Discovery & Selection
+│   ├── User Profile Header [user-profile-bar]
+│   ├── Refresh Device List Button [btn-refresh-devices]
+│   ├── Connect via LTE/5G Public Tunnel Dialog [modal-tunnel-dialog]
+│   │   ├── Tunnel WSS URL Input [input-tunnel-url]
+│   │   ├── Paste Clipboard Button [btn-paste-clipboard]
+│   │   ├── Cached Recent URLs Chip Bar [chip-recent-urls]
+│   │   └── Connect Now Button [btn-connect-tunnel]
+│   ├── Host PC Device Card List [list-device-cards]
+│   │   ├── Transport Badges (USB ADB, LAN Wi-Fi, LTE/5G Tunnel, Cloud Relay) [badges-transport]
+│   │   └── Connect Button [btn-connect-device]
+│   └── Logout Button [btn-logout]
+│
+├── 3. [remote-control-screen] Interactive Remote Desktop View
+│   ├── App Bar Navigation Header [appbar-remote-header]
+│   │   ├── Active Host Badge & Connection Status [badge-connection-status]
+│   │   ├── Fullscreen Toggle Button [btn-toggle-fullscreen]
+│   │   ├── Screen Rotation Toggle Button [btn-toggle-rotation]
+│   │   ├── Windows Manager Selector Button [btn-open-windows-menu]
+│   │   └── Display Resolution Settings Button [btn-open-resolution-modal]
+│   ├── Remote Screen Canvas View [canvas-remote-stream]
+│   │   ├── Reconnection Banner Overlay [overlay-reconnecting]
+│   │   ├── Background Low-Data Mode Banner [overlay-background-mode]
+│   │   └── Interactive Canvas Area (Touch/Click/Drag Events) [area-touch-canvas]
+│   └── Floating Semi-Transparent Control Overlay Bar [bar-floating-controls]
+│       ├── Mouse Instructions Button [btn-mouse-guide]
+│       ├── Virtual Keyboard Input Button [btn-virtual-keyboard]
+│       ├── Fit Mode Cycle Button (Contain / Fill / Cover) [btn-cycle-fitmode]
+│       ├── Fullscreen Toggle Button [btn-overlay-fullscreen]
+│       ├── Screen Rotation Toggle Button [btn-overlay-rotation]
+│       ├── Windows Manager Menu Button [btn-overlay-windows]
+│       └── Resolution Settings Modal Button [btn-overlay-resolution]
+│
+├── 4. [modals-and-sheets] Contextual UI Dialogs & Bottom Sheets
+│   ├── Windows Selector Bottom Sheet [sheet-window-selector]
+│   │   ├── Target Capture Window List Item [item-window-handle]
+│   │   └── Full Desktop Capture Selection [item-full-desktop]
+│   ├── Display Resolution Modal Sheet [sheet-resolution-modal]
+│   │   ├── Fit to Mobile Resolution Button [btn-fit-mobile-res]
+│   │   └── Standard Resolution Chips (FHD 1080p, 900p, 768p, HD 720p) [chips-resolution]
+│   └── Connection Diagnostics & HUD Modal [modal-debug-hud]
+│       └── Real-time FPS, Latency & Frame Buffer Stats [hud-metrics]
+│
+└── 5. [backend-services] Signaling Server & Host Agent Endpoints
+    ├── Node.js Signaling Server (`server/index.js`) [service-signaling-server]
+    │   ├── REST `/api/auth/verify-google` [api-auth-google]
+    │   ├── REST `/api/health` [api-health-check]
+    │   ├── REST `/api/devices/:google_user_id` [api-list-devices]
+    │   └── WebSocket Signaling Endpoint (`ws://localhost:8080`) [ws-signaling]
+    └── Python Host Agent (`host_agent/main.py`) [service-host-agent]
+        ├── Screen Capturer & Fallback (MSS / OpenCV / PIL) [agent-screen-capturer]
+        ├── Input Handler (Mouse / Keyboard PyAutoGUI) [agent-input-handler]
+        ├── Display Resolution Manager [agent-display-mgr]
+        ├── UDP Discovery Service (`0.0.0.0:8888`) [agent-udp-discovery]
+        └── Cloudflare Public Tunnel Manager [agent-tunnel-mgr]

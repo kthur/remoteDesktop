@@ -49,6 +49,10 @@ class InputHandler:
                 key_val = cmd.get("key")
                 if key_val:
                     self._send_key(key_val)
+            elif cmd_type == "shortcut":
+                action = cmd.get("action")
+                if action:
+                    self._send_shortcut(action)
             elif cmd_type == "text":
                 text_str = cmd.get("text")
                 if text_str:
@@ -76,6 +80,25 @@ class InputHandler:
         abs_y = int(norm_y * screen_h)
         return abs_x, abs_y
 
+    def _send_shortcut(self, shortcut_name):
+        s = shortcut_name.lower()
+        if s == "win_d":
+            pyautogui.hotkey('win', 'd')
+        elif s == "alt_tab":
+            pyautogui.hotkey('alt', 'tab')
+        elif s == "ctrl_z":
+            pyautogui.hotkey('ctrl', 'z')
+        elif s == "ctrl_c":
+            pyautogui.hotkey('ctrl', 'c')
+        elif s == "ctrl_v":
+            pyautogui.hotkey('ctrl', 'v')
+        elif s == "win":
+            pyautogui.press('win')
+        elif s in ["enter", "backspace", "tab", "space", "esc", "up", "down", "left", "right", "delete"]:
+            pyautogui.press(s)
+        else:
+            self._send_key(shortcut_name)
+
     def _send_key(self, key_name):
         if not self.keyboard:
             return
@@ -89,10 +112,12 @@ class InputHandler:
             "down": Key.down if Key else None,
             "left": Key.left if Key else None,
             "right": Key.right if Key else None,
+            "delete": Key.delete if Key else None,
         }
         target = key_map.get(key_name.lower())
         if target:
             self.keyboard.press(target)
             self.keyboard.release(target)
         else:
-            self.keyboard.type(key_name)
+            if pyautogui:
+                pyautogui.press(key_name)
