@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../services/network_discovery_service.dart';
 import 'remote_control_screen.dart';
@@ -15,11 +17,34 @@ class DeviceListScreen extends StatefulWidget {
 class _DeviceListScreenState extends State<DeviceListScreen> {
   bool _isLoading = false;
   List<Map<String, dynamic>> _devices = [];
+  List<String> _recentUrls = [];
 
   @override
   void initState() {
     super.initState();
+    _loadCachedUrls();
     _refreshDeviceList();
+  }
+
+  Future<void> _loadCachedUrls() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _recentUrls = prefs.getStringList('recent_tunnel_urls') ?? [];
+    });
+  }
+
+  Future<void> _saveConnectedUrl(String url) async {
+    if (url.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    final urls = prefs.getStringList('recent_tunnel_urls') ?? [];
+    urls.remove(url);
+    urls.insert(0, url);
+    if (urls.length > 5) urls.removeLast();
+    await prefs.setStringList('recent_tunnel_urls', urls);
+    await prefs.setString('last_connected_tunnel_url', url);
+    setState(() {
+      _recentUrls = urls;
+    });
   }
 
   Future<void> _refreshDeviceList() async {
@@ -144,67 +169,129 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     );
   }
 
-  void _showCustomTunnelDialog() {
-    final controller = TextEditingController(text: "wss://");
+  Future<void> _showCustomTunnelDialog() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastUrl = prefs.getString('last_connected_tunnel_url') ?? "wss://";
+    final controller = TextEditingController(text: lastUrl);
+
+    if (!mounted) return;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.public_rounded, color: Color(0xFF38BDF8)),
-            SizedBox(width: 8),
-            Text('🌐 Connect via LTE/5G Tunnel', style: TextStyle(color: Colors.white, fontSize: 16)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Enter Cloudflare / ngrok Public Tunnel WSS URL:',
-              style: TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: controller,
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'wss://xxx.trycloudflare.com',
-                hintStyle: const TextStyle(color: Colors.white30),
-                filled: true,
-                fillColor: const Color(0xFF0F172A),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFF1E293B),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.public_rounded, color: Color(0xFF38BDF8)),
+              SizedBox(width: 8),
+              Text('🌐 Connect via LTE/5G Tunnel', style: TextStyle(color: Colors.white, fontSize: 16)),
+            ],
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0EA5E9)),
-            onPressed: () {
-              final url = controller.text.trim();
-              Navigator.of(ctx).pop();
-              if (url.isNotEmpty && url.startsWith('wss://')) {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => RemoteControlScreen(
-                      targetDeviceId: "pc_b6fca047",
-                      deviceName: "🌐 Remote PC (LTE/5G Public Tunnel)",
-                      directWsUrls: [url, 'ws://127.0.0.1:8080'],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Enter Cloudflare / ngrok Public Tunnel WSS URL or scan PC QR Code:',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: controller,
+                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        decoration: InputDecoration(
+                          hintText: 'wss://xxx.trycloudflare.com',
+                          hintStyle: const TextStyle(color: Colors.white30),
+                          filled: true,
+                          fillColor: const Color(0xFF0F172A),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
                     ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.paste_rounded, color: Color(0xFF38BDF8)),
+                      tooltip: 'Paste from Clipboard',
+                      onPressed: () async {
+                        final data = await Clipboard.getData(Clipboard.kTextPlain);
+                        if (data?.text != null && data!.text!.isNotEmpty) {
+                          setDialogState(() {
+                            controller.text = data.text!.trim();
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                if (_recentUrls.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  const Text(
+                    '🕒 Cached Recent Connection History:',
+                    style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.bold),
                   ),
-                );
-              }
-            },
-            child: const Text('Connect Now', style: TextStyle(color: Colors.white)),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: _recentUrls.map((url) {
+                      return InkWell(
+                        onTap: () {
+                          setDialogState(() {
+                            controller.text = url;
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F172A),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF38BDF8).withOpacity(0.3)),
+                          ),
+                          child: Text(
+                            url.length > 28 ? '${url.substring(0, 25)}...' : url,
+                            style: const TextStyle(color: Colors.white70, fontSize: 11),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ],
+            ),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0EA5E9)),
+              onPressed: () {
+                final url = controller.text.trim();
+                Navigator.of(ctx).pop();
+                if (url.isNotEmpty && (url.startsWith('wss://') || url.startsWith('ws://'))) {
+                  _saveConnectedUrl(url);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => RemoteControlScreen(
+                        targetDeviceId: "pc_b6fca047",
+                        deviceName: "🌐 Remote PC (LTE/5G Public Tunnel)",
+                        directWsUrls: [url, 'ws://127.0.0.1:8080'],
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: const Text('Connect Now', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
       ),
     );
   }

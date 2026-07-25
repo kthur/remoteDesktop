@@ -35,6 +35,92 @@ function getServerNetworkInterfaces() {
     return results;
 }
 
+app.get('/', (req, res) => {
+    let hostsHtml = '';
+    registeredHosts.forEach((hostData, devId) => {
+        const urls = hostData.info.direct_ws_urls || [];
+        const primaryUrl = urls.find(u => u.startsWith('wss://')) || urls.find(u => u.includes('192.168')) || urls[0] || 'ws://localhost:8080';
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(primaryUrl)}`;
+
+        hostsHtml += `
+        <div class="card">
+            <div class="card-header">
+                <h3>🖥️ ${hostData.info.device_name || 'PC Host'}</h3>
+                <span class="badge online">🟢 Online</span>
+            </div>
+            <div class="card-body">
+                <p><strong>OS:</strong> ${hostData.info.os || 'Windows'}</p>
+                <p><strong>Device ID:</strong> <code>${devId}</code></p>
+                
+                <div class="qr-container">
+                    <img src="${qrUrl}" alt="Scan QR Code to Connect" title="Scan with Mobile App" />
+                    <p class="qr-label">📱 Scan with Mobile App to Connect</p>
+                </div>
+
+                <div class="endpoints">
+                    <h4>🔌 Available Connection Endpoints:</h4>
+                    <ul>
+                        ${urls.map(url => `
+                            <li>
+                                <code>${url}</code>
+                                <button onclick="navigator.clipboard.writeText('${url}')">Copy</button>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        `;
+    });
+
+    if (!hostsHtml) {
+        hostsHtml = `
+        <div class="card">
+            <p style="text-align:center; color:#94A3B8;">Waiting for PC Host Agent to connect...</p>
+        </div>
+        `;
+    }
+
+    res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>AnyRemote PC - Host Web Control Center</title>
+        <style>
+            body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #0F172A; color: #F8FAFC; margin: 0; padding: 24px; }
+            .container { max-width: 800px; margin: 0 auto; }
+            header { text-align: center; margin-bottom: 32px; }
+            h1 { color: #38BDF8; margin-bottom: 8px; }
+            .subtitle { color: #94A3B8; font-size: 14px; }
+            .card { background: #1E293B; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); }
+            .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 16px; margin-bottom: 16px; }
+            .badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+            .online { background: rgba(34, 197, 94, 0.2); color: #4ADE80; border: 1px solid #22C55E; }
+            .qr-container { text-align: center; margin: 20px 0; background: #0F172A; padding: 20px; border-radius: 12px; border: 1px solid #334155; }
+            .qr-container img { border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+            .qr-label { color: #38BDF8; font-size: 13px; font-weight: bold; margin-top: 10px; }
+            .endpoints ul { list-style: none; padding: 0; margin: 0; }
+            .endpoints li { display: flex; justify-content: space-between; align-items: center; background: #0F172A; padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #334155; }
+            code { color: #38BDF8; font-family: monospace; font-size: 14px; word-break: break-all; }
+            button { background: #0EA5E9; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+            button:hover { background: #0284C7; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <header>
+                <h1>🌐 AnyRemote PC Control Center</h1>
+                <p class="subtitle">Scan QR Code or copy WebSocket URL to pair your Mobile App</p>
+            </header>
+            ${hostsHtml}
+        </div>
+    </body>
+    </html>
+    `);
+});
+
 app.post('/api/auth/verify-google', async (req, res) => {
     const { id_token } = req.body;
     if (!id_token) {
