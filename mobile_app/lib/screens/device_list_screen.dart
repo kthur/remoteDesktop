@@ -195,7 +195,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                   MaterialPageRoute(
                     builder: (_) => RemoteControlScreen(
                       targetDeviceId: "pc_b6fca047",
-                      targetDeviceName: "🌐 Remote PC (LTE/5G Public Tunnel)",
+                      deviceName: "🌐 Remote PC (LTE/5G Public Tunnel)",
                       directWsUrls: [url, 'ws://127.0.0.1:8080'],
                     ),
                   ),
