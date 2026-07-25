@@ -23,6 +23,24 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const DeviceListScreen()),
       );
+    } else if (!success && mounted && auth.lastError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(auth.lastError!),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _handleGuestSignIn() {
+    final auth = Provider.of<AuthService>(context, listen: false);
+    auth.signInAsGuest();
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const DeviceListScreen()),
+      );
     }
   }
 
@@ -149,6 +167,30 @@ class _LoginScreenState extends State<LoginScreen> {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            onPressed: _handleGuestSignIn,
+                            icon: const Icon(Icons.person_outline_rounded, color: Color(0xFF38BDF8)),
+                            label: const Text(
+                              '🚀 Continue as Demo / Guest User',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF38BDF8),
                               ),
                             ),
                           ),

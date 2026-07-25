@@ -19,16 +19,20 @@ class GoogleUserModel {
 
 class AuthService extends ChangeNotifier {
   GoogleUserModel? _currentUser;
+  String? _lastError;
+
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
   );
 
   GoogleUserModel? get currentUser => _currentUser;
   bool get isLoggedIn => _currentUser != null;
+  String? get lastError => _lastError;
 
   AuthService();
 
   Future<bool> signInWithGoogle() async {
+    _lastError = null;
     try {
       final GoogleSignInAccount? account = await _googleSignIn.signIn();
       if (account != null) {
@@ -42,13 +46,28 @@ class AuthService extends ChangeNotifier {
         );
         notifyListeners();
         return true;
+      } else {
+        _lastError = "Google Sign-In canceled by user.";
       }
     } catch (e) {
+      _lastError = "Google Sign-In Exception: $e";
       debugPrint('Google Sign In Error: $e');
     }
     _currentUser = null;
     notifyListeners();
     return false;
+  }
+
+  void signInAsGuest() {
+    _lastError = null;
+    _currentUser = GoogleUserModel(
+      id: "google_user_12345",
+      email: "demo.user@gmail.com",
+      displayName: "Guest User",
+      photoUrl: "",
+      idToken: "demo_token",
+    );
+    notifyListeners();
   }
 
   Future<void> signOut() async {
