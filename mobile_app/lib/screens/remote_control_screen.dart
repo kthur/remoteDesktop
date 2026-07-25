@@ -390,208 +390,281 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
       value: _remoteService,
       child: Consumer<RemoteService>(
         builder: (context, service, _) {
+<<<<<<< HEAD
+=======
+          final bodyContent = Stack(
+            children: [
+              // Remote Video Stream Container (Isolated with RepaintBoundary & ValueListenableBuilder)
+              Positioned.fill(
+                child: ValueListenableBuilder<Uint8List?>(
+                  valueListenable: service.frameNotifier,
+                  builder: (context, frameBytes, _) {
+                    if (frameBytes == null) {
+                      return _buildPlaceholderView(service);
+                    }
+                    return RepaintBoundary(
+                      child: GestureDetector(
+                        key: _canvasKey,
+                        onDoubleTap: () {
+                          // Double tap toggles control bar overlay cleanly without conflicting with single tap click
+                          setState(() {
+                            _showOverlay = !_showOverlay;
+                          });
+                        },
+                        onTapUp: (details) {
+                          final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+                          if (renderBox != null) {
+                            _sendNormalizedInput("click", details.localPosition, renderBox.size);
+                          }
+                        },
+                        onLongPressStart: (details) {
+                          final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+                          if (renderBox != null) {
+                            _sendNormalizedInput("rclick", details.localPosition, renderBox.size);
+                          }
+                        },
+                        onPanUpdate: (details) {
+                          final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+                          if (renderBox != null) {
+                            _sendNormalizedInput("move", details.localPosition, renderBox.size);
+                          }
+                        },
+                        child: Container(
+                          color: Colors.black,
+                          child: Center(
+                            child: Image.memory(
+                              frameBytes,
+                              gaplessPlayback: true,
+                              fit: _fitMode,
+                              width: double.infinity,
+                              height: double.infinity,
+                              errorBuilder: (context, error, stackTrace) {
+                                debugPrint("Image decode error: $error");
+                                return _buildPlaceholderView(service);
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // Reconnection Banner Overlay
+              if (service.connectionState == RemoteConnectionState.reconnecting ||
+                  service.connectionState == RemoteConnectionState.connecting)
+                Positioned(
+                  top: _isFullscreen ? 20 : 10,
+                  left: 16,
+                  right: 16,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A).withOpacity(0.92),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.amber.withOpacity(0.6)),
+                      boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 8)],
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amberAccent),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            service.connectionState == RemoteConnectionState.connecting
+                                ? 'Connecting to Host (${service.activeTransportBadge})...'
+                                : 'Reconnecting (Attempt ${service.reconnectAttempts}/${RemoteService.maxReconnectAttempts}) via ${service.activeTransportBadge}...',
+                            style: const TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              if (service.isBackground)
+                Positioned(
+                  top: _isFullscreen ? 30 : 20,
+                  left: 20,
+                  right: 20,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.nature_people_rounded, color: Colors.white),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Background Low-Data Mode Active\nVideo stream paused to save network usage.',
+                            style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // Floating Controls Bar Overlay
+              if (_showOverlay)
+                Positioned(
+                  bottom: 20,
+                  left: 20,
+                  right: 20,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B).withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.white.withOpacity(0.15)),
+                      boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 10)],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        IconButton(
+                          tooltip: 'Mouse Instructions',
+                          icon: const Icon(Icons.mouse_rounded, color: Color(0xFF38BDF8)),
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Tap: Left Click | Double-Tap: Menu Toggle | Long Press: Right Click | Drag: Move'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          tooltip: 'Keyboard Input',
+                          icon: const Icon(Icons.keyboard_rounded, color: Colors.white70),
+                          onPressed: () {
+                            _remoteService.sendInputEvent({"type": "text", "text": " "});
+                          },
+                        ),
+                        IconButton(
+                          tooltip: 'Fit Mode (${_getFitModeLabel(_fitMode)})',
+                          icon: Icon(_getFitModeIcon(_fitMode), color: const Color(0xFF38BDF8)),
+                          onPressed: _cycleFitMode,
+                        ),
+                        IconButton(
+                          tooltip: 'Toggle Fullscreen',
+                          icon: Icon(
+                            _isFullscreen ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
+                            color: Colors.amberAccent,
+                          ),
+                          onPressed: _toggleFullscreen,
+                        ),
+                        IconButton(
+                          tooltip: 'Rotate Screen',
+                          icon: Icon(
+                            Icons.screen_rotation_rounded,
+                            color: _isLandscape ? const Color(0xFF38BDF8) : Colors.white70,
+                          ),
+                          onPressed: _toggleOrientation,
+                        ),
+                        IconButton(
+                          tooltip: 'Windows Manager',
+                          icon: const Icon(Icons.window_rounded, color: Colors.white70),
+                          onPressed: _showWindowSelectorMenu,
+                        ),
+                        IconButton(
+                          tooltip: 'Display Resolution',
+                          icon: const Icon(Icons.aspect_ratio_rounded, color: Colors.white70),
+                          onPressed: _showResolutionModal,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          );
+
           return Scaffold(
             backgroundColor: Colors.black,
-            appBar: AppBar(
-              backgroundColor: const Color(0xFF1E293B),
-              elevation: 0,
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        widget.deviceName,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            appBar: _isFullscreen
+                ? null
+                : AppBar(
+                    backgroundColor: const Color(0xFF1E293B),
+                    elevation: 0,
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              widget.deviceName,
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                service.activeTransportBadge,
+                                style: const TextStyle(fontSize: 11, color: Color(0xFF38BDF8), fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          service.isBackground
+                              ? '⏸️ Background Mode (Data Saver)'
+                              : (service.isConnected
+                                  ? '🟢 Connected (${service.activeUrl ?? "Live"})'
+                                  : (service.connectionState == RemoteConnectionState.reconnecting
+                                      ? '🟠 Reconnecting (${service.reconnectAttempts}/${RemoteService.maxReconnectAttempts})...'
+                                      : '🔴 ${service.connectionState.name.toUpperCase()}')),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: service.isBackground
+                                ? Colors.orangeAccent
+                                : (service.isConnected ? Colors.greenAccent : Colors.amberAccent),
+                          ),
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      IconButton(
+                        tooltip: 'Toggle Fullscreen',
+                        icon: const Icon(Icons.fullscreen_rounded, color: Colors.amberAccent),
+                        onPressed: _toggleFullscreen,
                       ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(6),
+                      IconButton(
+                        tooltip: 'Rotate Orientation',
+                        icon: Icon(
+                          Icons.screen_rotation_rounded,
+                          color: _isLandscape ? const Color(0xFF38BDF8) : Colors.white,
                         ),
-                        child: Text(
-                          service.activeTransportBadge,
-                          style: const TextStyle(fontSize: 11, color: Color(0xFF38BDF8), fontWeight: FontWeight.bold),
-                        ),
+                        onPressed: _toggleOrientation,
+                      ),
+                      IconButton(
+                        tooltip: 'Windows Manager Menu',
+                        icon: const Icon(Icons.window_rounded, color: Color(0xFF38BDF8)),
+                        onPressed: _showWindowSelectorMenu,
+                      ),
+                      IconButton(
+                        tooltip: 'Display Resolution',
+                        icon: const Icon(Icons.settings_display_rounded, color: Colors.white),
+                        onPressed: _showResolutionModal,
                       ),
                     ],
                   ),
-                  Text(
-                    service.isBackground
-                        ? '⏸️ Background Mode (Data Saver)'
-                        : (service.isConnected
-                            ? '🟢 Connected (${service.activeUrl ?? "Live"})'
-                            : (service.connectionState == RemoteConnectionState.reconnecting
-                                ? '🟠 Reconnecting (${service.reconnectAttempts}/${RemoteService.maxReconnectAttempts})...'
-                                : '🔴 ${service.connectionState.name.toUpperCase()}')),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: service.isBackground
-                          ? Colors.orangeAccent
-                          : (service.isConnected ? Colors.greenAccent : Colors.amberAccent),
-                    ),
+            body: _isFullscreen
+                ? bodyContent
+                : SafeArea(
+                    child: bodyContent,
                   ),
-                ],
-              ),
-              actions: [
-                IconButton(
-                  tooltip: '🐛 Debug & Connection HUD',
-                  icon: const Icon(Icons.bug_report_rounded, color: Color(0xFF38BDF8)),
-                  onPressed: _showDebugModal,
-                ),
-                IconButton(
-                  tooltip: 'Windows Manager Menu',
-                  icon: const Icon(Icons.window_rounded, color: Colors.white70),
-                  onPressed: _showWindowSelectorMenu,
-                ),
-                IconButton(
-                  tooltip: 'Display Resolution',
-                  icon: const Icon(Icons.settings_display_rounded, color: Colors.white),
-                  onPressed: _showResolutionModal,
-                ),
-              ],
-            ),
-            body: SafeArea(
-              child: Stack(
-                children: [
-                  Center(
-                    child: service.latestFrameBytes != null
-                        ? GestureDetector(
-                            key: _canvasKey,
-                            onTapUp: (details) {
-                              final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
-                              if (renderBox != null) {
-                                _sendNormalizedInput("click", details.localPosition, renderBox.size);
-                              }
-                            },
-                            onLongPressStart: (details) {
-                              final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
-                              if (renderBox != null) {
-                                _sendNormalizedInput("rclick", details.localPosition, renderBox.size);
-                              }
-                            },
-                            onPanUpdate: (details) {
-                              final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
-                              if (renderBox != null) {
-                                _sendNormalizedInput("move", details.localPosition, renderBox.size);
-                              }
-                            },
-                            child: Image.memory(
-                              service.latestFrameBytes!,
-                              gaplessPlayback: true,
-                              fit: BoxFit.contain,
-                            ),
-                          )
-                        : _buildPlaceholderView(service),
-                  ),
-
-                  // Reconnection Banner Overlay
-                  if (service.connectionState == RemoteConnectionState.reconnecting ||
-                      service.connectionState == RemoteConnectionState.connecting)
-                    Positioned(
-                      top: 10,
-                      left: 16,
-                      right: 16,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0F172A).withOpacity(0.92),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.amber.withOpacity(0.6)),
-                          boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 8)],
-                        ),
-                        child: Row(
-                          children: [
-                            const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amberAccent),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                service.connectionState == RemoteConnectionState.connecting
-                                    ? 'Connecting to Host (${service.activeTransportBadge})...'
-                                    : 'Reconnecting (Attempt ${service.reconnectAttempts}/${RemoteService.maxReconnectAttempts}) via ${service.activeTransportBadge}...',
-                                style: const TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  if (service.isBackground)
-                    Positioned(
-                      top: 20,
-                      left: 20,
-                      right: 20,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.nature_people_rounded, color: Colors.white),
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'Background Low-Data Mode Active\nVideo stream paused to save network usage.',
-                                style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  Positioned(
-                    bottom: 20,
-                    left: 20,
-                    right: 20,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B).withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withOpacity(0.15)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.mouse_rounded, color: Color(0xFF38BDF8)),
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Tap: Left Click | Long Press: Right Click | Drag: Move')),
-                              );
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.keyboard_rounded, color: Colors.white70),
-                            onPressed: () {
-                              _remoteService.sendInputEvent({"type": "text", "text": " "});
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.crop_free_rounded, color: Colors.white70),
-                            onPressed: _showWindowSelectorMenu,
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.aspect_ratio_rounded, color: Colors.white70),
-                            onPressed: _showResolutionModal,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           );
         },
       ),

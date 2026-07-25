@@ -415,12 +415,18 @@ class RemoteService extends ChangeNotifier {
       } else if (msgType == "screen_frame") {
         _lastPongReceived = DateTime.now();
         if (!_isBackground && data["frame"] != null) {
-          final decodedBytes = base64Decode(data["frame"]);
-          _latestFrameBytes = decodedBytes;
-          _framesReceivedCount++;
-          _framesInLastSecond++;
-          _lastFrameSizeBytes = decodedBytes.length;
-          notifyListeners();
+          try {
+            final decodedBytes = base64Decode(data["frame"]);
+            if (decodedBytes.isNotEmpty) {
+              _latestFrameBytes = decodedBytes;
+              _framesReceivedCount++;
+              _framesInLastSecond++;
+              _lastFrameSizeBytes = decodedBytes.length;
+              frameNotifier.value = _latestFrameBytes;
+            }
+          } catch (e) {
+            logDiagnostic("Frame decode error: $e");
+          }
         }
       } else if (msgType == "windows_list_update") {
         if (data["windows"] != null) {

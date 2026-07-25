@@ -14,6 +14,11 @@ try:
 except ImportError:
     mss = None
 
+try:
+    from PIL import ImageGrab
+except ImportError:
+    ImageGrab = None
+
 if sys.platform == "win32":
     try:
         import win32gui
@@ -86,40 +91,57 @@ class ScreenCapturer:
 
     def capture_frame(self, target_width=None, quality=70):
         """Captures frame from desktop or selected window, returns JPEG bytes"""
-        if self.is_background or not self.sct or not cv2:
+        if self.is_background:
             return None
 
-        bbox = None
-        if self.is_full_desktop or not self.selected_window_handle:
-            monitor = self.sct.monitors[1] if len(self.sct.monitors) > 1 else self.sct.monitors[0]
-            bbox = monitor
-        else:
-            if sys.platform == "win32" and self.selected_window_handle and win32gui:
-                try:
-                    rect = win32gui.GetWindowRect(self.selected_window_handle)
-                    left, top, right, bottom = rect
-                    w = max(1, right - left)
-                    h = max(1, bottom - top)
-                    bbox = {"top": top, "left": left, "width": w, "height": h}
-                except Exception as e:
-                    self.is_full_desktop = True
-                    bbox = self.sct.monitors[1] if len(self.sct.monitors) > 1 else self.sct.monitors[0]
-            else:
-                bbox = self.sct.monitors[1] if len(self.sct.monitors) > 1 else self.sct.monitors[0]
+        # 1. Primary capturer: mss + cv2
+        if self.sct and cv2:
+            try:
+                bbox = None
+                if self.is_full_desktop or not self.selected_window_handle:
+                    monitor = self.sct.monitors[1] if len(self.sct.monitors) > 1 else self.sct.monitors[0]
+                    bbox = monitor
+                else:
+                    if sys.platform == "win32" and self.selected_window_handle and win32gui:
+                        try:
+                            rect = win32gui.GetWindowRect(self.selected_window_handle)
+                            left, top, right, bottom = rect
+                            w = max(1, right - left)
+                            h = max(1, bottom - top)
+                            bbox = {"top": top, "left": left, "width": w, "height": h}
+                        except Exception:
+                            self.is_full_desktop = True
+                            bbox = self.sct.monitors[1] if len(self.sct.monitors) > 1 else self.sct.monitors[0]
+                    else:
+                        bbox = self.sct.monitors[1] if len(self.sct.monitors) > 1 else self.sct.monitors[0]
 
-        try:
-            sct_img = self.sct.grab(bbox)
-            img = np.array(sct_img)
-            img_bgr = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+                sct_img = self.sct.grab(bbox)
+                img = np.array(sct_img)
+                img_bgr = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
-            h, w = img_bgr.shape[:2]
-            if target_width and target_width < w:
-                target_height = int(h * (target_width / w))
-                img_bgr = cv2.resize(img_bgr, (target_width, target_height), interpolation=cv2.INTER_AREA)
+                h, w = img_bgr.shape[:2]
+                if target_width and target_width < w:
+                    target_height = int(h * (target_width / w))
+                    img_bgr = cv2.resize(img_bgr, (target_width, target_height), interpolation=cv2.INTER_AREA)
 
-            encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), quality]
-            _, jpeg_buffer = cv2.imencode('.jpg', img_bgr, encode_param)
-            return jpeg_buffer.tobytes()
-        except Exception as e:
-            print(f"Capture error: {e}")
-            return None
+                encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), quality]
+                _, jpeg_buffer = cv2.imencode('.jpg', img_bgr, encode_param)
+                if jpeg_buffer is not None:
+                    return jpeg_buffer.tobytes()
+            except Exception as e:
+                print(f"Primary capture error: {e}, falling back to PIL...")
+
+        # 2. Fallback capturer: PIL ImageGrab
+        if ImageGrab:
+            try:
+                pil_img = ImageGrab.grab()
+                if target_width and target_width < pil_img.width:
+                    target_height = int(pil_img.height * (target_width / pil_img.width))
+                    pil_img = pil_img.resize((target_width, target_height))
+                buf = io.BytesIO()
+                pil_img.save(buf, format='JPEG', quality=quality)
+                return buf.getvalue()
+            except Exception as e:
+                print(f"Fallback capture error: {e}")
+
+        return None
