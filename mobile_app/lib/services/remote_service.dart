@@ -150,13 +150,24 @@ class RemoteService extends ChangeNotifier {
     }
   }
 
-  Future<List<String>> _buildCandidateUrls() async {
+  Future<List<String>> _buildCandidateUrls({List<String>? overrideCandidates}) async {
     final List<String> candidates = [];
 
-    // Priority 1: USB ADB direct (127.0.0.1)
-    candidates.add('ws://127.0.0.1:8080');
+    // 1. Direct candidate URLs passed from caller
+    if (overrideCandidates != null && overrideCandidates.isNotEmpty) {
+      for (var url in overrideCandidates) {
+        if (!candidates.contains(url)) {
+          candidates.add(url);
+        }
+      }
+    }
 
-    // Priority 2: Wi-Fi LAN IPs
+    // 2. USB ADB direct (127.0.0.1:8080)
+    if (!candidates.contains('ws://127.0.0.1:8080')) {
+      candidates.add('ws://127.0.0.1:8080');
+    }
+
+    // 3. Wi-Fi LAN IPs from knownLocalIps
     if (_knownLocalIps != null && _knownLocalIps!.isNotEmpty) {
       for (var ip in _knownLocalIps!) {
         final url = 'ws://$ip:8080';
@@ -166,10 +177,29 @@ class RemoteService extends ChangeNotifier {
       }
     }
 
-    // Priority 3: Android Emulator Loopback
-    candidates.add('ws://10.0.2.2:8080');
+    // 4. Discover via NetworkDiscoveryService (UDP broadcast + Server Registered IPs)
+    try {
+      final discoveredUrls = await NetworkDiscoveryService.getPrioritizedCandidateUrls(
+        serverBaseUrl: _serverUrl ?? 'ws://localhost:8080',
+        googleUserId: _googleUserId ?? 'google_user_12345',
+        targetDeviceId: _targetDeviceId,
+        knownLocalIps: _knownLocalIps,
+      );
+      for (var url in discoveredUrls) {
+        if (!candidates.contains(url)) {
+          candidates.add(url);
+        }
+      }
+    } catch (e) {
+      debugPrint("Error discovering network candidates: $e");
+    }
 
-    // Priority 4: Central Relay Server
+    // 5. Android Emulator Loopback
+    if (!candidates.contains('ws://10.0.2.2:8080')) {
+      candidates.add('ws://10.0.2.2:8080');
+    }
+
+    // 6. Central Relay / Server Base URL
     if (_serverUrl != null && !candidates.contains(_serverUrl)) {
       candidates.add(_serverUrl!);
     }
@@ -192,7 +222,7 @@ class RemoteService extends ChangeNotifier {
       return;
     }
 
-    final candidateUrls = overrideCandidates ?? await _buildCandidateUrls();
+    final candidateUrls = await _buildCandidateUrls(overrideCandidates: overrideCandidates);
     _testedCandidateUrls = List.from(candidateUrls);
     logDiagnostic("Starting candidate connection probing across ${candidateUrls.length} targets: $candidateUrls");
 
