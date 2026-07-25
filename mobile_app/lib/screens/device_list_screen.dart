@@ -112,9 +112,10 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
   }
 
   Widget _buildTransportBadges(Map<String, dynamic> dev) {
-    final bool usb = dev["usb_available"] == true ||
-        (dev["direct_ws_urls"] as List<dynamic>?)?.any((u) => u.toString().contains("127.0.0.1")) == true;
+    final urls = (dev["direct_ws_urls"] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+    final bool usb = dev["usb_available"] == true || urls.any((u) => u.contains("127.0.0.1"));
     final bool wifi = (dev["local_ips"] as List<dynamic>?)?.isNotEmpty == true;
+    final bool tunnel = urls.any((u) => u.contains("trycloudflare.com") || u.contains("ngrok") || (u.startsWith("wss://") && !u.contains("localhost")));
 
     return Wrap(
       spacing: 6,
@@ -122,7 +123,8 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       children: [
         if (usb) _badge('🔌 USB ADB', Colors.purpleAccent),
         if (wifi) _badge('📶 LAN Wi-Fi', Colors.cyanAccent),
-        _badge('🌐 Cloud Relay', Colors.blueAccent),
+        if (tunnel) _badge('🌐 LTE/5G Public Tunnel', Colors.greenAccent),
+        _badge('☁️ Cloud Relay', Colors.blueAccent),
       ],
     );
   }
@@ -138,6 +140,71 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       child: Text(
         text,
         style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  void _showCustomTunnelDialog() {
+    final controller = TextEditingController(text: "wss://");
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.public_rounded, color: Color(0xFF38BDF8)),
+            SizedBox(width: 8),
+            Text('🌐 Connect via LTE/5G Tunnel', style: TextStyle(color: Colors.white, fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Enter Cloudflare / ngrok Public Tunnel WSS URL:',
+              style: TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: controller,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'wss://xxx.trycloudflare.com',
+                hintStyle: const TextStyle(color: Colors.white30),
+                filled: true,
+                fillColor: const Color(0xFF0F172A),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0EA5E9)),
+            onPressed: () {
+              final url = controller.text.trim();
+              Navigator.of(ctx).pop();
+              if (url.isNotEmpty && url.startsWith('wss://')) {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => RemoteControlScreen(
+                      targetDeviceId: "pc_b6fca047",
+                      targetDeviceName: "🌐 Remote PC (LTE/5G Public Tunnel)",
+                      directWsUrls: [url, 'ws://127.0.0.1:8080'],
+                    ),
+                  ),
+                );
+              }
+            },
+            child: const Text('Connect Now', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }
@@ -158,11 +225,16 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
             SizedBox(width: 10),
             Text(
               'Available PCs',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.public_rounded, color: Color(0xFF38BDF8)),
+            tooltip: 'Connect via LTE/5G Public Tunnel',
+            onPressed: _showCustomTunnelDialog,
+          ),
           IconButton(
             icon: const Icon(Icons.logout_rounded, color: Colors.white70),
             onPressed: () async {

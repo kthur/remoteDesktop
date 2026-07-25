@@ -9,6 +9,7 @@ from screen_capturer import ScreenCapturer
 from display_manager import DisplayManager
 from input_handler import InputHandler
 from auth_host import HostAuth
+from tunnel_manager import TunnelManager
 
 SERVER_URI = os.getenv("SIGNALING_SERVER", "ws://localhost:8080")
 
@@ -105,6 +106,9 @@ async def run_host_agent():
     display_mgr = DisplayManager()
     input_handler = InputHandler()
 
+    tunnel_mgr = TunnelManager(port=8080)
+    tunnel_mgr.start_tunnel()
+
     hostname = socket.gethostname()
     os_name = f"{sys.platform.capitalize()} ({hostname})"
 
@@ -112,7 +116,8 @@ async def run_host_agent():
         return {
             "local_ips": get_local_ip_addresses(),
             "ws_port": 8080,
-            "usb_available": check_usb_adb_availability()
+            "usb_available": check_usb_adb_availability(),
+            "public_tunnel_url": tunnel_mgr.get_wss_url()
         }
 
     print(f"==================================================")

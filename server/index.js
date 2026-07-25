@@ -118,10 +118,14 @@ wss.on('connection', (ws) => {
                 const remoteIp = rawRemoteIp ? rawRemoteIp.replace(/^.*:/, '') : '127.0.0.1';
                 const isUsbAvailable = data.network_info?.usb_available || (remoteIp === '127.0.0.1' || remoteIp === 'localhost');
 
+                const publicTunnelUrl = data.network_info?.public_tunnel_url;
                 const directWsUrls = [
                     `ws://127.0.0.1:${wsPort}`,
                     ...localIps.map(ip => `ws://${ip}:${wsPort}`)
                 ];
+                if (publicTunnelUrl && !directWsUrls.includes(publicTunnelUrl)) {
+                    directWsUrls.push(publicTunnelUrl);
+                }
 
                 registeredHosts.set(clientId, {
                     ws: ws,
@@ -137,6 +141,7 @@ wss.on('connection', (ws) => {
                         local_ips: localIps,
                         remote_ip: remoteIp,
                         usb_available: isUsbAvailable,
+                        public_tunnel_url: publicTunnelUrl || '',
                         direct_ws_urls: directWsUrls
                     }
                 });
