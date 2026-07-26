@@ -59,14 +59,14 @@ def generate_host_qr(device_id, device_name, primary_url, direct_urls=None, save
                 print(f" Could not copy to {latest_link}: {e}")
 
             print(f"\n [QR SAVED] Image saved to: {os.path.abspath(save_filename)}")
-            return True
+            return os.path.abspath(save_filename)
         except Exception as e:
             print(f" [QR WARNING] QR rendering error: {e}")
     else:
         print(" [QR NOTICE] 'qrcode' python package not installed. Install via: pip install qrcode[pil]")
 
     print(f" Raw Connection Payload: {payload_str}\n")
-    return False
+    return None
 
 if __name__ == "__main__":
     generate_host_qr("pc_test_01", "Demo PC Host", "ws://192.168.1.100:8080", ["ws://127.0.0.1:8080"])

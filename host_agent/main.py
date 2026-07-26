@@ -92,7 +92,7 @@ async def start_udp_discovery_service(device_id, device_name, google_user_id, ge
         print(f"[UDP WARNING] Could not start UDP Discovery Service on port 8888: {e}")
         return None
 
-async def run_host_agent():
+async def run_host_agent(on_qr_ready=None):
     auth = HostAuth()
     if not auth.google_user_id:
         env_email = os.getenv("GOOGLE_USER_EMAIL")
@@ -138,12 +138,15 @@ async def run_host_agent():
     if not tunnel_url:
         print(" Tunnel URL timeout, proceeding with local IPs only.")
     primary_conn_url = tunnel_url or f"ws://{cached_local_ips[0]}:8080"
-    generate_host_qr(
+    # Generate QR and notify GUI via callback if provided
+    qr_path = generate_host_qr(
         device_id=auth.device_id,
         device_name=hostname,
         primary_url=primary_conn_url,
         direct_urls=[f"ws://{ip}:8080" for ip in cached_local_ips]
     )
+    if on_qr_ready and qr_path:
+        on_qr_ready(qr_path)
 
     udp_transport = await start_udp_discovery_service(
         auth.device_id,
