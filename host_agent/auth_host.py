@@ -1,13 +1,22 @@
 import os
+import sys
 import json
 import hashlib
+
+
+def _get_app_dir():
+    """Return the directory of the actual EXE (or script) for persistent storage."""
+    if getattr(sys, 'frozen', False):
+        # Running as PyInstaller single-file or onedir EXE
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
+
 
 class HostAuth:
     """Manages Google User pairing and Device Identity for Host PC Agent"""
     def __init__(self, config_path=None):
         if config_path is None:
-            config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "host_config.json")
-        self.config_path = config_path
+            config_path = os.path.join(_get_app_dir(), "host_config.json")
         self.config_path = config_path
         self.google_email = None
         self.google_user_id = None
