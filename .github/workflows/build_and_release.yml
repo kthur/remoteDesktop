@@ -28,21 +28,27 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r host_agent/requirements.txt
-          pip install pyinstaller
+          pip install pyinstaller pyinstaller-hooks-contrib
 
-      - name: Build Standalone Executable
+      - name: Build Single-File EXE
         run: |
-          python build_standalone.py
+          python build_exe.py
 
-      - name: Compress PC Host Artifact
+      - name: Verify EXE was created
         run: |
-          Compress-Archive -Path dist/AnyRemote_Host/* -DestinationPath AnyRemote_PC_Host_Windows.zip
+          if (Test-Path "dist/AnyRemote_Host.exe") {
+            $size = (Get-Item "dist/AnyRemote_Host.exe").Length / 1MB
+            Write-Host "✅ AnyRemote_Host.exe built successfully ($([math]::Round($size,1)) MB)"
+          } else {
+            Write-Error "❌ EXE not found at dist/AnyRemote_Host.exe"
+            exit 1
+          }
 
       - name: Upload PC Host Artifact
         uses: actions/upload-artifact@v4
         with:
           name: AnyRemote_PC_Host_Windows
-          path: AnyRemote_PC_Host_Windows.zip
+          path: dist/AnyRemote_Host.exe
 
   # ---------------------------------------------------------------
   # 2. Build Mobile App (Android APK & Firebase Upload)
@@ -254,7 +260,7 @@ jobs:
         with:
           tag_name: ${{ steps.tag_name.outputs.TAG }}
           files: |
-            AnyRemote_PC_Host_Windows/AnyRemote_PC_Host_Windows.zip
+            AnyRemote_PC_Host_Windows/AnyRemote_Host.exe
             AnyRemote_Android_APK/app-release.apk
             AnyRemote_iOS_Runner/AnyRemote_iOS_Runner.zip
             AnyRemote_Browser_Extension/AnyRemote_Browser_Extension.zip
@@ -263,12 +269,18 @@ jobs:
             ## 🚀 AnyRemote Cross-Platform Release (${{ steps.tag_name.outputs.TAG }})
             
             ### Included Release Packages:
-            - **💻 Windows PC Host App**: `AnyRemote_PC_Host_Windows.zip` (1-Click Standalone Executable)
+            - **💻 Windows PC Host App**: `AnyRemote_Host.exe` — 더블클릭으로 바로 실행 (설치 불필요, 단일 파일)
             - **📱 Android App**: `app-release.apk`
             - **🍎 iOS App**: `AnyRemote_iOS_Runner.zip`
             - **🌐 Chrome & Firefox Extension**: `AnyRemote_Browser_Extension.zip`
             
-            *Automated CI/CD Release via GitHub Actions & Firebase Integration.*
+            ### PC Host 사용법
+            1. `AnyRemote_Host.exe` 다운로드
+            2. 더블클릭으로 실행
+            3. Start Host Agent 버튼 클릭
+            4. QR 코드를 모바일 앱으로 스캔하여 연결
+            
+            *Automated CI/CD Release via GitHub Actions.*
           draft: false
           prerelease: false
         env:
