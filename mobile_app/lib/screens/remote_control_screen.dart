@@ -1,5 +1,4 @@
-import 'dart:async';
-import 'dart:typed_data';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -27,6 +26,7 @@ class RemoteControlScreen extends StatefulWidget {
 class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsBindingObserver {
   late RemoteService _remoteService;
   final GlobalKey _canvasKey = GlobalKey();
+  final TransformationController _transformationController = TransformationController();
 
   bool _isFullscreen = false;
   BoxFit _fitMode = BoxFit.contain;
@@ -44,15 +44,22 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
     _remoteService = RemoteService();
 
     final auth = Provider.of<AuthService>(context, listen: false);
-    final userId = auth.currentUser?.id ?? "google_user_12345";
+    auth.getValidIdToken().then((token) {
+      if (!mounted) return;
+      final userId = auth.currentUser?.id ?? "google_user_12345";
+      final String serverUrl = (widget.directWsUrls != null && widget.directWsUrls!.isNotEmpty)
+          ? widget.directWsUrls!.first
+          : const String.fromEnvironment('SIGNALING_SERVER', defaultValue: 'ws://192.168.1.100:8080');
 
-    _remoteService.connect(
-      "ws://localhost:8080",
-      userId,
-      widget.targetDeviceId,
-      candidateUrls: widget.directWsUrls,
-      knownLocalIps: widget.knownLocalIps,
-    );
+      _remoteService.connect(
+        serverUrl,
+        userId,
+        widget.targetDeviceId,
+        token,
+        candidateUrls: widget.directWsUrls,
+        knownLocalIps: widget.knownLocalIps,
+      );
+    });
   }
 
   @override
@@ -207,7 +214,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    '🪟 Windows Manager (Select Window)',
+                    '?첒 Windows Manager (Select Window)',
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   IconButton(
@@ -234,16 +241,16 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                     itemCount: windows.length,
                     itemBuilder: (context, index) {
                       final win = windows[index];
-                      final handle = win["handle"] as int;
+                      final handle = (win["handle"] as num?)?.toInt() ?? 0;
                       final isSelected = handle == _remoteService.selectedWindowHandle;
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFF0284C7).withOpacity(0.25) : Colors.white.withOpacity(0.05),
+                          color: isSelected ? const Color(0xFF0284C7).withValues(alpha: 0.25) : Colors.white.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isSelected ? const Color(0xFF38BDF8) : Colors.white.withOpacity(0.08),
+                            color: isSelected ? const Color(0xFF38BDF8) : Colors.white.withValues(alpha: 0.08),
                           ),
                         ),
                         child: ListTile(
@@ -292,13 +299,13 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                '⚙️ Display Resolution Control (Windows)',
+                '?숋툘 Display Resolution Control (Windows)',
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 8),
               Text(
                 'Adjust Windows PC resolution to match your mobile screen.',
-                style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
               ),
               const SizedBox(height: 16),
 
@@ -312,7 +319,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                   ),
                   icon: const Icon(Icons.aspect_ratio_rounded, color: Colors.white),
                   label: Text(
-                    '📱 Fit to Mobile Resolution (${screenSize.width.toInt()} x ${screenSize.height.toInt()})',
+                    '?벑 Fit to Mobile Resolution (${screenSize.width.toInt()} x ${screenSize.height.toInt()})',
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                   onPressed: () {
@@ -344,7 +351,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
 
   Widget _resChip(int w, int h, String label) {
     return ActionChip(
-      backgroundColor: Colors.white.withOpacity(0.08),
+      backgroundColor: Colors.white.withValues(alpha: 0.08),
       label: Text(label, style: const TextStyle(color: Colors.white)),
       onPressed: () {
         _remoteService.changeResolution(w, h);
@@ -383,7 +390,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                       Icon(Icons.keyboard_rounded, color: Color(0xFF38BDF8)),
                       SizedBox(width: 8),
                       Text(
-                        '⌨️ Virtual Keyboard & Windows Shortcuts',
+                        '?⑨툘 Virtual Keyboard & Windows Shortcuts',
                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                     ],
@@ -437,40 +444,40 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                 ],
               ),
               const SizedBox(height: 16),
-              const Text('🚀 Quick Windows Key Shortcuts:', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+              const Text('?? Quick Windows Key Shortcuts:', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
 
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _shortcutChip('💻 Win + D', 'win_d'),
-                  _shortcutChip('🔄 Alt + Tab', 'alt_tab'),
-                  _shortcutChip('↩️ Enter', 'enter'),
-                  _shortcutChip('⌫ Backspace', 'backspace'),
-                  _shortcutChip('↹ Tab', 'tab'),
-                  _shortcutChip('⎋ Esc', 'esc'),
-                  _shortcutChip('↩️ Ctrl + Z', 'ctrl_z'),
-                  _shortcutChip('📋 Ctrl + C', 'ctrl_c'),
-                  _shortcutChip('📌 Ctrl + V', 'ctrl_v'),
-                  _shortcutChip('🪟 Windows Key', 'win'),
-                  _shortcutChip('⬆️ Up', 'up'),
-                  _shortcutChip('⬇️ Down', 'down'),
-                  _shortcutChip('⬅️ Left', 'left'),
-                  _shortcutChip('➡️ Right', 'right'),
+                  _shortcutChip('?뮲 Win + D', 'win_d'),
+                  _shortcutChip('?봽 Alt + Tab', 'alt_tab'),
+                  _shortcutChip('?⑼툘 Enter', 'enter'),
+                  _shortcutChip('??Backspace', 'backspace'),
+                  _shortcutChip('??Tab', 'tab'),
+                  _shortcutChip('??Esc', 'esc'),
+                  _shortcutChip('?⑼툘 Ctrl + Z', 'ctrl_z'),
+                  _shortcutChip('?뱥 Ctrl + C', 'ctrl_c'),
+                  _shortcutChip('?뱦 Ctrl + V', 'ctrl_v'),
+                  _shortcutChip('?첒 Windows Key', 'win'),
+                  _shortcutChip('燧놅툘 Up', 'up'),
+                  _shortcutChip('燧뉛툘 Down', 'down'),
+                  _shortcutChip('燧낉툘 Left', 'left'),
+                  _shortcutChip('?∽툘 Right', 'right'),
                 ],
               ),
             ],
           ),
         );
       },
-    );
+    ).then((_) => textController.dispose());
   }
 
   Widget _shortcutChip(String label, String action) {
     return ActionChip(
       backgroundColor: const Color(0xFF0F172A),
-      side: BorderSide(color: const Color(0xFF38BDF8).withOpacity(0.3)),
+      side: BorderSide(color: const Color(0xFF38BDF8).withValues(alpha: 0.3)),
       label: Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
       onPressed: () {
         HapticFeedback.lightImpact();
@@ -504,7 +511,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                           Icon(Icons.bug_report_rounded, color: Color(0xFF38BDF8)),
                           SizedBox(width: 8),
                           Text(
-                            '🐛 Diagnostics & Connection HUD',
+                            '?맀 Diagnostics & Connection HUD',
                             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                           ),
                         ],
@@ -522,7 +529,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                     decoration: BoxDecoration(
                       color: const Color(0xFF1E293B),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                     ),
                     child: Column(
                       children: [
@@ -541,7 +548,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('📜 Real-time Connection Logs', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
+                      const Text('?뱶 Real-time Connection Logs', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
                       Row(
                         children: [
                           TextButton.icon(
@@ -568,7 +575,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.white10),
                       ),
@@ -646,29 +653,33 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                           });
                         },
                         onTapUp: (details) {
-                          _triggerTouchVisual(details.localPosition);
+                          final localPos = _transformationController.toScene(details.localPosition);
+                          _triggerTouchVisual(localPos);
                           final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
                           if (renderBox != null) {
-                            _sendNormalizedInput("click", details.localPosition, renderBox.size);
+                            _sendNormalizedInput("click", localPos, renderBox.size);
                           }
                         },
                         onLongPressStart: (details) {
-                          _triggerTouchVisual(details.localPosition, isRightClick: true);
+                          final localPos = _transformationController.toScene(details.localPosition);
+                          _triggerTouchVisual(localPos, isRightClick: true);
                           final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
                           if (renderBox != null) {
-                            _sendNormalizedInput("rclick", details.localPosition, renderBox.size);
+                            _sendNormalizedInput("rclick", localPos, renderBox.size);
                           }
                         },
                         onPanUpdate: (details) {
-                          _triggerTouchVisual(details.localPosition);
+                          final localPos = _transformationController.toScene(details.localPosition);
+                          _triggerTouchVisual(localPos);
                           final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
                           if (renderBox != null) {
-                            _sendNormalizedInput("move", details.localPosition, renderBox.size);
+                            _sendNormalizedInput("move", localPos, renderBox.size);
                           }
                         },
                         child: Container(
                           color: Colors.black,
                           child: InteractiveViewer(
+                            transformationController: _transformationController,
                             minScale: 1.0,
                             maxScale: 4.0,
                             child: Stack(
@@ -701,7 +712,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                                           height: 44,
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
-                                            color: const Color(0xFF38BDF8).withOpacity(0.35),
+                                            color: const Color(0xFF38BDF8).withValues(alpha: 0.35),
                                             border: Border.all(color: Colors.white, width: 2.5),
                                             boxShadow: const [
                                               BoxShadow(color: Color(0xFF38BDF8), blurRadius: 16, spreadRadius: 2)
@@ -734,9 +745,9 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A).withOpacity(0.92),
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.92),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.amber.withOpacity(0.6)),
+                      border: Border.all(color: Colors.amber.withValues(alpha: 0.6)),
                       boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 8)],
                     ),
                     child: Row(
@@ -782,7 +793,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.9),
+                      color: Colors.orange.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Row(
@@ -809,9 +820,9 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B).withOpacity(0.9),
+                      color: const Color(0xFF1E293B).withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white.withOpacity(0.15)),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
                       boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 10)],
                     ),
                     child: Row(
@@ -892,7 +903,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.12),
+                                color: Colors.white.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -904,12 +915,12 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                         ),
                         Text(
                           service.isBackground
-                              ? '⏸️ Background Mode (Data Saver)'
+                              ? '?몌툘 Background Mode (Data Saver)'
                               : (service.isConnected
-                                  ? '🟢 Connected (${service.activeUrl ?? "Live"})'
+                                  ? '?윟 Connected (${service.activeUrl ?? "Live"})'
                                   : (service.connectionState == RemoteConnectionState.reconnecting
-                                      ? '🟠 Reconnecting (${service.reconnectAttempts}/${RemoteService.maxReconnectAttempts})...'
-                                      : '🔴 ${service.connectionState.name.toUpperCase()}')),
+                                      ? '?윝 Reconnecting (${service.reconnectAttempts}/${RemoteService.maxReconnectAttempts})...'
+                                      : '?뵶 ${service.connectionState.name.toUpperCase()}')),
                           style: TextStyle(
                             fontSize: 11,
                             color: service.isBackground
@@ -921,7 +932,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                     ),
                     actions: [
                       IconButton(
-                        tooltip: '🐛 Debug HUD',
+                        tooltip: '?맀 Debug HUD',
                         icon: const Icon(Icons.bug_report_rounded, color: Color(0xFF38BDF8)),
                         onPressed: _showDebugModal,
                       ),
@@ -962,6 +973,42 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
   }
 
   Widget _buildPlaceholderView(RemoteService service) {
+    if (service.connectionState == RemoteConnectionState.failed) {
+      return Container(
+        color: const Color(0xFF0F172A),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 48),
+              const SizedBox(height: 16),
+              const Text(
+                'Connection Failed',
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                service.lastErrorMsg ?? 'Unable to connect to host.',
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0284C7),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                label: const Text('Retry Connection', style: TextStyle(color: Colors.white)),
+                onPressed: () {
+                  service.retryConnectionNow();
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return Container(
       color: const Color(0xFF0F172A),
       child: Center(
@@ -982,3 +1029,4 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
     );
   }
 }
+

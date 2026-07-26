@@ -8,12 +8,16 @@ except ImportError:
 
 def generate_host_qr(device_id, device_name, primary_url, direct_urls=None, save_filename="host_qr.png"):
     """Generates ASCII QR code in terminal and saves PNG image file."""
+    if save_filename == "host_qr.png":
+        from datetime import datetime
+        ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+        save_filename = f"host_qr_{device_id}_{ts}.png"
+        
     payload = {
         "service": "AnyRemote",
         "device_id": device_id,
         "device_name": device_name,
-        "url": primary_url,
-        "direct_urls": direct_urls or []
+        "url": primary_url
     }
     payload_str = json.dumps(payload)
 
@@ -21,6 +25,8 @@ def generate_host_qr(device_id, device_name, primary_url, direct_urls=None, save
     print(" 📲 AnyRemote HOST PC QR Code Connection Info")
     print(f" Target Device: {device_name} ({device_id})")
     print(f" Connection URL: {primary_url}")
+    if direct_urls:
+        print(f" Local IPs: {', '.join(direct_urls)}")
     print("==================================================\n")
 
     if qrcode:
@@ -39,6 +45,19 @@ def generate_host_qr(device_id, device_name, primary_url, direct_urls=None, save
             # 2. Save PNG Image File
             img_qr = qrcode.make(payload_str)
             img_qr.save(save_filename)
+            
+            latest_link = "host_qr_latest.png"
+            if os.path.exists(latest_link):
+                try:
+                    os.remove(latest_link)
+                except:
+                    pass
+            try:
+                import shutil
+                shutil.copy(save_filename, latest_link)
+            except Exception as e:
+                print(f" Could not copy to {latest_link}: {e}")
+
             print(f"\n [QR SAVED] Image saved to: {os.path.abspath(save_filename)}")
             return True
         except Exception as e:

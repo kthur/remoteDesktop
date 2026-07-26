@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -135,23 +135,37 @@ class NetworkDiscoveryService {
       final completer = Completer<List<DiscoveredHost>>();
       final Map<String, DiscoveredHost> hostMap = {};
 
-      final subscription = socket.listen((RawSocketEvent event) {
-        if (event == RawSocketEvent.read) {
-          final datagram = socket?.receive();
-          if (datagram != null) {
-            try {
-              final message = utf8.decode(datagram.data);
-              final data = jsonDecode(message);
-              if (data['service'] == 'AnyRemote_PC_Host') {
-                final host = DiscoveredHost.fromJson(data, source: 'udp');
-                hostMap[host.deviceId] = host;
+      final subscription = socket.listen(
+        (RawSocketEvent event) {
+          if (event == RawSocketEvent.read) {
+            final datagram = socket?.receive();
+            if (datagram != null) {
+              try {
+                final message = utf8.decode(datagram.data);
+                final data = jsonDecode(message);
+                if (data['service'] == 'AnyRemote_PC_Host') {
+                  final host = DiscoveredHost.fromJson(data, source: 'udp');
+                  hostMap[host.deviceId] = host;
+                }
+              } catch (e) {
+                debugPrint('Error parsing UDP datagram: $e');
               }
-            } catch (e) {
-              debugPrint('Error parsing UDP datagram: $e');
             }
           }
-        }
-      });
+        },
+        onError: (e) {
+          debugPrint('UDP listen error: $e');
+          if (!completer.isCompleted) {
+            completer.complete(hostMap.values.toList());
+          }
+        },
+        onDone: () {
+          if (!completer.isCompleted) {
+            completer.complete(hostMap.values.toList());
+          }
+        },
+        cancelOnError: true,
+      );
 
       Timer(timeout, () {
         subscription.cancel();
@@ -200,29 +214,31 @@ class NetworkDiscoveryService {
       prefixesToScan = ['192.168.1', '192.168.0', '10.0.2'];
     }
 
-    final List<Future<void>> tasks = [];
-
+    final List<String> allUrls = [];
     for (var prefix in prefixesToScan) {
       for (int i = 1; i <= 254; i++) {
-        final targetIp = '$prefix.$i';
-        final url = 'http://$targetIp:$port/api/health';
-        tasks.add(
-          http.get(Uri.parse(url)).timeout(timeout).then((res) {
-            if (res.statusCode == 200) {
-              final data = jsonDecode(res.body);
-              if (data['status'] == 'ok' && data['service'] == 'anyremote') {
-                final wsUrl = 'ws://$targetIp:$port';
-                if (!activeHosts.contains(wsUrl)) {
-                  activeHosts.add(wsUrl);
-                }
-              }
-            }
-          }).catchError((_) {}),
-        );
+        allUrls.add('http://$prefix.$i:$port/api/health');
       }
     }
 
-    await Future.wait(tasks);
+    for (var i = 0; i < allUrls.length; i += 20) {
+      final end = (i + 20 < allUrls.length) ? i + 20 : allUrls.length;
+      final batch = allUrls.sublist(i, end);
+      await Future.wait(batch.map((url) =>
+        http.get(Uri.parse(url)).timeout(timeout).then((res) {
+          if (res.statusCode == 200) {
+            final data = jsonDecode(res.body);
+            if (data['status'] == 'ok' && data['service'] == 'anyremote') {
+              final uri = Uri.parse(url);
+              final wsUrl = 'ws://${uri.host}:$port';
+              if (!activeHosts.contains(wsUrl)) {
+                activeHosts.add(wsUrl);
+              }
+            }
+          }
+        }).catchError((_) {})
+      ));
+    }
     return activeHosts;
   }
 
@@ -284,3 +300,4 @@ class NetworkDiscoveryService {
     return candidateUrls;
   }
 }
+

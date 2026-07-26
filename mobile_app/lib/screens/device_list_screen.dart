@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -57,8 +57,9 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     });
 
     try {
+      const String signalingServer = String.fromEnvironment('SIGNALING_SERVER', defaultValue: 'http://192.168.1.100:8080');
       final serverHosts = await NetworkDiscoveryService.fetchServerRegisteredDevices(
-        "http://localhost:8080",
+        signalingServer,
         userId,
       );
 
@@ -99,14 +100,14 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       if (combined.isEmpty) {
         _devices = [
           {
-            "device_id": "pc_win_desktop_01",
-            "device_name": "🖥️ Local PC Host (Auto Detect)",
+            "device_id": "pc_host_unknown",
+            "device_name": "?뼢截?Local PC Host (Auto Detect)",
             "os": "Windows PC",
             "resolution": {"width": 1920, "height": 1080},
             "status": "online",
             "usb_available": true,
-            "local_ips": ["127.0.0.1", "10.0.2.2"],
-            "direct_ws_urls": ["ws://127.0.0.1:8080", "ws://10.0.2.2:8080"],
+            "local_ips": [],
+            "direct_ws_urls": [],
             "windows": []
           }
         ];
@@ -117,14 +118,14 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       debugPrint("Error refreshing devices: $e");
       _devices = [
         {
-          "device_id": "pc_win_desktop_01",
-          "device_name": "🖥️ Local PC Host (Auto Detect)",
+          "device_id": "pc_host_unknown",
+          "device_name": "?뼢截?Local PC Host (Auto Detect)",
           "os": "Windows PC",
           "resolution": {"width": 1920, "height": 1080},
           "status": "online",
           "usb_available": true,
-          "local_ips": ["127.0.0.1", "10.0.2.2"],
-          "direct_ws_urls": ["ws://127.0.0.1:8080", "ws://10.0.2.2:8080"],
+          "local_ips": [],
+          "direct_ws_urls": [],
           "windows": []
         }
       ];
@@ -147,10 +148,10 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       spacing: 6,
       runSpacing: 4,
       children: [
-        if (usb) _badge('🔌 USB ADB', Colors.purpleAccent),
-        if (wifi) _badge('📶 LAN Wi-Fi', Colors.cyanAccent),
-        if (tunnel) _badge('🌐 LTE/5G Public Tunnel', Colors.greenAccent),
-        _badge('☁️ Cloud Relay', Colors.blueAccent),
+        if (usb) _badge('?뵆 USB ADB', Colors.purpleAccent),
+        if (wifi) _badge('?벛 LAN Wi-Fi', Colors.cyanAccent),
+        if (tunnel) _badge('?뙋 LTE/5G Public Tunnel', Colors.greenAccent),
+        _badge('?곻툘 Cloud Relay', Colors.blueAccent),
       ],
     );
   }
@@ -159,9 +160,9 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Text(
         text,
@@ -173,8 +174,8 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
   void _connectFromQrPayload(String rawPayload) {
     if (rawPayload.isEmpty) return;
     String targetUrl = "";
-    String deviceId = "pc_b6fca047";
-    String deviceName = "📱 Remote PC Host (QR Connect)";
+    String deviceId = "pc_host_unknown";
+    String deviceName = "?벑 Remote PC Host (QR Connect)";
     List<String> directUrls = [];
 
     try {
@@ -228,7 +229,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           children: [
             Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF38BDF8), size: 28),
             SizedBox(width: 10),
-            Text('📷 Scan Host PC QR Code', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+            Text('?벜 Scan Host PC QR Code', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
           ],
         ),
         content: SingleChildScrollView(
@@ -242,7 +243,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF0F172A),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF38BDF8).withOpacity(0.4), width: 2),
+                  border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.4), width: 2),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -250,7 +251,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF38BDF8).withOpacity(0.15),
+                        color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.qr_code_2_rounded, size: 50, color: Color(0xFF38BDF8)),
@@ -322,7 +323,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           ),
         ],
       ),
-    );
+    ).then((_) => controller.dispose());
   }
 
   Future<void> _showCustomTunnelDialog() async {
@@ -342,7 +343,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
             children: [
               Icon(Icons.public_rounded, color: Color(0xFF38BDF8)),
               SizedBox(width: 8),
-              Text('🌐 Connect via LTE/5G Tunnel', style: TextStyle(color: Colors.white, fontSize: 16)),
+              Text('?뙋 Connect via LTE/5G Tunnel', style: TextStyle(color: Colors.white, fontSize: 16)),
             ],
           ),
           content: SingleChildScrollView(
@@ -388,7 +389,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                 if (_recentUrls.isNotEmpty) ...[
                   const SizedBox(height: 14),
                   const Text(
-                    '🕒 Cached Recent Connection History:',
+                    '?븩 Cached Recent Connection History:',
                     style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 6),
@@ -407,7 +408,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                           decoration: BoxDecoration(
                             color: const Color(0xFF0F172A),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFF38BDF8).withOpacity(0.3)),
+                            border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.3)),
                           ),
                           child: Text(
                             url.length > 28 ? '${url.substring(0, 25)}...' : url,
@@ -436,9 +437,9 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => RemoteControlScreen(
-                        targetDeviceId: "pc_b6fca047",
-                        deviceName: "🌐 Remote PC (LTE/5G Public Tunnel)",
-                        directWsUrls: [url, 'ws://127.0.0.1:8080'],
+                        targetDeviceId: "pc_host_unknown",
+                        deviceName: "?뙋 Remote PC (LTE/5G Public Tunnel)",
+                        directWsUrls: [url],
                       ),
                     ),
                   );
@@ -449,7 +450,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           ],
         ),
       ),
-    );
+    ).then((_) => controller.dispose());
   }
 
   @override
@@ -506,7 +507,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF1E293B),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                 ),
                 child: Row(
                   children: [
@@ -533,7 +534,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                           Text(
                             user.email,
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
+                              color: Colors.white.withValues(alpha: 0.6),
                               fontSize: 13,
                             ),
                           ),
@@ -543,9 +544,9 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.2),
+                        color: Colors.green.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.green.withOpacity(0.5)),
+                        border: Border.all(color: Colors.green.withValues(alpha: 0.5)),
                       ),
                       child: const Row(
                         children: [
@@ -570,7 +571,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                   Text(
                     'HOST COMPUTERS (${_devices.length})',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
+                      color: Colors.white.withValues(alpha: 0.5),
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.0,
@@ -604,14 +605,14 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                     decoration: BoxDecoration(
                       color: const Color(0xFF1E293B),
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: Colors.white.withOpacity(0.08)),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                     ),
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       leading: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withOpacity(0.15),
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: const Icon(
@@ -634,14 +635,14 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                           const SizedBox(height: 4),
                           Text(
                             dev["os"] ?? "Windows",
-                            style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
                           ),
                           const SizedBox(height: 4),
                           _buildTransportBadges(dev),
                           const SizedBox(height: 4),
                           Text(
                             'Res: ${res["width"]}x${res["height"]}',
-                            style: TextStyle(color: const Color(0xFF38BDF8).withOpacity(0.8), fontSize: 12),
+                            style: TextStyle(color: const Color(0xFF38BDF8).withValues(alpha: 0.8), fontSize: 12),
                           ),
                         ],
                       ),
@@ -682,3 +683,4 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     );
   }
 }
+

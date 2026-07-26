@@ -111,11 +111,15 @@ async def run_host_agent():
     tunnel_mgr.start_tunnel()
 
     hostname = socket.gethostname()
-    os_name = f"{sys.platform.capitalize()} ({hostname})"
+    os_name_map = {"win32": "Windows", "darwin": "macOS", "linux": "Linux"}
+    os_mapped = os_name_map.get(sys.platform, sys.platform)
+    os_name = f"{os_mapped} ({hostname})"
+
+    cached_local_ips = get_local_ip_addresses()
 
     def current_net_info():
         return {
-            "local_ips": get_local_ip_addresses(),
+            "local_ips": cached_local_ips,
             "ws_port": 8080,
             "usb_available": check_usb_adb_availability(),
             "public_tunnel_url": tunnel_mgr.get_wss_url()
@@ -124,18 +128,21 @@ async def run_host_agent():
     print(f"==================================================")
     print(f" [HOST] Remote PC Host Agent Started")
     print(f" Host: {hostname} | OS: {sys.platform}")
-    print(f" Local IPs: {get_local_ip_addresses()}")
+    print(f" Local IPs: {cached_local_ips}")
     print(f" USB ADB Available: {check_usb_adb_availability()}")
     print(f" Registered Google ID: {auth.google_email} ({auth.google_user_id})")
     print(f" Connecting to Signaling Server: {SERVER_URI}")
     print(f"==================================================")
 
-    primary_conn_url = tunnel_mgr.get_wss_url() or f"ws://{get_local_ip_addresses()[0]}:8080"
+    tunnel_url = tunnel_mgr.wait_for_url(timeout=15)
+    if not tunnel_url:
+        print(" Tunnel URL timeout, proceeding with local IPs only.")
+    primary_conn_url = tunnel_url or f"ws://{cached_local_ips[0]}:8080"
     generate_host_qr(
         device_id=auth.device_id,
         device_name=hostname,
         primary_url=primary_conn_url,
-        direct_urls=[f"ws://{ip}:8080" for ip in get_local_ip_addresses()]
+        direct_urls=[f"ws://{ip}:8080" for ip in cached_local_ips]
     )
 
     udp_transport = await start_udp_discovery_service(
@@ -145,10 +152,15 @@ async def run_host_agent():
         current_net_info
     )
 
+    listener_task = None
+    retry_delay = 3
     try:
         while True:
+            if listener_task:
+                listener_task.cancel()
             try:
                 async with websockets.connect(SERVER_URI) as ws:
+                    retry_delay = 3
                     res_info = display_mgr.get_current_resolution()
                     windows_list = capturer.list_windows()
                     net_info = current_net_info()
@@ -174,7 +186,8 @@ async def run_host_agent():
                                 msg_type = msg.get("type")
 
                                 if msg_type == "input_event":
-                                    input_handler.process_command(msg.get("payload", {}), capturer)
+                                    payload = msg.get("payload", {})
+                                    asyncio.get_event_loop().run_in_executor(None, input_handler.process_command, payload, capturer)
 
                                 elif msg_type == "select_window":
                                     handle = msg.get("handle")
@@ -215,6 +228,8 @@ async def run_host_agent():
                                         "windows": updated_windows
                                     }))
 
+                        except websockets.exceptions.ConnectionClosed:
+                            raise
                         except Exception as e:
                             print(f"Listener error: {e}")
 
@@ -237,8 +252,12 @@ async def run_host_agent():
                             await asyncio.sleep(0.04)
 
             except (websockets.exceptions.ConnectionClosed, OSError) as err:
-                print(f"[WARNING] Connection lost: {err}. Reconnecting in 3 seconds...")
-                await asyncio.sleep(3)
+                if listener_task:
+                    listener_task.cancel()
+                input_handler.release_stuck_buttons()
+                print(f"[WARNING] Connection lost: {err}. Reconnecting in {retry_delay} seconds...")
+                await asyncio.sleep(retry_delay)
+                retry_delay = min(60, retry_delay * 2)
     finally:
         if udp_transport:
             udp_transport.close()

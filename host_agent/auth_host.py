@@ -4,7 +4,10 @@ import hashlib
 
 class HostAuth:
     """Manages Google User pairing and Device Identity for Host PC Agent"""
-    def __init__(self, config_path="host_config.json"):
+    def __init__(self, config_path=None):
+        if config_path is None:
+            config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "host_config.json")
+        self.config_path = config_path
         self.config_path = config_path
         self.google_email = None
         self.google_user_id = None
@@ -24,8 +27,10 @@ class HostAuth:
 
         if not self.device_id:
             import socket
+            import uuid
             hostname = socket.gethostname()
-            self.device_id = f"pc_{hashlib.md5(hostname.encode()).hexdigest()[:8]}"
+            mac_addr = str(uuid.getnode())
+            self.device_id = f"pc_{hashlib.md5((hostname + mac_addr).encode()).hexdigest()[:16]}"
             self.save_config()
 
     def save_config(self):
@@ -34,8 +39,10 @@ class HostAuth:
             "google_user_id": self.google_user_id,
             "device_id": self.device_id
         }
-        with open(self.config_path, "w", encoding="utf-8") as f:
+        temp_path = self.config_path + ".tmp"
+        with open(temp_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
+        os.replace(temp_path, self.config_path)
 
     def set_google_user(self, email, user_id):
         self.google_email = email

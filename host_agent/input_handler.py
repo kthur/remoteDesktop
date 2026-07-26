@@ -13,11 +13,22 @@ except ImportError:
     MouseController = None
     KeyboardController = None
 
+try:
+    import pyperclip
+except ImportError:
+    pyperclip = None
+
 class InputHandler:
     """Processes normalized remote input commands from mobile client and injects into OS"""
     def __init__(self):
-        self.mouse = MouseController() if MouseController else None
         self.keyboard = KeyboardController() if KeyboardController else None
+        self._mouse_pressed = False
+
+    def release_stuck_buttons(self):
+        if self._mouse_pressed and pyautogui:
+            pyautogui.mouseUp()
+            self._mouse_pressed = False
+
 
     def process_command(self, cmd, capturer=None):
         if not pyautogui:
@@ -40,11 +51,13 @@ class InputHandler:
                 pyautogui.doubleClick(abs_x, abs_y)
             elif cmd_type == "mousedown":
                 pyautogui.mouseDown(abs_x, abs_y, button='left')
+                self._mouse_pressed = True
             elif cmd_type == "mouseup":
                 pyautogui.mouseUp(abs_x, abs_y, button='left')
+                self._mouse_pressed = False
             elif cmd_type == "scroll":
                 dy = cmd.get("dy", 0)
-                pyautogui.scroll(int(dy * 10), x=abs_x, y=abs_y)
+                pyautogui.scroll(-int(dy * 5), x=int(abs_x), y=int(abs_y))
             elif cmd_type == "key":
                 key_val = cmd.get("key")
                 if key_val:
@@ -56,7 +69,11 @@ class InputHandler:
             elif cmd_type == "text":
                 text_str = cmd.get("text")
                 if text_str:
-                    pyautogui.write(text_str)
+                    if pyperclip:
+                        pyperclip.copy(text_str)
+                        pyautogui.hotkey('ctrl', 'v')
+                    else:
+                        pyautogui.write(text_str)
         except Exception as e:
             print(f"Input injection error: {e}")
 
@@ -78,6 +95,8 @@ class InputHandler:
         screen_w, screen_h = pyautogui.size() if pyautogui else (1920, 1080)
         abs_x = int(norm_x * screen_w)
         abs_y = int(norm_y * screen_h)
+        abs_x = max(0, min(screen_w - 1, abs_x))
+        abs_y = max(0, min(screen_h - 1, abs_y))
         return abs_x, abs_y
 
     def _send_shortcut(self, shortcut_name):
@@ -93,7 +112,11 @@ class InputHandler:
         elif s == "ctrl_v":
             pyautogui.hotkey('ctrl', 'v')
         elif s == "win":
-            pyautogui.press('win')
+            if self.keyboard and Key:
+                self.keyboard.press(Key.cmd)
+                self.keyboard.release(Key.cmd)
+            else:
+                pyautogui.press('win')
         elif s in ["enter", "backspace", "tab", "space", "esc", "up", "down", "left", "right", "delete"]:
             pyautogui.press(s)
         else:

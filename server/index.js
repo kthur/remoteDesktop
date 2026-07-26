@@ -17,12 +17,25 @@ const googleClient = new OAuth2Client();
 const registeredHosts = new Map();
 const activeClients = new Map();
 
+function escapeHtml(str) {
+    if (typeof str !== 'string') return str;
+    return str.replace(/[&<>"']/g, (m) => {
+        switch (m) {
+            case '&': return '&amp;';
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '"': return '&quot;';
+            case "'": return '&#39;';
+        }
+    });
+}
+
 function getServerNetworkInterfaces() {
     const interfaces = os.networkInterfaces();
     const results = [];
     for (const name of Object.keys(interfaces)) {
         for (const iface of interfaces[name]) {
-            if (iface.family === 'IPv4' && !iface.internal) {
+            if ((iface.family === 'IPv4' || iface.family === 4) && !iface.internal) {
                 results.push({
                     interface: name,
                     address: iface.address,
@@ -45,12 +58,12 @@ app.get('/', (req, res) => {
         hostsHtml += `
         <div class="card">
             <div class="card-header">
-                <h3>🖥️ ${hostData.info.device_name || 'PC Host'}</h3>
+                <h3>🖥️ ${escapeHtml(hostData.info.device_name || 'PC Host')}</h3>
                 <span class="badge online">🟢 Online</span>
             </div>
             <div class="card-body">
-                <p><strong>OS:</strong> ${hostData.info.os || 'Windows'}</p>
-                <p><strong>Device ID:</strong> <code>${devId}</code></p>
+                <p><strong>OS:</strong> ${escapeHtml(hostData.info.os || 'Windows')}</p>
+                <p><strong>Device ID:</strong> <code>${escapeHtml(devId)}</code></p>
                 
                 <div class="qr-container">
                     <img src="${qrUrl}" alt="Scan QR Code to Connect" title="Scan with Mobile App" />
@@ -128,7 +141,7 @@ app.post('/api/auth/verify-google', async (req, res) => {
     }
 
     try {
-        const ticket = await googleClient.verifyIdToken({ idToken: id_token });
+        const ticket = await googleClient.verifyIdToken({ idToken: id_token, audience: process.env.GOOGLE_CLIENT_ID });
         const payload = ticket.getPayload();
         return res.json({
             success: true,
@@ -154,16 +167,16 @@ app.get('/api/health', (req, res) => {
 });
 
 app.get('/api/devices/:google_user_id', (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
     const userId = req.params.google_user_id;
     const userDevices = [];
 
     registeredHosts.forEach((hostData, devId) => {
-        if (hostData.google_user_id === userId ||
-            !hostData.google_user_id ||
-            userId === 'google_user_12345' ||
-            hostData.google_user_id === 'google_user_12345' ||
-            userId === 'all' ||
-            registeredHosts.size === 1) {
+        if (hostData.google_user_id === userId) {
             userDevices.push({
                 device_id: devId,
                 device_name: hostData.info.device_name,
@@ -183,14 +196,36 @@ app.get('/api/devices/:google_user_id', (req, res) => {
     res.json({ success: true, devices: userDevices });
 });
 
-wss.on('connection', (ws) => {
+const interval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+        if (ws.isAlive === false) return ws.terminate();
+        ws.isAlive = false;
+        ws.ping();
+    });
+}, 30000);
+
+wss.on('close', () => {
+    clearInterval(interval);
+});
+
+wss.on('connection', (ws, req) => {
     let clientRole = null;
     let clientId = null;
     let userId = null;
 
+    ws.isAlive = true;
+    ws.on('pong', () => { ws.isAlive = true; });
+    ws.on('error', (err) => { console.error('[WS Error]', err.message); });
+
     ws.on('message', (message) => {
+        if (message.length > 5 * 1024 * 1024) {
+            console.warn('[WS] Message exceeds 5MB limit, skipping.');
+            return;
+        }
+
         try {
             const data = JSON.parse(message);
+            if (!data || !data.type) return;
             const msgType = data.type;
 
             if (msgType === 'register_host') {
@@ -198,9 +233,14 @@ wss.on('connection', (ws) => {
                 clientId = data.device_id;
                 userId = data.google_user_id || 'google_user_12345';
 
+                const existing = registeredHosts.get(clientId);
+                if (existing && existing.ws !== ws) {
+                    existing.ws.close();
+                }
+
                 const localIps = data.network_info?.local_ips || [];
                 const wsPort = data.network_info?.ws_port || 8080;
-                const rawRemoteIp = ws._socket ? ws._socket.remoteAddress : '';
+                const rawRemoteIp = req.socket ? req.socket.remoteAddress : '';
                 const remoteIp = rawRemoteIp ? rawRemoteIp.replace(/^.*:/, '') : '127.0.0.1';
                 const isUsbAvailable = data.network_info?.usb_available || (remoteIp === '127.0.0.1' || remoteIp === 'localhost');
 
@@ -262,15 +302,13 @@ wss.on('connection', (ws) => {
             }
 
             else if (msgType === 'screen_frame') {
+                if (!data.frame_data) return;
                 const devId = data.device_id;
+                const hostData = registeredHosts.get(devId);
                 activeClients.forEach((cData) => {
                     if (cData.ws.readyState === WebSocket.OPEN) {
-                        if (cData.target_device_id === devId ||
-                            cData.target_device_id === 'pc_win_desktop_01' ||
-                            devId === 'pc_win_desktop_01' ||
-                            cData.google_user_id === 'google_user_12345' ||
-                            registeredHosts.size === 1 ||
-                            activeClients.size === 1) {
+                        if (cData.target_device_id === devId &&
+                            hostData && hostData.google_user_id === cData.google_user_id) {
                             cData.ws.send(message.toString());
                         }
                     }
@@ -313,8 +351,11 @@ wss.on('connection', (ws) => {
     ws.on('close', () => {
         if (clientRole === 'host' && clientId) {
             console.log(`[HOST OFFLINE] Device ${clientId}`);
-            registeredHosts.delete(clientId);
-            if (userId) notifyClientsDeviceList(userId);
+            const currentRegistration = registeredHosts.get(clientId);
+            if (currentRegistration && currentRegistration.ws === ws) {
+                registeredHosts.delete(clientId);
+                if (userId) notifyClientsDeviceList(userId);
+            }
         } else if (clientRole === 'client' && clientId) {
             console.log(`[CLIENT DISCONNECTED] ${clientId}`);
             activeClients.delete(clientId);

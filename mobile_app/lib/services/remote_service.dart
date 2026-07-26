@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
@@ -29,6 +29,7 @@ class RemoteService extends ChangeNotifier {
   String? _activeUrl;
 
   Uint8List? _latestFrameBytes;
+  final ValueNotifier<Uint8List?> frameNotifier = ValueNotifier<Uint8List?>(null);
   List<Map<String, dynamic>> _openWindows = [];
   Map<String, dynamic>? _currentResolution;
   List<Map<String, dynamic>> _supportedResolutions = [];
@@ -48,6 +49,7 @@ class RemoteService extends ChangeNotifier {
   String? _serverUrl;
   String? _googleUserId;
   String? _targetDeviceId;
+  String _idToken = '';
   List<String>? _knownLocalIps;
 
   // Reconnection and Heartbeat
@@ -101,15 +103,15 @@ class RemoteService extends ChangeNotifier {
   String get activeTransportBadge {
     switch (_activeTransport) {
       case ConnectionTransport.usbAdb:
-        return '🔌 USB ADB';
+        return '?뵆 USB ADB';
       case ConnectionTransport.localWifi:
-        return '📶 LAN Wi-Fi';
+        return '?벛 LAN Wi-Fi';
       case ConnectionTransport.emulator:
-        return '📱 Emulator';
+        return '?벑 Emulator';
       case ConnectionTransport.relay:
-        return '🌐 Cloud Relay';
+        return '?뙋 Cloud Relay';
       case ConnectionTransport.none:
-        return '⚪ Disconnected';
+        return '??Disconnected';
     }
   }
 
@@ -128,13 +130,15 @@ class RemoteService extends ChangeNotifier {
   void connect(
     String serverUrl,
     String googleUserId,
-    String targetDeviceId, {
+    String targetDeviceId,
+    String idToken, {
     List<String>? candidateUrls,
     List<String>? knownLocalIps,
   }) {
     _serverUrl = serverUrl;
     _googleUserId = googleUserId;
     _targetDeviceId = targetDeviceId;
+    _idToken = idToken;
     _knownLocalIps = knownLocalIps;
     _isManualDisconnect = false;
     _reconnectAttempts = 0;
@@ -163,10 +167,8 @@ class RemoteService extends ChangeNotifier {
       }
     }
 
-    // 2. USB ADB direct (127.0.0.1:8080)
-    if (!candidates.contains('ws://127.0.0.1:8080')) {
-      candidates.add('ws://127.0.0.1:8080');
-    }
+    // 2. USB ADB direct (127.0.0.1:8080) - removed from hardcoded
+
 
     // 3. Wi-Fi LAN IPs from knownLocalIps
     if (_knownLocalIps != null && _knownLocalIps!.isNotEmpty) {
@@ -195,10 +197,7 @@ class RemoteService extends ChangeNotifier {
       debugPrint("Error discovering network candidates: $e");
     }
 
-    // 5. Android Emulator Loopback
-    if (!candidates.contains('ws://10.0.2.2:8080')) {
-      candidates.add('ws://10.0.2.2:8080');
-    }
+    // 5. Android Emulator Loopback - removed from hardcoded
 
     // 6. Central Relay / Server Base URL
     if (_serverUrl != null && !candidates.contains(_serverUrl)) {
@@ -245,7 +244,8 @@ class RemoteService extends ChangeNotifier {
         final regMsg = jsonEncode({
           "type": "register_client",
           "google_user_id": _googleUserId,
-          "target_device_id": _targetDeviceId
+          "target_device_id": _targetDeviceId,
+          "id_token": _idToken
         });
         channel.sink.add(regMsg);
 
@@ -275,6 +275,8 @@ class RemoteService extends ChangeNotifier {
                     s.cancel();
                   }
                 }
+                probingSubscriptions.clear();
+                probingSubscriptions.add(sub);
 
                 _onSuccessfulConnection(parsed);
                 if (!probeCompleter.isCompleted) {
@@ -580,4 +582,16 @@ class RemoteService extends ChangeNotifier {
     _latestFrameBytes = null;
     notifyListeners();
   }
+
+  @override
+  void dispose() {
+    _reconnectTimer?.cancel();
+    _pingTimer?.cancel();
+    _fpsTimer?.cancel();
+    _streamSubscription?.cancel();
+    _channel?.sink.close();
+    frameNotifier.dispose();
+    super.dispose();
+  }
 }
+

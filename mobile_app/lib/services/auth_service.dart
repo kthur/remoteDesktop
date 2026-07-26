@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class GoogleUserModel {
@@ -23,6 +23,7 @@ class AuthService extends ChangeNotifier {
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
+    serverClientId: const String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID', defaultValue: '').isEmpty ? null : const String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID', defaultValue: ''),
   );
 
   GoogleUserModel? get currentUser => _currentUser;
@@ -70,6 +71,31 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<String> getValidIdToken() async {
+    if (_currentUser == null) return "";
+    if (_currentUser!.id == "google_user_12345") return _currentUser!.idToken; // Guest user
+    
+    try {
+      final account = _googleSignIn.currentUser ?? await _googleSignIn.signInSilently();
+      if (account != null) {
+        final auth = await account.authentication;
+        if (auth.idToken != null) {
+          _currentUser = GoogleUserModel(
+            id: _currentUser!.id,
+            email: _currentUser!.email,
+            displayName: _currentUser!.displayName,
+            photoUrl: _currentUser!.photoUrl,
+            idToken: auth.idToken!,
+          );
+          return auth.idToken!;
+        }
+      }
+    } catch (e) {
+      debugPrint("Error refreshing token: $e");
+    }
+    return _currentUser!.idToken;
+  }
+
   Future<void> signOut() async {
     try {
       await _googleSignIn.signOut();
@@ -80,3 +106,4 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 }
+

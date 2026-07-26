@@ -2,7 +2,10 @@ import sys
 import time
 import io
 import base64
-import numpy as np
+try:
+    import numpy as np
+except ImportError:
+    np = None
 
 try:
     import cv2
@@ -109,13 +112,16 @@ class ScreenCapturer:
                             w = max(1, right - left)
                             h = max(1, bottom - top)
                             bbox = {"top": top, "left": left, "width": w, "height": h}
-                        except Exception:
-                            self.is_full_desktop = True
+                        except Exception as e:
+                            print(f"Window capture error: {e}")
                             bbox = self.sct.monitors[1] if len(self.sct.monitors) > 1 else self.sct.monitors[0]
                     else:
                         bbox = self.sct.monitors[1] if len(self.sct.monitors) > 1 else self.sct.monitors[0]
 
                 sct_img = self.sct.grab(bbox)
+                if np is None:
+                    print("numpy is not installed, cannot use mss")
+                    raise ImportError("numpy is required for mss capture")
                 img = np.array(sct_img)
                 img_bgr = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
@@ -134,7 +140,7 @@ class ScreenCapturer:
         # 2. Fallback capturer: PIL ImageGrab
         if ImageGrab:
             try:
-                pil_img = ImageGrab.grab()
+                pil_img = ImageGrab.grab(all_screens=True)
                 if target_width and target_width < pil_img.width:
                     target_height = int(pil_img.height * (target_width / pil_img.width))
                     pil_img = pil_img.resize((target_width, target_height))
