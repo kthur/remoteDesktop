@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
@@ -409,8 +409,15 @@ class RemoteService extends ChangeNotifier {
         _lastPongReceived = DateTime.now();
         _startPingTimer();
         _startFpsTimer();
-        notifyListeners();
 
+        // Update targetDeviceId with the server-resolved actual device ID
+        final resolvedId = data["resolved_device_id"];
+        if (resolvedId != null && resolvedId.toString().isNotEmpty) {
+          _targetDeviceId = resolvedId.toString();
+          logDiagnostic("Server resolved device ID: $_targetDeviceId");
+        }
+
+        notifyListeners();
         _reSynchronizeSessionState();
       } else if (msgType == "pong") {
         _lastPongReceived = DateTime.now();

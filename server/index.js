@@ -282,19 +282,28 @@ wss.on('connection', (ws, req) => {
                 clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
                 userId = data.google_user_id || 'google_user_12345';
 
+                // Resolve actual host: exact device_id match first, then same-user fallback
+                let resolvedDeviceId = data.target_device_id;
+                let host = registeredHosts.get(data.target_device_id);
+                if (!host) {
+                    // Find any host belonging to the same user
+                    for (const [devId, hostEntry] of registeredHosts.entries()) {
+                        if (hostEntry.google_user_id === userId) {
+                            host = hostEntry;
+                            resolvedDeviceId = devId;
+                            break;
+                        }
+                    }
+                }
+
                 activeClients.set(clientId, {
                     ws: ws,
                     google_user_id: userId,
-                    target_device_id: data.target_device_id
+                    target_device_id: resolvedDeviceId
                 });
 
-                console.log(`[CLIENT CONNECTED] Client ${clientId} watching Device ${data.target_device_id}`);
-                ws.send(jsonStr({ type: 'client_registered', client_id: clientId }));
-
-                let host = registeredHosts.get(data.target_device_id);
-                if (!host && registeredHosts.size === 1) {
-                    host = Array.from(registeredHosts.values())[0];
-                }
+                console.log(`[CLIENT CONNECTED] Client ${clientId} resolved Device: ${resolvedDeviceId} (requested: ${data.target_device_id})`);
+                ws.send(jsonStr({ type: 'client_registered', client_id: clientId, resolved_device_id: resolvedDeviceId }));
 
                 if (host && host.ws.readyState === WebSocket.OPEN) {
                     host.ws.send(jsonStr({ type: 'request_windows' }));
@@ -302,15 +311,21 @@ wss.on('connection', (ws, req) => {
             }
 
             else if (msgType === 'screen_frame') {
-                if (!data.frame_data) return;
+                if (!data.frame) return;  // Host sends "frame" key, not "frame_data"
                 const devId = data.device_id;
                 const hostData = registeredHosts.get(devId);
+                // userId here is the host's userId (set during register_host for this WS connection)
+                const hostUserId = userId;
                 activeClients.forEach((cData) => {
-                    if (cData.ws.readyState === WebSocket.OPEN) {
-                        if (cData.target_device_id === devId &&
-                            hostData && hostData.google_user_id === cData.google_user_id) {
-                            cData.ws.send(message.toString());
-                        }
+                    if (cData.ws.readyState !== WebSocket.OPEN) return;
+                    // User must match (host userId vs client userId)
+                    const userMatches = hostUserId === cData.google_user_id;
+                    // Device matches if exact, OR if client has no/unknown device target
+                    const deviceMatches = cData.target_device_id === devId
+                        || cData.target_device_id === 'pc_host_unknown'
+                        || !cData.target_device_id;
+                    if (userMatches && deviceMatches) {
+                        cData.ws.send(message.toString());
                     }
                 });
             }
@@ -318,8 +333,14 @@ wss.on('connection', (ws, req) => {
             else if (['input_event', 'select_window', 'change_resolution', 'fit_resolution', 'app_state'].includes(msgType)) {
                 const targetDevId = data.target_device_id;
                 let host = registeredHosts.get(targetDevId);
-                if (!host && registeredHosts.size === 1) {
-                    host = Array.from(registeredHosts.values())[0];
+                if (!host) {
+                    // Fallback: find any host for this client's user
+                    for (const hostEntry of registeredHosts.values()) {
+                        if (hostEntry.google_user_id === userId) {
+                            host = hostEntry;
+                            break;
+                        }
+                    }
                 }
                 if (host && host.ws.readyState === WebSocket.OPEN) {
                     host.ws.send(message.toString());
