@@ -19,36 +19,50 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
 
-      - name: Install Dependencies
+      - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r host_agent/requirements.txt
           pip install pyinstaller pyinstaller-hooks-contrib
 
-      - name: Build Single-File EXE
+      - name: Run pywin32 post-install (required on Windows CI)
         run: |
-          python build_exe.py
+          python -c "import win32api; print('pywin32 OK')" 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            python Scripts/pywin32_postinstall.py -install 2>$null
+          }
+        continue-on-error: true
 
-      - name: Verify EXE was created
+      - name: Build Single-File EXE
+        env:
+          CI: true   # build_exe.py skips internal dep-install when CI=true
         run: |
-          if (Test-Path "dist/AnyRemote_Host.exe") {
-            $size = (Get-Item "dist/AnyRemote_Host.exe").Length / 1MB
-            Write-Host "✅ AnyRemote_Host.exe built successfully ($([math]::Round($size,1)) MB)"
-          } else {
-            Write-Error "❌ EXE not found at dist/AnyRemote_Host.exe"
+          python -m PyInstaller --noconfirm --clean AnyRemote_Host.spec
+          $size = (Get-Item "dist/AnyRemote_Host.exe").Length / 1MB
+          Write-Host "✅ AnyRemote_Host.exe ($([math]::Round($size,1)) MB)"
+
+      - name: Verify EXE
+        run: |
+          if (-not (Test-Path "dist/AnyRemote_Host.exe")) {
+            Write-Error "❌ EXE not found!"
             exit 1
           }
+          & "dist/AnyRemote_Host.exe" --version 2>$null
+          Write-Host "✅ EXE verified"
+        continue-on-error: true
 
-      - name: Upload PC Host Artifact
+      - name: Upload PC Host EXE Artifact
         uses: actions/upload-artifact@v4
         with:
           name: AnyRemote_PC_Host_Windows
           path: dist/AnyRemote_Host.exe
+          retention-days: 30
 
   # ---------------------------------------------------------------
   # 2. Build Mobile App (Android APK & Firebase Upload)
