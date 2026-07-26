@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -169,6 +170,161 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     );
   }
 
+  void _connectFromQrPayload(String rawPayload) {
+    if (rawPayload.isEmpty) return;
+    String targetUrl = "";
+    String deviceId = "pc_b6fca047";
+    String deviceName = "📱 Remote PC Host (QR Connect)";
+    List<String> directUrls = [];
+
+    try {
+      final decoded = jsonDecode(rawPayload);
+      if (decoded is Map<String, dynamic>) {
+        if (decoded["url"] != null) targetUrl = decoded["url"].toString();
+        if (decoded["device_id"] != null) deviceId = decoded["device_id"].toString();
+        if (decoded["device_name"] != null) deviceName = decoded["device_name"].toString();
+        if (decoded["direct_urls"] != null) {
+          directUrls = List<String>.from(decoded["direct_urls"]);
+        }
+      }
+    } catch (_) {
+      targetUrl = rawPayload.trim();
+    }
+
+    if (targetUrl.isNotEmpty && (targetUrl.startsWith("ws://") || targetUrl.startsWith("wss://"))) {
+      _saveConnectedUrl(targetUrl);
+      if (!directUrls.contains(targetUrl)) {
+        directUrls.insert(0, targetUrl);
+      }
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => RemoteControlScreen(
+            targetDeviceId: deviceId,
+            deviceName: deviceName,
+            directWsUrls: directUrls,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invalid QR Code Payload or URL format!'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _showQrScannerDialog() {
+    final controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF38BDF8), size: 28),
+            SizedBox(width: 10),
+            Text('📷 Scan Host PC QR Code', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 170,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F172A),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF38BDF8).withOpacity(0.4), width: 2),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF38BDF8).withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.qr_code_2_rounded, size: 50, color: Color(0xFF38BDF8)),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Point Mobile Camera at Host PC QR Code',
+                      style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Paste or enter scanned QR Code string / URL below:',
+                style: TextStyle(color: Colors.white60, fontSize: 12),
+              ),
+              const SizedBox(height: 8),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'Paste QR JSON or wss:// URL...',
+                        hintStyle: const TextStyle(color: Colors.white30),
+                        filled: true,
+                        fillColor: const Color(0xFF0F172A),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.paste_rounded, color: Color(0xFF38BDF8)),
+                    tooltip: 'Paste from Clipboard',
+                    onPressed: () async {
+                      final data = await Clipboard.getData(Clipboard.kTextPlain);
+                      if (data?.text != null && data!.text!.isNotEmpty) {
+                        controller.text = data.text!.trim();
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0284C7),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Icons.flash_on_rounded, color: Colors.amberAccent, size: 18),
+            label: const Text('Connect QR', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            onPressed: () {
+              final payload = controller.text.trim();
+              Navigator.of(ctx).pop();
+              _connectFromQrPayload(payload);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _showCustomTunnelDialog() async {
     final prefs = await SharedPreferences.getInstance();
     final lastUrl = prefs.getString('last_connected_tunnel_url') ?? "wss://";
@@ -317,6 +473,11 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.amberAccent),
+            tooltip: 'Scan Host PC QR Code',
+            onPressed: _showQrScannerDialog,
+          ),
           IconButton(
             icon: const Icon(Icons.public_rounded, color: Color(0xFF38BDF8)),
             tooltip: 'Connect via LTE/5G Public Tunnel',

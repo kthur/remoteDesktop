@@ -8,6 +8,7 @@
 ├── 2. [device-list-screen] Host PC Device Discovery & Selection
 │   ├── User Profile Header [user-profile-bar]
 │   ├── Refresh Device List Button [btn-refresh-devices]
+│   ├── Scan Host PC QR Code Button [btn-scan-qr]
 │   ├── Connect via LTE/5G Public Tunnel Dialog [modal-tunnel-dialog]
 │   │   ├── Tunnel WSS URL Input [input-tunnel-url]
 │   │   ├── Paste Clipboard Button [btn-paste-clipboard]
@@ -39,6 +40,10 @@
 │       └── Resolution Settings Modal Button [btn-overlay-resolution]
 │
 ├── 4. [modals-and-sheets] Contextual UI Dialogs & Bottom Sheets
+│   ├── Scan Host PC QR Code Modal [modal-qr-scanner]
+│   │   ├── Camera Viewfinder Frame [frame-qr-viewfinder]
+│   │   ├── Scanned QR Code Input / Paste Field [input-qr-payload]
+│   │   └── Connect QR Button [btn-connect-qr]
 │   ├── Windows Selector Bottom Sheet [sheet-window-selector]
 │   │   ├── Target Capture Window List Item [item-window-handle]
 │   │   └── Full Desktop Capture Selection [item-full-desktop]
@@ -55,6 +60,7 @@
     │   ├── REST `/api/devices/:google_user_id` [api-list-devices]
     │   └── WebSocket Signaling Endpoint (`ws://localhost:8080`) [ws-signaling]
     └── Python Host Agent (`host_agent/main.py`) [service-host-agent]
+        ├── QR Code Generator (`qr_generator.py` / `host_qr.png`) [agent-qr-generator]
         ├── Screen Capturer & Fallback (MSS / OpenCV / PIL) [agent-screen-capturer]
         ├── Input Handler (Mouse / Keyboard PyAutoGUI) [agent-input-handler]
         ├── Display Resolution Manager [agent-display-mgr]

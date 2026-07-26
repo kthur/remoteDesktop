@@ -10,6 +10,7 @@ from display_manager import DisplayManager
 from input_handler import InputHandler
 from auth_host import HostAuth
 from tunnel_manager import TunnelManager
+from qr_generator import generate_host_qr
 
 SERVER_URI = os.getenv("SIGNALING_SERVER", "ws://localhost:8080")
 
@@ -128,6 +129,14 @@ async def run_host_agent():
     print(f" Registered Google ID: {auth.google_email} ({auth.google_user_id})")
     print(f" Connecting to Signaling Server: {SERVER_URI}")
     print(f"==================================================")
+
+    primary_conn_url = tunnel_mgr.get_wss_url() or f"ws://{get_local_ip_addresses()[0]}:8080"
+    generate_host_qr(
+        device_id=auth.device_id,
+        device_name=hostname,
+        primary_url=primary_conn_url,
+        direct_urls=[f"ws://{ip}:8080" for ip in get_local_ip_addresses()]
+    )
 
     udp_transport = await start_udp_discovery_service(
         auth.device_id,
