@@ -3,8 +3,18 @@ import json
 import socket
 import sys
 import os
+import io
 import base64
 import websockets
+
+if sys.platform == 'win32':
+    try:
+        if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
+            sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
 from screen_capturer import ScreenCapturer
 from display_manager import DisplayManager
 from input_handler import InputHandler

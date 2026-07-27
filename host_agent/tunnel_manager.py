@@ -4,6 +4,16 @@ import re
 import time
 import sys
 import os
+import io
+
+if sys.platform == 'win32':
+    try:
+        if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
+            sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
 
 class TunnelManager:
     """Manages asynchronous Cloudflare Tunnel creation for LTE/5G external network access."""

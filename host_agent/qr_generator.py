@@ -1,5 +1,16 @@
 import os
 import json
+import sys
+import io
+
+if sys.platform == 'win32':
+    try:
+        if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
+            sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
 
 try:
     import qrcode
@@ -22,7 +33,7 @@ def generate_host_qr(device_id, device_name, primary_url, direct_urls=None, save
     payload_str = json.dumps(payload)
 
     print("\n==================================================")
-    print(" 📲 AnyRemote HOST PC QR Code Connection Info")
+    print(" [QR CODE] AnyRemote HOST PC QR Code Connection Info")
     print(f" Target Device: {device_name} ({device_id})")
     print(f" Connection URL: {primary_url}")
     if direct_urls:
