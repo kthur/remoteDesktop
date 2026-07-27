@@ -854,23 +854,30 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                         },
                         onScaleUpdate: (details) {
                           if (details.pointerCount > 1 || _isScaling) {
-                            // ── 2 Fingers: Pinch to Zoom & Pan Viewport ─────
+                            // ── 2 Fingers: Pinch to Zoom & Smooth Pan ─────
                             _isScaling = true;
+                            final delta = details.focalPointDelta;
+                            final focal = details.localFocalPoint;
+
                             final newScale = (_scaleAtStart * details.scale).clamp(1.0, 4.0);
                             final scaleChange = newScale / _viewScale;
-                            final focal = details.localFocalPoint;
-                            final delta = details.focalPointDelta;
 
-                            final oldM = _transformationController.value.clone();
-                            final newM = Matrix4.identity()
-                              ..translate(focal.dx, focal.dy)
-                              ..scale(scaleChange)
-                              ..translate(-focal.dx, -focal.dy)
-                              ..translate(delta.dx, delta.dy)
-                              ..multiply(oldM);
+                            final m = _transformationController.value;
 
-                            _transformationController.value = newM;
-                            setState(() => _viewScale = newScale);
+                            // Apply smooth pan
+                            m.translate(delta.dx / _viewScale, delta.dy / _viewScale);
+
+                            // Apply zoom centered on pinch focal point
+                            if ((scaleChange - 1.0).abs() > 0.001) {
+                              final sceneFocal = _transformationController.toScene(focal);
+                              m.translate(sceneFocal.dx, sceneFocal.dy);
+                              m.scale(scaleChange);
+                              m.translate(-sceneFocal.dx, -sceneFocal.dy);
+                              _viewScale = newScale;
+                            }
+
+                            _transformationController.value = m;
+                            setState(() {});
                             _showZoomIndicator();
                           } else if (!_isScaling) {
                             // ── Single finger: move PC mouse / Drag / Scroll ─
@@ -916,6 +923,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                                     frameBytes,
                                     gaplessPlayback: true,
                                     fit: _fitMode,
+                                    filterQuality: FilterQuality.medium,
                                     width: double.infinity,
                                     height: double.infinity,
                                     errorBuilder: (context, error, stackTrace) {

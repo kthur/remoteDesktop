@@ -254,7 +254,7 @@ async def run_host_agent(on_qr_ready=None):
                             await ws.send(json.dumps({"type": "ping", "device_id": auth.device_id}))
                             await asyncio.sleep(2.0)
                         else:
-                            frame_bytes = capturer.capture_frame(target_width=1280, quality=65)
+                            frame_bytes = capturer.capture_frame(target_width=1920, quality=82)
                             if frame_bytes:
                                 b64_frame = base64.b64encode(frame_bytes).decode('utf-8')
                                 frame_packet = {
