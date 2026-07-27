@@ -1650,6 +1650,56 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                 ),
               ),
 
+              // ── Floating Zoom Controls (+ / - / Reset 1:1) ────────────────
+              if (_showOverlay || _viewScale > 1.0)
+                Positioned(
+                  right: 16,
+                  bottom: _showOverlay ? 86 : 24,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.88),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.5)),
+                      boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 8)],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                          onPressed: _zoomIn,
+                          tooltip: 'Zoom In (+)',
+                        ),
+                        InkWell(
+                          onTap: _resetZoom,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            child: Text(
+                              '${(_viewScale * 100).round()}%',
+                              style: const TextStyle(
+                                color: Color(0xFF38BDF8),
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(Icons.remove_rounded, color: Colors.white, size: 20),
+                          onPressed: _zoomOut,
+                          tooltip: 'Zoom Out (-)',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
               // ── Connection Loss / Reconnecting Large Overlay Card ──────────
               if (!service.isConnected && !service.isBackground)
                 Center(
