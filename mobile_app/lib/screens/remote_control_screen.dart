@@ -44,10 +44,12 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
   bool _showZoomBadge = false;   // show zoom % badge during pinch
   Timer? _zoomBadgeTimer;
 
-  // ── Control Modes (Drag / Scroll) ───────────────────────────
+  // ── Control Modes (Drag / Scroll / Floating Bar UX) ──────────
   bool _isDragMode = false;      // Drag Mode: 1-finger holds left mouse button
   bool _isScrollMode = false;    // Scroll Mode: 1-finger drag sends mouse wheel scroll
   bool _isDraggingMouse = false; // Currently holding mouse button down
+  bool _isOverlayCollapsed = false; // Floating Bar UX: collapse into tiny trigger pill
+  bool _overlayAtTop = false;     // Floating Bar UX: toggle position (Top vs Bottom)
 
   @override
   void initState() {
@@ -996,117 +998,169 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                   ),
                 ),
 
-              // Floating Controls Bar Overlay
+              // Floating Controls Bar Overlay (Collapsible & Positionable Top/Bottom)
               if (_showOverlay)
-                Positioned(
-                  bottom: 20,
-                  left: 20,
-                  right: 20,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B).withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-                      boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 10)],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        IconButton(
-                          tooltip: 'Mouse Instructions',
-                          icon: const Icon(Icons.mouse_rounded, color: Color(0xFF38BDF8)),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Tap: Click | Long Press: RClick | Pinch: Zoom | Mode: Drag & Scroll supported'),
-                                behavior: SnackBarBehavior.floating,
+                _isOverlayCollapsed
+                    ? Positioned(
+                        top: _overlayAtTop ? (_isFullscreen ? 36 : 18) : null,
+                        bottom: _overlayAtTop ? null : 18,
+                        right: 18,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => setState(() => _isOverlayCollapsed = false),
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E293B).withValues(alpha: 0.85),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.6), width: 1.5),
+                                boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 8)],
                               ),
-                            );
-                          },
-                        ),
-                        // ── Drag Mode Toggle Button ──────────────────────
-                        IconButton(
-                          tooltip: _isDragMode ? 'Drag Mode (ON)' : 'Drag Mode (OFF)',
-                          icon: Icon(
-                            Icons.drag_indicator_rounded,
-                            color: _isDragMode ? Colors.amberAccent : Colors.white70,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _isDragMode = !_isDragMode;
-                              if (_isDragMode) _isScrollMode = false;
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(_isDragMode ? '🖐️ Drag Mode Enabled (Hold Left Button)' : 'Normal Touch Mode'),
-                                duration: const Duration(milliseconds: 900),
-                                behavior: SnackBarBehavior.floating,
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.tune_rounded, color: Color(0xFF38BDF8), size: 16),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    "툴바 열기",
+                                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
                               ),
-                            );
-                          },
-                        ),
-                        // ── Scroll Mode Toggle Button ────────────────────
-                        IconButton(
-                          tooltip: _isScrollMode ? 'Scroll Mode (ON)' : 'Scroll Mode (OFF)',
-                          icon: Icon(
-                            Icons.swap_vert_rounded,
-                            color: _isScrollMode ? Colors.amberAccent : Colors.white70,
+                            ),
                           ),
-                          onPressed: () {
-                            setState(() {
-                              _isScrollMode = !_isScrollMode;
-                              if (_isScrollMode) _isDragMode = false;
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(_isScrollMode ? '📜 Scroll Mode Enabled (Swipe to Scroll)' : 'Normal Touch Mode'),
-                                duration: const Duration(milliseconds: 900),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
                         ),
-                        IconButton(
-                          tooltip: 'Virtual Keyboard & Shortcuts',
-                          icon: const Icon(Icons.keyboard_rounded, color: Colors.white70),
-                          onPressed: _showVirtualKeyboardSheet,
-                        ),
-                        IconButton(
-                          tooltip: 'Fit Mode (${_getFitModeLabel(_fitMode)})',
-                          icon: Icon(_getFitModeIcon(_fitMode), color: const Color(0xFF38BDF8)),
-                          onPressed: _cycleFitMode,
-                        ),
-                        IconButton(
-                          tooltip: 'Toggle Fullscreen',
-                          icon: Icon(
-                            _isFullscreen ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
-                            color: Colors.amberAccent,
+                      )
+                    : Positioned(
+                        top: _overlayAtTop ? (_isFullscreen ? 36 : 18) : null,
+                        bottom: _overlayAtTop ? null : 18,
+                        left: 14,
+                        right: 14,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E293B).withValues(alpha: 0.78),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                            boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 10)],
                           ),
-                          onPressed: _toggleFullscreen,
-                        ),
-                        IconButton(
-                          tooltip: 'Rotate Screen',
-                          icon: Icon(
-                            Icons.screen_rotation_rounded,
-                            color: _isLandscape ? const Color(0xFF38BDF8) : Colors.white70,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  tooltip: 'Minimize Toolbar',
+                                  icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.amberAccent),
+                                  onPressed: () => setState(() => _isOverlayCollapsed = true),
+                                ),
+                                IconButton(
+                                  tooltip: _overlayAtTop ? 'Move Toolbar to Bottom' : 'Move Toolbar to Top',
+                                  icon: Icon(
+                                    _overlayAtTop ? Icons.vertical_align_bottom_rounded : Icons.vertical_align_top_rounded,
+                                    color: const Color(0xFF38BDF8),
+                                  ),
+                                  onPressed: () => setState(() => _overlayAtTop = !_overlayAtTop),
+                                ),
+                                const SizedBox(width: 4),
+                                Container(width: 1, height: 20, color: Colors.white24),
+                                const SizedBox(width: 4),
+                                IconButton(
+                                  tooltip: 'Mouse Instructions',
+                                  icon: const Icon(Icons.mouse_rounded, color: Color(0xFF38BDF8)),
+                                  onPressed: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Tap: Click | Long Press: RClick | Pinch: Zoom | Mode: Drag & Scroll'),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  },
+                                ),
+                                // ── Drag Mode Toggle Button ──────────────────────
+                                IconButton(
+                                  tooltip: _isDragMode ? 'Drag Mode (ON)' : 'Drag Mode (OFF)',
+                                  icon: Icon(
+                                    Icons.drag_indicator_rounded,
+                                    color: _isDragMode ? Colors.amberAccent : Colors.white70,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _isDragMode = !_isDragMode;
+                                      if (_isDragMode) _isScrollMode = false;
+                                    });
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(_isDragMode ? '🖐️ Drag Mode Enabled' : 'Normal Touch Mode'),
+                                        duration: const Duration(milliseconds: 900),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  },
+                                ),
+                                // ── Scroll Mode Toggle Button ────────────────────
+                                IconButton(
+                                  tooltip: _isScrollMode ? 'Scroll Mode (ON)' : 'Scroll Mode (OFF)',
+                                  icon: Icon(
+                                    Icons.swap_vert_rounded,
+                                    color: _isScrollMode ? Colors.amberAccent : Colors.white70,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _isScrollMode = !_isScrollMode;
+                                      if (_isScrollMode) _isDragMode = false;
+                                    });
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(_isScrollMode ? '📜 Scroll Mode Enabled' : 'Normal Touch Mode'),
+                                        duration: const Duration(milliseconds: 900),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  },
+                                ),
+                                IconButton(
+                                  tooltip: 'Virtual Keyboard & Shortcuts',
+                                  icon: const Icon(Icons.keyboard_rounded, color: Colors.white70),
+                                  onPressed: _showVirtualKeyboardSheet,
+                                ),
+                                IconButton(
+                                  tooltip: 'Fit Mode (${_getFitModeLabel(_fitMode)})',
+                                  icon: Icon(_getFitModeIcon(_fitMode), color: const Color(0xFF38BDF8)),
+                                  onPressed: _cycleFitMode,
+                                ),
+                                IconButton(
+                                  tooltip: 'Toggle Fullscreen',
+                                  icon: Icon(
+                                    _isFullscreen ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
+                                    color: Colors.amberAccent,
+                                  ),
+                                  onPressed: _toggleFullscreen,
+                                ),
+                                IconButton(
+                                  tooltip: 'Rotate Screen',
+                                  icon: Icon(
+                                    Icons.screen_rotation_rounded,
+                                    color: _isLandscape ? const Color(0xFF38BDF8) : Colors.white70,
+                                  ),
+                                  onPressed: _toggleOrientation,
+                                ),
+                                IconButton(
+                                  tooltip: 'Windows Manager',
+                                  icon: const Icon(Icons.window_rounded, color: Colors.white70),
+                                  onPressed: _showWindowSelectorMenu,
+                                ),
+                                IconButton(
+                                  tooltip: 'Display Resolution',
+                                  icon: const Icon(Icons.aspect_ratio_rounded, color: Colors.white70),
+                                  onPressed: _showResolutionModal,
+                                ),
+                              ],
+                            ),
                           ),
-                          onPressed: _toggleOrientation,
                         ),
-                        IconButton(
-                          tooltip: 'Windows Manager',
-                          icon: const Icon(Icons.window_rounded, color: Colors.white70),
-                          onPressed: _showWindowSelectorMenu,
-                        ),
-                        IconButton(
-                          tooltip: 'Display Resolution',
-                          icon: const Icon(Icons.aspect_ratio_rounded, color: Colors.white70),
-                          onPressed: _showResolutionModal,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                      ),
 
               // Floating Zoom Controls (+ / - / Reset 1:1)
               if (_showOverlay || _viewScale > 1.0)
