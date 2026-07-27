@@ -102,7 +102,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
         _devices = [
           {
             "device_id": "pc_host_unknown",
-            "device_name": "?뼢截?Local PC Host (Auto Detect)",
+            "device_name": "💻 Local PC Host (Auto Detect)",
             "os": "Windows PC",
             "resolution": {"width": 1920, "height": 1080},
             "status": "online",
@@ -120,7 +120,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       _devices = [
         {
           "device_id": "pc_host_unknown",
-          "device_name": "?뼢截?Local PC Host (Auto Detect)",
+          "device_name": "💻 Local PC Host (Auto Detect)",
           "os": "Windows PC",
           "resolution": {"width": 1920, "height": 1080},
           "status": "online",
@@ -149,10 +149,10 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       spacing: 6,
       runSpacing: 4,
       children: [
-        if (usb) _badge('?뵆 USB ADB', Colors.purpleAccent),
-        if (wifi) _badge('?벛 LAN Wi-Fi', Colors.cyanAccent),
-        if (tunnel) _badge('?뙋 LTE/5G Public Tunnel', Colors.greenAccent),
-        _badge('?곻툘 Cloud Relay', Colors.blueAccent),
+        if (usb) _badge('🔌 USB ADB', Colors.purpleAccent),
+        if (wifi) _badge('📶 LAN Wi-Fi', Colors.cyanAccent),
+        if (tunnel) _badge('🌐 LTE/5G Public Tunnel', Colors.greenAccent),
+        _badge('☁️ Cloud Relay', Colors.blueAccent),
       ],
     );
   }
@@ -176,7 +176,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     if (rawPayload.isEmpty) return;
     String targetUrl = "";
     String deviceId = "pc_host_unknown";
-    String deviceName = "?벑 Remote PC Host (QR Connect)";
+    String deviceName = "📱 Remote PC Host (QR Connect)";
     List<String> directUrls = [];
 
     try {
@@ -230,7 +230,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           children: [
             Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF38BDF8), size: 28),
             SizedBox(width: 10),
-            Text('?벜 Scan Host PC QR Code', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+            Text('📷 Scan Host PC QR Code', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
           ],
         ),
         content: SingleChildScrollView(
@@ -344,7 +344,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
             children: [
               Icon(Icons.public_rounded, color: Color(0xFF38BDF8)),
               SizedBox(width: 8),
-              Text('?뙋 Connect via LTE/5G Tunnel', style: TextStyle(color: Colors.white, fontSize: 16)),
+              Text('🌐 Connect via LTE/5G Tunnel', style: TextStyle(color: Colors.white, fontSize: 16)),
             ],
           ),
           content: SingleChildScrollView(
@@ -390,7 +390,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                 if (_recentUrls.isNotEmpty) ...[
                   const SizedBox(height: 14),
                   const Text(
-                    '?븩 Cached Recent Connection History:',
+                    '📜 Cached Recent Connection History:',
                     style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 6),
@@ -439,7 +439,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                     MaterialPageRoute(
                       builder: (_) => RemoteControlScreen(
                         targetDeviceId: "pc_host_unknown",
-                        deviceName: "?뙋 Remote PC (LTE/5G Public Tunnel)",
+                        deviceName: "🌐 Remote PC (LTE/5G Public Tunnel)",
                         directWsUrls: [url],
                       ),
                     ),

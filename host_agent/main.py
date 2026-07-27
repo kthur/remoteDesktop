@@ -5,6 +5,8 @@ import sys
 import os
 import io
 import base64
+import time
+import uuid
 import websockets
 
 if sys.platform == 'win32':
@@ -110,9 +112,9 @@ async def run_host_agent(on_qr_ready=None):
         if env_email and env_user_id:
             auth.set_google_user(env_email, env_user_id)
         else:
-            auth.google_user_id = "google_user_12345"
-            auth.google_email = "demo.user@gmail.com"
-            print(" [AUTH INFO] Host Agent running in Guest Mode (google_user_12345).")
+            auth.google_user_id = f"guest_user_{uuid.uuid4().hex[:8]}"
+            auth.google_email = f"guest_{uuid.uuid4().hex[:4]}@anyremote.local"
+            print(f" [AUTH INFO] Host Agent running in Guest Mode ({auth.google_user_id}).")
 
     capturer = ScreenCapturer()
     display_mgr = DisplayManager()
@@ -170,11 +172,11 @@ async def run_host_agent(on_qr_ready=None):
     retry_delay = 3
     try:
         while True:
-            if listener_task:
+            if listener_task and not listener_task.done():
                 listener_task.cancel()
             try:
+                connect_time = time.time()
                 async with websockets.connect(SERVER_URI) as ws:
-                    retry_delay = 3
                     res_info = display_mgr.get_current_resolution()
                     windows_list = capturer.list_windows()
                     net_info = current_net_info()
@@ -194,62 +196,69 @@ async def run_host_agent(on_qr_ready=None):
                     print(" Registered successfully with signaling server.")
 
                     async def message_listener():
-                        try:
-                            async for raw_msg in ws:
+                        async for raw_msg in ws:
+                            try:
                                 msg = json.loads(raw_msg)
-                                msg_type = msg.get("type")
+                            except json.JSONDecodeError:
+                                continue
+                            msg_type = msg.get("type")
 
-                                if msg_type == "input_event":
-                                    payload = msg.get("payload", {})
-                                    asyncio.get_event_loop().run_in_executor(None, input_handler.process_command, payload, capturer)
+                            if msg_type == "input_event":
+                                payload = msg.get("payload", {})
+                                asyncio.get_event_loop().run_in_executor(None, input_handler.process_command, payload, capturer)
 
-                                elif msg_type == "select_window":
-                                    handle = msg.get("handle")
-                                    capturer.set_target_window(handle)
-                                    print(f" Target capture switched to window handle: {handle}")
+                            elif msg_type == "select_window":
+                                handle = msg.get("handle")
+                                capturer.set_target_window(handle)
+                                print(f" Target capture switched to window handle: {handle}")
 
-                                elif msg_type == "change_resolution":
-                                    w = msg.get("width")
-                                    h = msg.get("height")
-                                    success, note = display_mgr.change_resolution(w, h)
-                                    updated_res = display_mgr.get_current_resolution()
-                                    await ws.send(json.dumps({
-                                        "type": "resolution_updated",
-                                        "resolution": updated_res,
-                                        "status": note
-                                    }))
+                            elif msg_type == "change_resolution":
+                                w = msg.get("width")
+                                h = msg.get("height")
+                                success, note = display_mgr.change_resolution(w, h)
+                                updated_res = display_mgr.get_current_resolution()
+                                await ws.send(json.dumps({
+                                    "type": "resolution_updated",
+                                    "resolution": updated_res,
+                                    "status": note
+                                }))
 
-                                elif msg_type == "fit_resolution":
-                                    mw = msg.get("mobile_width")
-                                    mh = msg.get("mobile_height")
-                                    success, note = display_mgr.fit_mobile_resolution(mw, mh)
-                                    updated_res = display_mgr.get_current_resolution()
-                                    await ws.send(json.dumps({
-                                        "type": "resolution_updated",
-                                        "resolution": updated_res,
-                                        "status": note
-                                    }))
+                            elif msg_type == "fit_resolution":
+                                mw = msg.get("mobile_width")
+                                mh = msg.get("mobile_height")
+                                success, note = display_mgr.fit_mobile_resolution(mw, mh)
+                                updated_res = display_mgr.get_current_resolution()
+                                await ws.send(json.dumps({
+                                    "type": "resolution_updated",
+                                    "resolution": updated_res,
+                                    "status": note
+                                }))
 
-                                elif msg_type == "app_state":
-                                    state = msg.get("state")
-                                    capturer.is_background = (state == "background")
-                                    print(f" Mobile App state changed: {state.upper()} (Frame sending paused: {capturer.is_background})")
+                            elif msg_type == "app_state":
+                                state = msg.get("state")
+                                capturer.is_background = (state == "background")
+                                print(f" Mobile App state changed: {state.upper()} (Frame sending paused: {capturer.is_background})")
 
-                                elif msg_type == "request_windows":
-                                    updated_windows = capturer.list_windows()
-                                    await ws.send(json.dumps({
-                                        "type": "windows_list_update",
-                                        "windows": updated_windows
-                                    }))
-
-                        except websockets.exceptions.ConnectionClosed:
-                            raise
-                        except Exception as e:
-                            print(f"Listener error: {e}")
+                            elif msg_type == "request_windows":
+                                updated_windows = capturer.list_windows()
+                                await ws.send(json.dumps({
+                                    "type": "windows_list_update",
+                                    "windows": updated_windows
+                                }))
 
                     listener_task = asyncio.create_task(message_listener())
 
                     while True:
+                        if listener_task.done():
+                            # If listener encountered error or finished, break out of loop
+                            exc = listener_task.exception()
+                            if exc:
+                                raise exc
+                            break
+
+                        if time.time() - connect_time > 15:
+                            retry_delay = 3
+
                         if capturer.is_background:
                             await ws.send(json.dumps({"type": "ping", "device_id": auth.device_id}))
                             await asyncio.sleep(2.0)
@@ -265,11 +274,11 @@ async def run_host_agent(on_qr_ready=None):
                                 await ws.send(json.dumps(frame_packet))
                             await asyncio.sleep(0.04)
 
-            except (websockets.exceptions.ConnectionClosed, OSError) as err:
-                if listener_task:
+            except Exception as err:
+                if listener_task and not listener_task.done():
                     listener_task.cancel()
                 input_handler.release_stuck_buttons()
-                print(f"[WARNING] Connection lost: {err}. Reconnecting in {retry_delay} seconds...")
+                print(f"[WARNING] Connection lost/error: {err}. Reconnecting in {retry_delay} seconds...")
                 await asyncio.sleep(retry_delay)
                 retry_delay = min(60, retry_delay * 2)
     finally:

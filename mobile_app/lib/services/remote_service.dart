@@ -56,6 +56,7 @@ class RemoteService extends ChangeNotifier {
   int _reconnectAttempts = 0;
   Timer? _reconnectTimer;
   Timer? _pingTimer;
+  Timer? _probeTimer;
   DateTime? _lastPongReceived;
   bool _isManualDisconnect = false;
 
@@ -103,15 +104,15 @@ class RemoteService extends ChangeNotifier {
   String get activeTransportBadge {
     switch (_activeTransport) {
       case ConnectionTransport.usbAdb:
-        return '?뵆 USB ADB';
+        return '🔌 USB ADB';
       case ConnectionTransport.localWifi:
-        return '?벛 LAN Wi-Fi';
+        return '📶 LAN Wi-Fi';
       case ConnectionTransport.emulator:
-        return '?벑 Emulator';
+        return '📱 Emulator';
       case ConnectionTransport.relay:
-        return '?뙋 Cloud Relay';
+        return '🌐 Cloud Relay';
       case ConnectionTransport.none:
-        return '??Disconnected';
+        return '🔴 Disconnected';
     }
   }
 
@@ -210,6 +211,7 @@ class RemoteService extends ChangeNotifier {
   Future<void> _startConnectionProbing({List<String>? overrideCandidates}) async {
     _cancelReconnectTimer();
     _stopPingTimer();
+    _probeTimer?.cancel();
 
     _connectionState = _reconnectAttempts == 0
         ? RemoteConnectionState.connecting
@@ -258,6 +260,7 @@ class RemoteService extends ChangeNotifier {
 
               if (!winnerFound && (msgType == "client_registered" || msgType == "screen_frame")) {
                 winnerFound = true;
+                _probeTimer?.cancel();
                 _activeChannel = channel;
                 _activeUrl = candidateUrl;
                 _activeTransport = classifyTransport(candidateUrl);
@@ -309,7 +312,7 @@ class RemoteService extends ChangeNotifier {
       }
     }
 
-    Timer(const Duration(seconds: 8), () {
+    _probeTimer = Timer(const Duration(seconds: 8), () {
       if (!winnerFound && !probeCompleter.isCompleted) {
         logDiagnostic("Candidate probing timeout reached (8s). Cleaning channels.");
         for (var ch in openProbingChannels) {

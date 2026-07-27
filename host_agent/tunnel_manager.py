@@ -98,9 +98,13 @@ class TunnelManager:
         self.stop_event.set()
         if self.process:
             try:
-                self.process.terminate()
-                self.process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                self.process.kill()
+                if sys.platform == "win32":
+                    subprocess.run(["taskkill", "/F", "/T", "/PID", str(self.process.pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                else:
+                    self.process.terminate()
+                    self.process.wait(timeout=5)
             except Exception:
-                pass
+                try:
+                    self.process.kill()
+                except Exception:
+                    pass

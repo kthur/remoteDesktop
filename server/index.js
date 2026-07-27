@@ -231,7 +231,7 @@ wss.on('connection', (ws, req) => {
             if (msgType === 'register_host') {
                 clientRole = 'host';
                 clientId = data.device_id;
-                userId = data.google_user_id || 'google_user_12345';
+                userId = data.google_user_id || 'anonymous_host';
 
                 const existing = registeredHosts.get(clientId);
                 if (existing && existing.ws !== ws) {
@@ -280,24 +280,19 @@ wss.on('connection', (ws, req) => {
             else if (msgType === 'register_client') {
                 clientRole = 'client';
                 clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
-                userId = data.google_user_id || 'google_user_12345';
+                userId = data.google_user_id || 'anonymous_client';
 
-                // Resolve actual host: exact device_id match first, then same-user fallback, then any registered host fallback
+                // Resolve actual host: exact device_id match first, then same-user match
                 let resolvedDeviceId = data.target_device_id;
                 let host = registeredHosts.get(data.target_device_id);
-                if (!host) {
+                if (!host && userId && userId !== 'anonymous_client') {
                     for (const [devId, hostEntry] of registeredHosts.entries()) {
-                        if (hostEntry.google_user_id === userId || hostEntry.google_user_id === 'google_user_12345' || userId === 'google_user_12345' || registeredHosts.size === 1) {
+                        if (hostEntry.google_user_id === userId) {
                             host = hostEntry;
                             resolvedDeviceId = devId;
                             break;
                         }
                     }
-                }
-                if (!host && registeredHosts.size > 0) {
-                    const [firstDevId, firstHost] = registeredHosts.entries().next().value;
-                    host = firstHost;
-                    resolvedDeviceId = firstDevId;
                 }
 
                 activeClients.set(clientId, {
@@ -315,21 +310,17 @@ wss.on('connection', (ws, req) => {
             }
 
             else if (msgType === 'screen_frame') {
-                if (!data.frame) return;  // Host sends "frame" key, not "frame_data"
+                const frameData = data.frame || data.frame_data;
+                if (!frameData) return;
                 const devId = data.device_id;
                 const hostData = registeredHosts.get(devId);
                 const hostUserId = hostData ? hostData.google_user_id : userId;
 
                 activeClients.forEach((cData) => {
                     if (cData.ws.readyState !== WebSocket.OPEN) return;
-                    const userMatches = (hostUserId === cData.google_user_id)
-                        || hostUserId === 'google_user_12345'
-                        || cData.google_user_id === 'google_user_12345';
-                    const deviceMatches = cData.target_device_id === devId
-                        || cData.target_device_id === 'pc_host_unknown'
-                        || !cData.target_device_id
-                        || registeredHosts.size === 1;
-                    if (userMatches || deviceMatches) {
+                    const userMatches = hostUserId && cData.google_user_id && (hostUserId === cData.google_user_id);
+                    const deviceMatches = cData.target_device_id === devId;
+                    if (deviceMatches || userMatches) {
                         cData.ws.send(message.toString());
                     }
                 });
@@ -338,16 +329,13 @@ wss.on('connection', (ws, req) => {
             else if (['input_event', 'select_window', 'change_resolution', 'fit_resolution', 'app_state'].includes(msgType)) {
                 const targetDevId = data.target_device_id;
                 let host = registeredHosts.get(targetDevId);
-                if (!host) {
+                if (!host && userId && userId !== 'anonymous_client') {
                     for (const hostEntry of registeredHosts.values()) {
-                        if (hostEntry.google_user_id === userId || hostEntry.google_user_id === 'google_user_12345' || userId === 'google_user_12345' || registeredHosts.size === 1) {
+                        if (hostEntry.google_user_id === userId) {
                             host = hostEntry;
                             break;
                         }
                     }
-                }
-                if (!host && registeredHosts.size > 0) {
-                    host = registeredHosts.values().next().value;
                 }
                 if (host && host.ws.readyState === WebSocket.OPEN) {
                     host.ws.send(message.toString());
@@ -361,7 +349,7 @@ wss.on('connection', (ws, req) => {
                     if (msgType === 'resolution_updated') hostData.info.resolution = data.resolution;
                 }
                 activeClients.forEach((cData) => {
-                    if ((cData.target_device_id === clientId || cData.target_device_id === 'pc_host_unknown' || registeredHosts.size === 1) && cData.ws.readyState === WebSocket.OPEN) {
+                    if ((cData.target_device_id === clientId) && cData.ws.readyState === WebSocket.OPEN) {
                         cData.ws.send(message.toString());
                     }
                 });

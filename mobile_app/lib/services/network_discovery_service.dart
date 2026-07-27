@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -134,11 +134,13 @@ class NetworkDiscoveryService {
 
       final completer = Completer<List<DiscoveredHost>>();
       final Map<String, DiscoveredHost> hostMap = {};
+      Timer? timeoutTimer;
+      late StreamSubscription subscription;
 
-      final subscription = socket.listen(
+      subscription = socket.listen(
         (RawSocketEvent event) {
           if (event == RawSocketEvent.read) {
-            final datagram = socket?.receive();
+            final datagram = socket!.receive();
             if (datagram != null) {
               try {
                 final message = utf8.decode(datagram.data);
@@ -155,11 +157,13 @@ class NetworkDiscoveryService {
         },
         onError: (e) {
           debugPrint('UDP listen error: $e');
+          timeoutTimer?.cancel();
           if (!completer.isCompleted) {
             completer.complete(hostMap.values.toList());
           }
         },
         onDone: () {
+          timeoutTimer?.cancel();
           if (!completer.isCompleted) {
             completer.complete(hostMap.values.toList());
           }
@@ -167,7 +171,7 @@ class NetworkDiscoveryService {
         cancelOnError: true,
       );
 
-      Timer(timeout, () {
+      timeoutTimer = Timer(timeout, () {
         subscription.cancel();
         if (!completer.isCompleted) {
           completer.complete(hostMap.values.toList());
@@ -221,23 +225,28 @@ class NetworkDiscoveryService {
       }
     }
 
-    for (var i = 0; i < allUrls.length; i += 20) {
-      final end = (i + 20 < allUrls.length) ? i + 20 : allUrls.length;
-      final batch = allUrls.sublist(i, end);
-      await Future.wait(batch.map((url) =>
-        http.get(Uri.parse(url)).timeout(timeout).then((res) {
-          if (res.statusCode == 200) {
-            final data = jsonDecode(res.body);
-            if (data['status'] == 'ok' && data['service'] == 'anyremote') {
-              final uri = Uri.parse(url);
-              final wsUrl = 'ws://${uri.host}:$port';
-              if (!activeHosts.contains(wsUrl)) {
-                activeHosts.add(wsUrl);
+    final client = http.Client();
+    try {
+      for (var i = 0; i < allUrls.length; i += 20) {
+        final end = (i + 20 < allUrls.length) ? i + 20 : allUrls.length;
+        final batch = allUrls.sublist(i, end);
+        await Future.wait(batch.map((url) =>
+          client.get(Uri.parse(url)).timeout(timeout).then((res) {
+            if (res.statusCode == 200) {
+              final data = jsonDecode(res.body);
+              if (data['status'] == 'ok' && data['service'] == 'anyremote') {
+                final uri = Uri.parse(url);
+                final wsUrl = 'ws://${uri.host}:$port';
+                if (!activeHosts.contains(wsUrl)) {
+                  activeHosts.add(wsUrl);
+                }
               }
             }
-          }
-        }).catchError((_) {})
-      ));
+          }).catchError((_) {})
+        ));
+      }
+    } finally {
+      client.close();
     }
     return activeHosts;
   }

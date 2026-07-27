@@ -25,10 +25,18 @@ class InputHandler:
         self._mouse_pressed = False
 
     def release_stuck_buttons(self):
-        if self._mouse_pressed and pyautogui:
-            pyautogui.mouseUp()
-            self._mouse_pressed = False
-
+        if pyautogui:
+            try:
+                pyautogui.mouseUp(button='left')
+                pyautogui.mouseUp(button='right')
+                pyautogui.mouseUp(button='middle')
+                pyautogui.keyUp('ctrl')
+                pyautogui.keyUp('alt')
+                pyautogui.keyUp('shift')
+                pyautogui.keyUp('win')
+            except Exception:
+                pass
+        self._mouse_pressed = False
 
     def process_command(self, cmd, capturer=None):
         if not pyautogui:
@@ -42,7 +50,10 @@ class InputHandler:
 
         try:
             if cmd_type == "move":
-                pyautogui.moveTo(abs_x, abs_y)
+                if self._mouse_pressed:
+                    pyautogui.dragTo(abs_x, abs_y, button='left')
+                else:
+                    pyautogui.moveTo(abs_x, abs_y)
             elif cmd_type == "click":
                 pyautogui.click(abs_x, abs_y)
             elif cmd_type == "rclick":
@@ -57,7 +68,7 @@ class InputHandler:
                 self._mouse_pressed = False
             elif cmd_type == "scroll":
                 dy = cmd.get("dy", 0)
-                pyautogui.scroll(-int(dy * 5), x=int(abs_x), y=int(abs_y))
+                pyautogui.scroll(-int(dy * 120), x=int(abs_x), y=int(abs_y))
             elif cmd_type == "key":
                 key_val = cmd.get("key")
                 if key_val:
@@ -70,8 +81,11 @@ class InputHandler:
                 text_str = cmd.get("text")
                 if text_str:
                     if pyperclip:
-                        pyperclip.copy(text_str)
-                        pyautogui.hotkey('ctrl', 'v')
+                        try:
+                            pyperclip.copy(text_str)
+                            pyautogui.hotkey('ctrl', 'v')
+                        except Exception:
+                            pyautogui.write(text_str)
                     else:
                         pyautogui.write(text_str)
         except Exception as e:
@@ -82,15 +96,34 @@ class InputHandler:
             if sys.platform == "win32":
                 import win32gui
                 try:
-                    rect = win32gui.GetWindowRect(capturer.selected_window_handle)
-                    left, top, right, bottom = rect
-                    w = right - left
-                    h = bottom - top
-                    abs_x = left + int(norm_x * w)
-                    abs_y = top + int(norm_y * h)
-                    return abs_x, abs_y
+                    hwnd = capturer.selected_window_handle
+                    if win32gui.IsWindow(hwnd) and not win32gui.IsIconic(hwnd):
+                        client_rect = win32gui.GetClientRect(hwnd)
+                        top_left = win32gui.ClientToScreen(hwnd, (0, 0))
+                        left, top = top_left
+                        w = client_rect[2] - client_rect[0]
+                        h = client_rect[3] - client_rect[1]
+                        if w > 0 and h > 0:
+                            abs_x = left + int(norm_x * w)
+                            abs_y = top + int(norm_y * h)
+                            return abs_x, abs_y
                 except Exception:
                     pass
+
+        if sys.platform == "win32":
+            try:
+                import win32api
+                import win32con
+                vx = win32api.GetSystemMetrics(win32con.SM_XVIRTUALSCREEN)
+                vy = win32api.GetSystemMetrics(win32con.SM_YVIRTUALSCREEN)
+                vw = win32api.GetSystemMetrics(win32con.SM_CXVIRTUALSCREEN)
+                vh = win32api.GetSystemMetrics(win32con.SM_CYVIRTUALSCREEN)
+                if vw > 0 and vh > 0:
+                    abs_x = vx + int(norm_x * vw)
+                    abs_y = vy + int(norm_y * vh)
+                    return abs_x, abs_y
+            except Exception:
+                pass
 
         screen_w, screen_h = pyautogui.size() if pyautogui else (1920, 1080)
         abs_x = int(norm_x * screen_w)

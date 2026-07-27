@@ -195,6 +195,10 @@ class AnyRemoteHostGUI:
         if self.loop:
             self.loop.call_soon_threadsafe(self.loop.stop)
 
+    def on_close(self):
+        self.stop_agent()
+        self.root.destroy()
+
     def _on_agent_stopped(self):
         """Called on the main thread when the agent loop ends."""
         self.is_running = False
@@ -247,6 +251,7 @@ class AnyRemoteHostGUI:
 def main_gui():
     root = tk.Tk()
     app = AnyRemoteHostGUI(root)
+    root.protocol("WM_DELETE_WINDOW", app.on_close)
     root.mainloop()
 
 

@@ -95,6 +95,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
       DeviceOrientation.landscapeRight,
     ]);
     _remoteService.disconnect();
+    _remoteService.dispose();
     super.dispose();
   }
 
@@ -275,6 +276,32 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
     double normX = (localPosition.dx / canvasSize.width).clamp(0.0, 1.0);
     double normY = (localPosition.dy / canvasSize.height).clamp(0.0, 1.0);
 
+    final res = _remoteService.currentResolution;
+    if (_fitMode == BoxFit.contain && res != null && res['width'] != null && res['height'] != null) {
+      double hostW = (res['width'] as num).toDouble();
+      double hostH = (res['height'] as num).toDouble();
+      if (hostW > 0 && hostH > 0) {
+        double canvasAspect = canvasSize.width / canvasSize.height;
+        double hostAspect = hostW / hostH;
+
+        double renderW = canvasSize.width;
+        double renderH = canvasSize.height;
+        double offsetX = 0.0;
+        double offsetY = 0.0;
+
+        if (canvasAspect > hostAspect) {
+          renderW = canvasSize.height * hostAspect;
+          offsetX = (canvasSize.width - renderW) / 2.0;
+        } else {
+          renderH = canvasSize.width / hostAspect;
+          offsetY = (canvasSize.height - renderH) / 2.0;
+        }
+
+        normX = ((localPosition.dx - offsetX) / renderW).clamp(0.0, 1.0);
+        normY = ((localPosition.dy - offsetY) / renderH).clamp(0.0, 1.0);
+      }
+    }
+
     final payload = {
       "type": type,
       "x": normX,
@@ -377,7 +404,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    '?첒 Windows Manager (Select Window)',
+                    '🪟 Windows Manager (Select Window)',
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   IconButton(
@@ -462,7 +489,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                '?숋툘 Display Resolution Control (Windows)',
+                '🖥️ Display Resolution Control (Windows)',
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 8),
@@ -482,7 +509,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                   ),
                   icon: const Icon(Icons.aspect_ratio_rounded, color: Colors.white),
                   label: Text(
-                    '?벑 Fit to Mobile Resolution (${screenSize.width.toInt()} x ${screenSize.height.toInt()})',
+                    '📱 Fit to Mobile Resolution (${screenSize.width.toInt()} x ${screenSize.height.toInt()})',
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                   onPressed: () {
@@ -553,7 +580,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                       Icon(Icons.keyboard_rounded, color: Color(0xFF38BDF8)),
                       SizedBox(width: 8),
                       Text(
-                        '?⑨툘 Virtual Keyboard & Windows Shortcuts',
+                        '⌨️ Virtual Keyboard & Shortcuts',
                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                     ],
@@ -607,27 +634,27 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                 ],
               ),
               const SizedBox(height: 16),
-              const Text('?? Quick Windows Key Shortcuts:', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+              const Text('⚡ Quick Windows Key Shortcuts:', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
 
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _shortcutChip('?뮲 Win + D', 'win_d'),
-                  _shortcutChip('?봽 Alt + Tab', 'alt_tab'),
-                  _shortcutChip('?⑼툘 Enter', 'enter'),
-                  _shortcutChip('??Backspace', 'backspace'),
-                  _shortcutChip('??Tab', 'tab'),
-                  _shortcutChip('??Esc', 'esc'),
-                  _shortcutChip('?⑼툘 Ctrl + Z', 'ctrl_z'),
-                  _shortcutChip('?뱥 Ctrl + C', 'ctrl_c'),
-                  _shortcutChip('?뱦 Ctrl + V', 'ctrl_v'),
-                  _shortcutChip('?첒 Windows Key', 'win'),
-                  _shortcutChip('燧놅툘 Up', 'up'),
-                  _shortcutChip('燧뉛툘 Down', 'down'),
-                  _shortcutChip('燧낉툘 Left', 'left'),
-                  _shortcutChip('?∽툘 Right', 'right'),
+                  _shortcutChip('💻 Win + D', 'win_d'),
+                  _shortcutChip('🔄 Alt + Tab', 'alt_tab'),
+                  _shortcutChip('↵ Enter', 'enter'),
+                  _shortcutChip('⌫ Backspace', 'backspace'),
+                  _shortcutChip('⇥ Tab', 'tab'),
+                  _shortcutChip('⎋ Esc', 'esc'),
+                  _shortcutChip('↩ Ctrl + Z', 'ctrl_z'),
+                  _shortcutChip('📋 Ctrl + C', 'ctrl_c'),
+                  _shortcutChip('📌 Ctrl + V', 'ctrl_v'),
+                  _shortcutChip('🪟 Windows Key', 'win'),
+                  _shortcutChip('⬆️ Up', 'up'),
+                  _shortcutChip('⬇️ Down', 'down'),
+                  _shortcutChip('⬅️ Left', 'left'),
+                  _shortcutChip('➡️ Right', 'right'),
                 ],
               ),
             ],
@@ -674,7 +701,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                           Icon(Icons.bug_report_rounded, color: Color(0xFF38BDF8)),
                           SizedBox(width: 8),
                           Text(
-                            '?맀 Diagnostics & Connection HUD',
+                            '📊 Diagnostics & Connection HUD',
                             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                           ),
                         ],
@@ -711,7 +738,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('?뱶 Real-time Connection Logs', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
+                      const Text('📜 Real-time Connection Logs', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
                       Row(
                         children: [
                           TextButton.icon(
@@ -843,7 +870,9 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                         onScaleStart: (details) {
                           _scaleAtStart = _viewScale;
                           _isScaling = details.pointerCount > 1;
-                          if (!_isScaling && _isDragMode) {
+                          if (_isScaling) {
+                            _touchOpacity = 0.0;
+                          } else if (_isDragMode) {
                             _isDraggingMouse = true;
                             final localPos = _transformationController.toScene(details.localFocalPoint);
                             final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
@@ -853,19 +882,34 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                           }
                         },
                         onScaleUpdate: (details) {
-                          if (details.pointerCount > 1 || _isScaling) {
+                          if (details.pointerCount > 1) {
+                            if (!_isScaling) {
+                              // Transition to 2-finger zoom mode seamlessly
+                              _isScaling = true;
+                              _scaleAtStart = _viewScale;
+                              _touchOpacity = 0.0;
+                              if (_isDraggingMouse) {
+                                _isDraggingMouse = false;
+                                final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+                                if (renderBox != null) {
+                                  _sendNormalizedInput("mouseup", Offset.zero, renderBox.size);
+                                }
+                              }
+                            }
+
                             // ── 2 Fingers: Pinch to Zoom & Smooth Pan ─────
-                            _isScaling = true;
                             final delta = details.focalPointDelta;
                             final focal = details.localFocalPoint;
 
                             final newScale = (_scaleAtStart * details.scale).clamp(1.0, 4.0);
                             final scaleChange = newScale / _viewScale;
 
-                            final m = _transformationController.value;
+                            final m = _transformationController.value.clone();
 
                             // Apply smooth pan
-                            m.translate(delta.dx / _viewScale, delta.dy / _viewScale);
+                            if (delta.dx != 0 || delta.dy != 0) {
+                              m.translate(delta.dx / _viewScale, delta.dy / _viewScale);
+                            }
 
                             // Apply zoom centered on pinch focal point
                             if ((scaleChange - 1.0).abs() > 0.001) {
@@ -1332,12 +1376,12 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                         ),
                         Text(
                           service.isBackground
-                              ? '?몌툘 Background Mode (Data Saver)'
+                              ? '🌙 Background Mode (Data Saver)'
                               : (service.isConnected
-                                  ? '?윟 Connected (${service.activeUrl ?? "Live"})'
+                                  ? '🟢 Connected (${service.activeUrl ?? "Live"})'
                                   : (service.connectionState == RemoteConnectionState.reconnecting
-                                      ? '?윝 Reconnecting (${service.reconnectAttempts}/${RemoteService.maxReconnectAttempts})...'
-                                      : '?뵶 ${service.connectionState.name.toUpperCase()}')),
+                                      ? '🟡 Reconnecting (${service.reconnectAttempts}/${RemoteService.maxReconnectAttempts})...'
+                                      : '🔴 ${service.connectionState.name.toUpperCase()}')),
                           style: TextStyle(
                             fontSize: 11,
                             color: service.isBackground
@@ -1349,7 +1393,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                     ),
                     actions: [
                       IconButton(
-                        tooltip: '?맀 Debug HUD',
+                        tooltip: '📊 Debug HUD',
                         icon: const Icon(Icons.bug_report_rounded, color: Color(0xFF38BDF8)),
                         onPressed: _showDebugModal,
                       ),

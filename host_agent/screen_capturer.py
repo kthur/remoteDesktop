@@ -33,6 +33,16 @@ if sys.platform == "win32":
         import pygetwindow as gw
     except ImportError:
         gw = None
+
+    try:
+        import ctypes
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    except Exception:
+        try:
+            import ctypes
+            ctypes.windll.user32.SetProcessDPIAware()
+        except Exception:
+            pass
 else:
     gw = None
 
@@ -43,12 +53,19 @@ class ScreenCapturer:
         self.is_full_desktop = True
         self.is_background = False  # App background state flag
 
+    def close(self):
+        if self.sct:
+            try:
+                self.sct.close()
+            except Exception:
+                pass
+
     def list_windows(self):
         """Enumerates visible active windows with title and position"""
         windows = []
         mon_w, mon_h = 1920, 1080
         if self.sct and self.sct.monitors:
-            monitor = self.sct.monitors[1] if len(self.sct.monitors) > 1 else self.sct.monitors[0]
+            monitor = self.sct.monitors[0]
             mon_w, mon_h = monitor["width"], monitor["height"]
 
         windows.append({
@@ -102,8 +119,7 @@ class ScreenCapturer:
             try:
                 bbox = None
                 if self.is_full_desktop or not self.selected_window_handle:
-                    monitor = self.sct.monitors[1] if len(self.sct.monitors) > 1 else self.sct.monitors[0]
-                    bbox = monitor
+                    bbox = self.sct.monitors[0]
                 else:
                     if sys.platform == "win32" and self.selected_window_handle and win32gui:
                         try:
@@ -114,9 +130,9 @@ class ScreenCapturer:
                             bbox = {"top": top, "left": left, "width": w, "height": h}
                         except Exception as e:
                             print(f"Window capture error: {e}")
-                            bbox = self.sct.monitors[1] if len(self.sct.monitors) > 1 else self.sct.monitors[0]
+                            bbox = self.sct.monitors[0]
                     else:
-                        bbox = self.sct.monitors[1] if len(self.sct.monitors) > 1 else self.sct.monitors[0]
+                        bbox = self.sct.monitors[0]
 
                 sct_img = self.sct.grab(bbox)
                 if np is None:
