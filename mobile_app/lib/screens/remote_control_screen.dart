@@ -718,9 +718,9 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                             final scaleChange = newScale / _viewScale;
 
                             final newM = Matrix4.identity()
-                              ..translateByDouble(focal.dx, focal.dy, 0.0, 1.0)
-                              ..scaleByDouble(scaleChange, scaleChange, 1.0, 1.0)
-                              ..translateByDouble(-focal.dx, -focal.dy, 0.0, 1.0)
+                              ..translate(focal.dx, focal.dy)
+                              ..scale(scaleChange)
+                              ..translate(-focal.dx, -focal.dy)
                               ..multiply(oldM);
 
                             _transformationController.value = newM;
