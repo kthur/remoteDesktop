@@ -44,6 +44,11 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
   bool _showZoomBadge = false;   // show zoom % badge during pinch
   Timer? _zoomBadgeTimer;
 
+  // ── Control Modes (Drag / Scroll) ───────────────────────────
+  bool _isDragMode = false;      // Drag Mode: 1-finger holds left mouse button
+  bool _isScrollMode = false;    // Scroll Mode: 1-finger drag sends mouse wheel scroll
+  bool _isDraggingMouse = false; // Currently holding mouse button down
+
   @override
   void initState() {
     super.initState();
@@ -142,6 +147,17 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
     _transformationController.value = newM;
     setState(() => _viewScale = newScale);
     _showZoomIndicator();
+  }
+
+  void _sendNormalizedScroll(Offset localPos, Size widgetSize, double dy) {
+    final normX = (localPos.dx / widgetSize.width).clamp(0.0, 1.0);
+    final normY = (localPos.dy / widgetSize.height).clamp(0.0, 1.0);
+    _remoteService.sendInputEvent({
+      "type": "scroll",
+      "x": normX,
+      "y": normY,
+      "dy": dy,
+    });
   }
 
   @override
@@ -747,6 +763,14 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                         onScaleStart: (details) {
                           _scaleAtStart = _viewScale;
                           _isScaling = details.pointerCount > 1;
+                          if (!_isScaling && _isDragMode) {
+                            _isDraggingMouse = true;
+                            final localPos = _transformationController.toScene(details.localFocalPoint);
+                            final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+                            if (renderBox != null) {
+                              _sendNormalizedInput("mousedown", localPos, renderBox.size);
+                            }
+                          }
                         },
                         onScaleUpdate: (details) {
                           if (details.pointerCount > 1 || _isScaling) {
@@ -769,18 +793,31 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                             setState(() => _viewScale = newScale);
                             _showZoomIndicator();
                           } else if (!_isScaling) {
-                            // ── Single finger: move PC mouse ───────────────
+                            // ── Single finger: move PC mouse / Drag / Scroll ─
                             final localPos = _transformationController.toScene(details.localFocalPoint);
-                            _triggerTouchVisual(localPos);
                             final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
                             if (renderBox != null) {
-                              _sendNormalizedInput("move", localPos, renderBox.size);
+                              if (_isScrollMode) {
+                                final dy = details.focalPointDelta.dy;
+                                if (dy.abs() > 0.3) {
+                                  _sendNormalizedScroll(localPos, renderBox.size, -dy);
+                                }
+                              } else {
+                                _triggerTouchVisual(localPos);
+                                _sendNormalizedInput("move", localPos, renderBox.size);
+                              }
                             }
                           }
                         },
-                        onScaleEnd: (_) {
+                        onScaleEnd: (details) {
+                          if (_isDraggingMouse) {
+                            _isDraggingMouse = false;
+                            final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+                            if (renderBox != null) {
+                              _sendNormalizedInput("mouseup", Offset.zero, renderBox.size);
+                            }
+                          }
                           _isScaling = false;
-                          // Snap back to 1× if almost there
                           if (_viewScale < 1.05) _resetZoom();
                         },
                         child: Container(
@@ -982,7 +1019,49 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Tap: Left Click | Double-Tap: Toggle Menu | Long Press: Right Click | Pinch: Zoom'),
+                                content: Text('Tap: Click | Long Press: RClick | Pinch: Zoom | Mode: Drag & Scroll supported'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                        ),
+                        // ── Drag Mode Toggle Button ──────────────────────
+                        IconButton(
+                          tooltip: _isDragMode ? 'Drag Mode (ON)' : 'Drag Mode (OFF)',
+                          icon: Icon(
+                            Icons.drag_indicator_rounded,
+                            color: _isDragMode ? Colors.amberAccent : Colors.white70,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isDragMode = !_isDragMode;
+                              if (_isDragMode) _isScrollMode = false;
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(_isDragMode ? '🖐️ Drag Mode Enabled (Hold Left Button)' : 'Normal Touch Mode'),
+                                duration: const Duration(milliseconds: 900),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                        ),
+                        // ── Scroll Mode Toggle Button ────────────────────
+                        IconButton(
+                          tooltip: _isScrollMode ? 'Scroll Mode (ON)' : 'Scroll Mode (OFF)',
+                          icon: Icon(
+                            Icons.swap_vert_rounded,
+                            color: _isScrollMode ? Colors.amberAccent : Colors.white70,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isScrollMode = !_isScrollMode;
+                              if (_isScrollMode) _isDragMode = false;
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(_isScrollMode ? '📜 Scroll Mode Enabled (Swipe to Scroll)' : 'Normal Touch Mode'),
+                                duration: const Duration(milliseconds: 900),
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );

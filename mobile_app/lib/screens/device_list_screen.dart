@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import '../services/network_discovery_service.dart';
 import 'remote_control_screen.dart';
 import 'login_screen.dart';
+import 'onboarding_screen.dart';
 
 class DeviceListScreen extends StatefulWidget {
   const DeviceListScreen({Key? key}) : super(key: key);
@@ -408,7 +409,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                           decoration: BoxDecoration(
                             color: const Color(0xFF0F172A),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFF38BDF8).withOpacity(0.3)),
+                            border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.3)),
                           ),
                           child: Text(
                             url.length > 28 ? '${url.substring(0, 25)}...' : url,
@@ -474,6 +475,15 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF38BDF8)),
+            tooltip: 'User Guide & Onboarding',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.amberAccent),
             tooltip: 'Scan Host PC QR Code',
