@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -51,6 +52,9 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
   bool _isOverlayCollapsed = false; // Floating Bar UX: collapse into tiny trigger pill
   bool _overlayAtTop = false;     // Floating Bar UX: toggle position (Top vs Bottom)
 
+  // ── Physical Keyboard & Mouse ────────────────────────────────
+  final FocusNode _keyboardFocusNode = FocusNode();
+
   @override
   void initState() {
     super.initState();
@@ -81,6 +85,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
     _touchFadeTimer?.cancel();
     _zoomBadgeTimer?.cancel();
     _transformationController.dispose();
+    _keyboardFocusNode.dispose();
     WidgetsBinding.instance.removeObserver(this);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([
@@ -160,6 +165,79 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
       "y": normY,
       "dy": dy,
     });
+  }
+
+  // ── Physical Keyboard Key Handler ─────────────────────────────
+  KeyEventResult _handlePhysicalKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    final key = event.logicalKey;
+    final isCtrl = HardwareKeyboard.instance.isControlPressed;
+    final isAlt = HardwareKeyboard.instance.isAltPressed;
+    final isMeta = HardwareKeyboard.instance.isMetaPressed;
+
+    if (isCtrl && key == LogicalKeyboardKey.keyC) {
+      _remoteService.sendInputEvent({"type": "shortcut", "action": "ctrl_c"});
+      return KeyEventResult.handled;
+    }
+    if (isCtrl && key == LogicalKeyboardKey.keyV) {
+      _remoteService.sendInputEvent({"type": "shortcut", "action": "ctrl_v"});
+      return KeyEventResult.handled;
+    }
+    if (isCtrl && key == LogicalKeyboardKey.keyZ) {
+      _remoteService.sendInputEvent({"type": "shortcut", "action": "ctrl_z"});
+      return KeyEventResult.handled;
+    }
+    if (isAlt && key == LogicalKeyboardKey.tab) {
+      _remoteService.sendInputEvent({"type": "shortcut", "action": "alt_tab"});
+      return KeyEventResult.handled;
+    }
+    if (isMeta) {
+      _remoteService.sendInputEvent({"type": "shortcut", "action": "win"});
+      return KeyEventResult.handled;
+    }
+
+    final keyMap = <LogicalKeyboardKey, String>{
+      LogicalKeyboardKey.enter: "enter",
+      LogicalKeyboardKey.numpadEnter: "enter",
+      LogicalKeyboardKey.backspace: "backspace",
+      LogicalKeyboardKey.tab: "tab",
+      LogicalKeyboardKey.space: "space",
+      LogicalKeyboardKey.escape: "esc",
+      LogicalKeyboardKey.arrowUp: "up",
+      LogicalKeyboardKey.arrowDown: "down",
+      LogicalKeyboardKey.arrowLeft: "left",
+      LogicalKeyboardKey.arrowRight: "right",
+      LogicalKeyboardKey.delete: "delete",
+      LogicalKeyboardKey.home: "home",
+      LogicalKeyboardKey.end: "end",
+      LogicalKeyboardKey.pageUp: "pageup",
+      LogicalKeyboardKey.pageDown: "pagedown",
+      LogicalKeyboardKey.f1: "f1",
+      LogicalKeyboardKey.f2: "f2",
+      LogicalKeyboardKey.f3: "f3",
+      LogicalKeyboardKey.f4: "f4",
+      LogicalKeyboardKey.f5: "f5",
+      LogicalKeyboardKey.f6: "f6",
+      LogicalKeyboardKey.f7: "f7",
+      LogicalKeyboardKey.f8: "f8",
+      LogicalKeyboardKey.f9: "f9",
+      LogicalKeyboardKey.f10: "f10",
+      LogicalKeyboardKey.f11: "f11",
+      LogicalKeyboardKey.f12: "f12",
+    };
+
+    if (keyMap.containsKey(key)) {
+      _remoteService.sendInputEvent({"type": "key", "key": keyMap[key]});
+      return KeyEventResult.handled;
+    }
+
+    if (event.character != null && event.character!.isNotEmpty) {
+      _remoteService.sendInputEvent({"type": "text", "text": event.character});
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
   }
 
   @override
@@ -1292,11 +1370,67 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                       ),
                     ],
                   ),
-            body: _isFullscreen
-                ? bodyContent
-                : SafeArea(
-                    child: bodyContent,
-                  ),
+            body: Focus(
+              focusNode: _keyboardFocusNode,
+              autofocus: true,
+              onKeyEvent: _handlePhysicalKeyEvent,
+              child: Listener(
+                onPointerHover: (event) {
+                  if (event.kind == PointerDeviceKind.mouse) {
+                    final localPos = _transformationController.toScene(event.localPosition);
+                    final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+                    if (renderBox != null) {
+                      _sendNormalizedInput("move", localPos, renderBox.size);
+                    }
+                  }
+                },
+                onPointerDown: (event) {
+                  if (event.kind == PointerDeviceKind.mouse) {
+                    final localPos = _transformationController.toScene(event.localPosition);
+                    final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+                    if (renderBox != null) {
+                      if (event.buttons == kSecondaryMouseButton) {
+                        _triggerTouchVisual(localPos, isRightClick: true);
+                        _sendNormalizedInput("rclick", localPos, renderBox.size);
+                      } else if (event.buttons == kPrimaryMouseButton) {
+                        _triggerTouchVisual(localPos);
+                        _sendNormalizedInput("mousedown", localPos, renderBox.size);
+                        _isDraggingMouse = true;
+                      } else if (event.buttons == kMiddleMouseButton) {
+                        _sendNormalizedInput("dclick", localPos, renderBox.size);
+                      }
+                    }
+                  }
+                },
+                onPointerUp: (event) {
+                  if (event.kind == PointerDeviceKind.mouse && _isDraggingMouse) {
+                    _isDraggingMouse = false;
+                    final localPos = _transformationController.toScene(event.localPosition);
+                    final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+                    if (renderBox != null) {
+                      _sendNormalizedInput("mouseup", localPos, renderBox.size);
+                    }
+                  }
+                },
+                onPointerSignal: (event) {
+                  if (event is PointerScrollEvent) {
+                    final localPos = _transformationController.toScene(event.localPosition);
+                    final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+                    if (renderBox != null) {
+                      _sendNormalizedScroll(localPos, renderBox.size, event.scrollDelta.dy / 2);
+                    }
+                  }
+                },
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.precise,
+                  child: _isFullscreen
+                      ? bodyContent
+                      : SafeArea(
+                          child: bodyContent,
+                        ),
+                ),
+              ),
+            ),
           );
         },
       ),
