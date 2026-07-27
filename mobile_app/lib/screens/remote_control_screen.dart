@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -37,6 +37,13 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
   double _touchOpacity = 0.0;
   Timer? _touchFadeTimer;
 
+  // ── Pinch-to-Zoom state ──────────────────────────────────────
+  double _viewScale = 1.0;       // current zoom level (1.0 = no zoom)
+  double _scaleAtStart = 1.0;    // scale when pinch started
+  bool _isScaling = false;       // true while 2-finger pinch is active
+  bool _showZoomBadge = false;   // show zoom % badge during pinch
+  Timer? _zoomBadgeTimer;
+
   @override
   void initState() {
     super.initState();
@@ -65,6 +72,8 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
   @override
   void dispose() {
     _touchFadeTimer?.cancel();
+    _zoomBadgeTimer?.cancel();
+    _transformationController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([
@@ -75,6 +84,21 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
     ]);
     _remoteService.disconnect();
     super.dispose();
+  }
+
+  void _resetZoom() {
+    setState(() {
+      _viewScale = 1.0;
+    });
+    _transformationController.value = Matrix4.identity();
+  }
+
+  void _showZoomIndicator() {
+    _zoomBadgeTimer?.cancel();
+    setState(() => _showZoomBadge = true);
+    _zoomBadgeTimer = Timer(const Duration(milliseconds: 1200), () {
+      if (mounted) setState(() => _showZoomBadge = false);
+    });
   }
 
   @override
@@ -647,12 +671,17 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                     return RepaintBoundary(
                       child: GestureDetector(
                         key: _canvasKey,
+                        // ── Double Tap: toggle UI / reset zoom ─────────────
                         onDoubleTap: () {
-                          setState(() {
-                            _showOverlay = !_showOverlay;
-                          });
+                          if (_viewScale > 1.0) {
+                            _resetZoom();       // double-tap while zoomed → reset
+                          } else {
+                            setState(() => _showOverlay = !_showOverlay);
+                          }
                         },
+                        // ── Single Tap → PC mouse click ────────────────────
                         onTapUp: (details) {
+                          if (_isScaling) return;
                           final localPos = _transformationController.toScene(details.localPosition);
                           _triggerTouchVisual(localPos);
                           final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
@@ -660,6 +689,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                             _sendNormalizedInput("click", localPos, renderBox.size);
                           }
                         },
+                        // ── Long Press → PC right-click ────────────────────
                         onLongPressStart: (details) {
                           final localPos = _transformationController.toScene(details.localPosition);
                           _triggerTouchVisual(localPos, isRightClick: true);
@@ -668,23 +698,61 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                             _sendNormalizedInput("rclick", localPos, renderBox.size);
                           }
                         },
-                        onPanUpdate: (details) {
-                          final localPos = _transformationController.toScene(details.localPosition);
-                          _triggerTouchVisual(localPos);
-                          final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
-                          if (renderBox != null) {
-                            _sendNormalizedInput("move", localPos, renderBox.size);
+                        // ── Scale (replaces onPanUpdate) ───────────────────
+                        // 1 finger → mouse move on PC
+                        // 2 fingers → pinch-to-zoom (local viewport)
+                        onScaleStart: (details) {
+                          _scaleAtStart = _viewScale;
+                          _isScaling = details.pointerCount > 1;
+                        },
+                        onScaleUpdate: (details) {
+                          if (details.pointerCount > 1 || _isScaling) {
+                            // ── Pinch to zoom ──────────────────────────────
+                            _isScaling = true;
+                            final newScale = (_scaleAtStart * details.scale).clamp(1.0, 4.0);
+                            if ((newScale - _viewScale).abs() < 0.001) return;
+
+                            // Apply zoom centered on the pinch focal point
+                            final focal = details.localFocalPoint;
+                            final oldM = _transformationController.value.clone();
+                            final scaleChange = newScale / _viewScale;
+
+                            final newM = Matrix4.identity()
+                              ..translateByDouble(focal.dx, focal.dy, 0.0, 1.0)
+                              ..scaleByDouble(scaleChange, scaleChange, 1.0, 1.0)
+                              ..translateByDouble(-focal.dx, -focal.dy, 0.0, 1.0)
+                              ..multiply(oldM);
+
+                            _transformationController.value = newM;
+                            setState(() => _viewScale = newScale);
+                            _showZoomIndicator();
+                          } else if (!_isScaling) {
+                            // ── Single finger: move PC mouse ───────────────
+                            final localPos = _transformationController.toScene(details.localFocalPoint);
+                            _triggerTouchVisual(localPos);
+                            final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+                            if (renderBox != null) {
+                              _sendNormalizedInput("move", localPos, renderBox.size);
+                            }
                           }
+                        },
+                        onScaleEnd: (_) {
+                          _isScaling = false;
+                          // Snap back to 1× if almost there
+                          if (_viewScale < 1.05) _resetZoom();
                         },
                         child: Container(
                           color: Colors.black,
-                          child: InteractiveViewer(
-                            transformationController: _transformationController,
-                            minScale: 1.0,
-                            maxScale: 4.0,
-                            child: Stack(
-                              children: [
-                                Center(
+                          child: Stack(
+                            children: [
+                              // ── Screen Frame (transformed) ───────────────
+                              InteractiveViewer(
+                                transformationController: _transformationController,
+                                panEnabled: false,   // we handle pan ourselves
+                                scaleEnabled: false, // we handle scale ourselves
+                                minScale: 0.5,
+                                maxScale: 4.0,
+                                child: Center(
                                   child: Image.memory(
                                     frameBytes,
                                     gaplessPlayback: true,
@@ -697,36 +765,74 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                                     },
                                   ),
                                 ),
+                              ),
 
-                                // Visual Animated Touch Ripple Pointer
-                                if (_touchPos != null && _touchOpacity > 0)
-                                  Positioned(
-                                    left: _touchPos!.dx - 22,
-                                    top: _touchPos!.dy - 22,
-                                    child: IgnorePointer(
-                                      child: AnimatedOpacity(
-                                        opacity: _touchOpacity,
-                                        duration: const Duration(milliseconds: 300),
-                                        child: Container(
-                                          width: 44,
-                                          height: 44,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: const Color(0xFF38BDF8).withValues(alpha: 0.35),
-                                            border: Border.all(color: Colors.white, width: 2.5),
-                                            boxShadow: const [
-                                              BoxShadow(color: Color(0xFF38BDF8), blurRadius: 16, spreadRadius: 2)
-                                            ],
-                                          ),
-                                          child: const Center(
-                                            child: Icon(Icons.touch_app_rounded, color: Colors.white, size: 20),
-                                          ),
+                              // ── Touch Ripple Pointer ─────────────────────
+                              if (_touchPos != null && _touchOpacity > 0)
+                                Positioned(
+                                  left: _touchPos!.dx - 22,
+                                  top: _touchPos!.dy - 22,
+                                  child: IgnorePointer(
+                                    child: AnimatedOpacity(
+                                      opacity: _touchOpacity,
+                                      duration: const Duration(milliseconds: 300),
+                                      child: Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: const Color(0xFF38BDF8).withValues(alpha: 0.35),
+                                          border: Border.all(color: Colors.white, width: 2.5),
+                                          boxShadow: const [
+                                            BoxShadow(color: Color(0xFF38BDF8), blurRadius: 16, spreadRadius: 2)
+                                          ],
+                                        ),
+                                        child: const Center(
+                                          child: Icon(Icons.touch_app_rounded, color: Colors.white, size: 20),
                                         ),
                                       ),
                                     ),
                                   ),
-                              ],
-                            ),
+                                ),
+
+                              // ── Zoom Level Badge ─────────────────────────
+                              if (_showZoomBadge)
+                                Positioned(
+                                  top: 14,
+                                  right: 14,
+                                  child: AnimatedOpacity(
+                                    opacity: _showZoomBadge ? 1.0 : 0.0,
+                                    duration: const Duration(milliseconds: 200),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withValues(alpha: 0.72),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: const Color(0xFF38BDF8).withValues(alpha: 0.7),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.zoom_in_rounded, color: Color(0xFF38BDF8), size: 14),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '${(_viewScale * 100).round()}%',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),
