@@ -74,7 +74,10 @@ class RemoteService extends ChangeNotifier {
   List<Map<String, dynamic>> get openWindows => _openWindows;
   List<Map<String, dynamic>> _openMonitors = [];
   int _selectedMonitorIndex = 0;
+  int _lastPingMs = 12;
+  DateTime? _lastPingSentTime;
 
+  int get lastPingMs => _lastPingMs;
   List<Map<String, dynamic>> get openMonitors => _openMonitors;
   int get selectedMonitorIndex => _selectedMonitorIndex;
   Map<String, dynamic>? get currentResolution => _currentResolution;
@@ -429,10 +432,9 @@ class RemoteService extends ChangeNotifier {
         _startPingTimer();
         _startFpsTimer();
 
-        // Update targetDeviceId with the server-resolved actual device ID
-        final resolvedId = data["resolved_device_id"];
-        if (resolvedId != null && resolvedId.toString().isNotEmpty) {
-          _targetDeviceId = resolvedId.toString();
+        logDiagnostic("Registered client context for device: $_targetDeviceId");
+        if (data["target_device_id"] != null) {
+          _targetDeviceId = data["target_device_id"];
           logDiagnostic("Server resolved device ID: $_targetDeviceId");
         }
 
@@ -440,6 +442,10 @@ class RemoteService extends ChangeNotifier {
         _reSynchronizeSessionState();
       } else if (msgType == "pong") {
         _lastPongReceived = DateTime.now();
+        if (_lastPingSentTime != null) {
+          _lastPingMs = DateTime.now().difference(_lastPingSentTime!).inMilliseconds;
+        }
+        notifyListeners();
       } else if (msgType == "screen_frame") {
         _lastPongReceived = DateTime.now();
         if (!_isBackground && data["frame"] != null) {
@@ -508,6 +514,7 @@ class RemoteService extends ChangeNotifier {
     _stopPingTimer();
     _pingTimer = Timer.periodic(pingInterval, (timer) {
       if (_connectionState == RemoteConnectionState.connected) {
+        _lastPingSentTime = DateTime.now();
         _sendMsg({"type": "ping"});
 
         if (_lastPongReceived != null) {

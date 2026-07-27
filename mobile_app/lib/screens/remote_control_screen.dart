@@ -1611,50 +1611,95 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                         ),
                       ),
 
-              // Floating Zoom Controls (+ / - / Reset 1:1)
-              if (_showOverlay || _viewScale > 1.0)
-                Positioned(
-                  right: 16,
-                  bottom: _showOverlay ? 86 : 24,
+              // ── Always-on Mini FPS / Ping Latency HUD Chip ────────────────
+              Positioned(
+                top: _isFullscreen ? 12 : 8,
+                left: 16,
+                child: GestureDetector(
+                  onTap: _showDebugModal,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A).withValues(alpha: 0.88),
+                      color: Colors.black.withValues(alpha: 0.65),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: service.isConnected ? const Color(0xFF38BDF8).withValues(alpha: 0.6) : Colors.amberAccent,
+                        width: 1.0,
+                      ),
+                      boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 6)],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: service.isConnected ? Colors.greenAccent : Colors.amberAccent,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${service.currentFps.toStringAsFixed(1)} FPS | ${service.lastPingMs} ms',
+                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, fontFamily: 'monospace'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // ── Connection Loss / Reconnecting Large Overlay Card ──────────
+              if (!service.isConnected && !service.isBackground)
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 28),
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B).withValues(alpha: 0.95),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.5)),
-                      boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 8)],
+                      border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.5), width: 1.5),
+                      boxShadow: const [BoxShadow(color: Colors.black87, blurRadius: 20)],
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        IconButton(
-                          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                          padding: EdgeInsets.zero,
-                          icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
-                          onPressed: _zoomIn,
-                          tooltip: 'Zoom In (+)',
-                        ),
-                        InkWell(
-                          onTap: _resetZoom,
-                          borderRadius: BorderRadius.circular(12),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                            child: Text(
-                              '${(_viewScale * 100).round()}%',
-                              style: const TextStyle(
-                                color: Color(0xFF38BDF8),
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                        const SizedBox(
+                          width: 42,
+                          height: 42,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
                           ),
                         ),
-                        IconButton(
-                          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                          padding: EdgeInsets.zero,
-                          icon: const Icon(Icons.remove_rounded, color: Colors.white, size: 20),
-                          onPressed: _zoomOut,
-                          tooltip: 'Zoom Out (-)',
+                        const SizedBox(height: 16),
+                        Text(
+                          service.connectionState == RemoteConnectionState.reconnecting
+                              ? '🔌 PC 호스트 연결 탐색 및 재연결 중...'
+                              : '⚠️ 원격 연결 해제됨',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          service.connectionState == RemoteConnectionState.reconnecting
+                              ? '네트워크 재탐색 중입니다 (시도: ${service.reconnectAttempts}/${RemoteService.maxReconnectAttempts})'
+                              : (service.lastErrorMsg ?? '호스트 PC와 통신이 중단되었습니다. 다시 시도해 주세요.'),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                        const SizedBox(height: 18),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0284C7),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 18),
+                          label: const Text('⚡ 즉시 재연결 시도', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                          onPressed: () {
+                            service.ensureConnected();
+                          },
                         ),
                       ],
                     ),
