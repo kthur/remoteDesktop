@@ -53,6 +53,11 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
   bool _isOverlayCollapsed = false; // Floating Bar UX: collapse into tiny trigger pill
   bool _overlayAtTop = false;     // Floating Bar UX: toggle position (Top vs Bottom)
 
+  // ── Phase 1: Sticky Modifier Key States (Ctrl / Shift / Alt Hold) ──
+  bool _isCtrlHold = false;
+  bool _isShiftHold = false;
+  bool _isAltHold = false;
+
   // ── Physical Keyboard & Mouse ────────────────────────────────
   final FocusNode _keyboardFocusNode = FocusNode();
 
@@ -344,6 +349,9 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
       "type": type,
       "x": normX,
       "y": normY,
+      if (_isCtrlHold) "ctrl": true,
+      if (_isShiftHold) "shift": true,
+      if (_isAltHold) "alt": true,
       ...?extra
     };
     _remoteService.sendInputEvent(payload);
@@ -423,88 +431,236 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
   }
 
   void _showWindowSelectorMenu() {
-    final windows = _remoteService.openWindows;
+    _remoteService.requestWindowsList();
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: const Color(0xFF1E293B),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final activeWindows = _remoteService.openWindows;
+            final currentHandle = _remoteService.selectedWindowHandle;
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.75,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.window_rounded, color: Color(0xFF38BDF8)),
+                          SizedBox(width: 8),
+                          Text(
+                            '🪟 Windows 앱 선택 & 표시 모드',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF38BDF8)),
+                            tooltip: '윈도우 목록 새로고침',
+                            onPressed: () {
+                              _remoteService.requestWindowsList();
+                              Future.delayed(const Duration(milliseconds: 300), () {
+                                if (mounted) setModalState(() {});
+                              });
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded, color: Colors.white60),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
                   const Text(
-                    '🪟 Windows Manager (Select Window)',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                    '작업표시줄에 실행 중인 Windows 앱을 선택하면 해당 앱만 독립적으로 화면에 스트리밍됩니다.',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, color: Colors.white60),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              if (windows.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(
-                    child: Text(
-                      'No open windows reported by host.',
-                      style: TextStyle(color: Colors.white60),
+                  const SizedBox(height: 16),
+
+                  // ── MODE 1: PC Full Desktop Option ──────────────────────────
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: currentHandle == 0
+                          ? const Color(0xFF0284C7).withValues(alpha: 0.25)
+                          : const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: currentHandle == 0 ? const Color(0xFF38BDF8) : Colors.white10,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: ListTile(
+                      leading: const Icon(Icons.desktop_windows_rounded, color: Color(0xFF38BDF8), size: 28),
+                      title: const Text(
+                        '1. 🖥️ PC 전체 화면 (Full Desktop)',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      subtitle: const Text(
+                        'PC 모니터 전체 화면을 그대로 스트리밍합니다.',
+                        style: TextStyle(color: Colors.white60, fontSize: 11),
+                      ),
+                      trailing: currentHandle == 0
+                          ? const Icon(Icons.check_circle_rounded, color: Color(0xFF38BDF8))
+                          : null,
+                      onTap: () {
+                        _remoteService.selectWindow(0);
+                        Navigator.pop(context);
+                      },
                     ),
                   ),
-                )
-              else
-                Flexible(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: windows.length,
-                    itemBuilder: (context, index) {
-                      final win = windows[index];
-                      final handle = (win["handle"] as num?)?.toInt() ?? 0;
-                      final isSelected = handle == _remoteService.selectedWindowHandle;
 
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFF0284C7).withValues(alpha: 0.25) : Colors.white.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isSelected ? const Color(0xFF38BDF8) : Colors.white.withValues(alpha: 0.08),
-                          ),
-                        ),
-                        child: ListTile(
-                          leading: Icon(
-                            win["is_desktop"] == true ? Icons.desktop_windows_rounded : Icons.window_rounded,
-                            color: isSelected ? const Color(0xFF38BDF8) : Colors.white70,
-                          ),
-                          title: Text(
-                            win["title"] ?? "Window",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            ),
-                          ),
-                          trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: Color(0xFF38BDF8)) : null,
-                          onTap: () {
-                            _remoteService.selectWindow(handle);
-                            Navigator.pop(context);
-                          },
-                        ),
-                      );
-                    },
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 4),
+                    child: Text(
+                      '📱 Windows 실행 중인 앱 목록 (특정 앱 화면 전용):',
+                      style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
                   ),
-                ),
-            ],
-          ),
+
+                  if (activeWindows.isEmpty)
+                    const Expanded(
+                      child: Center(
+                        child: Text(
+                          '호스트 PC에서 실행 중인 윈도우를 탐색 중입니다...',
+                          style: TextStyle(color: Colors.white60),
+                        ),
+                      ),
+                    )
+                  else
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: activeWindows.length,
+                        itemBuilder: (context, index) {
+                          final win = activeWindows[index];
+                          final handle = (win["handle"] as num?)?.toInt() ?? 0;
+                          if (win["is_desktop"] == true || handle == 0) return const SizedBox.shrink();
+
+                          final isSelected = handle == currentHandle;
+                          final title = win["title"] ?? "Window";
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFF0284C7).withValues(alpha: 0.25)
+                                  : const Color(0xFF0F172A),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: isSelected ? const Color(0xFF38BDF8) : Colors.white10,
+                                width: isSelected ? 1.5 : 1.0,
+                              ),
+                            ),
+                            child: ExpansionTile(
+                              key: PageStorageKey('win_$handle'),
+                              initiallyExpanded: isSelected,
+                              leading: Icon(
+                                Icons.window_rounded,
+                                color: isSelected ? const Color(0xFF38BDF8) : Colors.white70,
+                              ),
+                              title: Text(
+                                title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'Handle: $handle | ${win["width"] ?? 0}x${win["height"] ?? 0}',
+                                style: const TextStyle(color: Colors.white38, fontSize: 10),
+                              ),
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                                  child: Row(
+                                    children: [
+                                      // MODE 2: Specific App - Fill Mobile Screen
+                                      Expanded(
+                                        child: ElevatedButton.icon(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: (isSelected && _fitMode == BoxFit.fill)
+                                                ? const Color(0xFF0284C7)
+                                                : const Color(0xFF1E293B),
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(vertical: 10),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(10),
+                                              side: BorderSide(
+                                                color: (isSelected && _fitMode == BoxFit.fill)
+                                                    ? const Color(0xFF38BDF8)
+                                                    : Colors.white24,
+                                              ),
+                                            ),
+                                          ),
+                                          icon: const Icon(Icons.aspect_ratio_rounded, size: 16),
+                                          label: const Text('2. 모바일 전체화면 채움', style: TextStyle(fontSize: 11)),
+                                          onPressed: () {
+                                            _remoteService.selectWindow(handle);
+                                            setState(() => _fitMode = BoxFit.fill);
+                                            Navigator.pop(context);
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+
+                                      // MODE 3: Specific App - Windows Original Aspect
+                                      Expanded(
+                                        child: ElevatedButton.icon(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: (isSelected && _fitMode == BoxFit.contain)
+                                                ? const Color(0xFF0284C7)
+                                                : const Color(0xFF1E293B),
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(vertical: 10),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(10),
+                                              side: BorderSide(
+                                                color: (isSelected && _fitMode == BoxFit.contain)
+                                                    ? const Color(0xFF38BDF8)
+                                                    : Colors.white24,
+                                              ),
+                                            ),
+                                          ),
+                                          icon: const Icon(Icons.fit_screen_rounded, size: 16),
+                                          label: const Text('3. Windows 원본 해상도', style: TextStyle(fontSize: 11)),
+                                          onPressed: () {
+                                            _remoteService.selectWindow(handle);
+                                            setState(() => _fitMode = BoxFit.contain);
+                                            Navigator.pop(context);
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
@@ -618,7 +774,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                       Icon(Icons.keyboard_rounded, color: Color(0xFF38BDF8)),
                       SizedBox(width: 8),
                       Text(
-                        '⌨️ Virtual Keyboard & Shortcuts',
+                        '⌨️ 가상 키보드 & 빠른 단축키',
                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                     ],
@@ -639,7 +795,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                       style: const TextStyle(color: Colors.white, fontSize: 14),
                       autofocus: true,
                       decoration: InputDecoration(
-                        hintText: 'Type text to send to Host PC...',
+                        hintText: 'PC로 전송할 텍스트 입력 (한글/영문 가능)...',
                         hintStyle: const TextStyle(color: Colors.white30),
                         filled: true,
                         fillColor: const Color(0xFF0F172A),
@@ -672,27 +828,84 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                 ],
               ),
               const SizedBox(height: 16),
-              const Text('⚡ Quick Windows Key Shortcuts:', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+              const Text('📌 보조키 고정 토글 (Sticky Modifier Keys):', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              StatefulBuilder(
+                builder: (context, setSheetState) {
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FilterChip(
+                        selected: _isCtrlHold,
+                        selectedColor: const Color(0xFF0284C7),
+                        backgroundColor: const Color(0xFF0F172A),
+                        side: BorderSide(color: _isCtrlHold ? const Color(0xFF38BDF8) : Colors.white24),
+                        label: Text(
+                          _isCtrlHold ? '📌 Ctrl (고정됨)' : 'Ctrl 고정',
+                          style: TextStyle(color: _isCtrlHold ? Colors.white : Colors.white70, fontSize: 12, fontWeight: _isCtrlHold ? FontWeight.bold : FontWeight.normal),
+                        ),
+                        onSelected: (val) {
+                          setState(() => _isCtrlHold = val);
+                          setSheetState(() {});
+                        },
+                      ),
+                      FilterChip(
+                        selected: _isShiftHold,
+                        selectedColor: const Color(0xFF0284C7),
+                        backgroundColor: const Color(0xFF0F172A),
+                        side: BorderSide(color: _isShiftHold ? const Color(0xFF38BDF8) : Colors.white24),
+                        label: Text(
+                          _isShiftHold ? '📌 Shift (고정됨)' : 'Shift 고정',
+                          style: TextStyle(color: _isShiftHold ? Colors.white : Colors.white70, fontSize: 12, fontWeight: _isShiftHold ? FontWeight.bold : FontWeight.normal),
+                        ),
+                        onSelected: (val) {
+                          setState(() => _isShiftHold = val);
+                          setSheetState(() {});
+                        },
+                      ),
+                      FilterChip(
+                        selected: _isAltHold,
+                        selectedColor: const Color(0xFF0284C7),
+                        backgroundColor: const Color(0xFF0F172A),
+                        side: BorderSide(color: _isAltHold ? const Color(0xFF38BDF8) : Colors.white24),
+                        label: Text(
+                          _isAltHold ? '📌 Alt (고정됨)' : 'Alt 고정',
+                          style: TextStyle(color: _isAltHold ? Colors.white : Colors.white70, fontSize: 12, fontWeight: _isAltHold ? FontWeight.bold : FontWeight.normal),
+                        ),
+                        onSelected: (val) {
+                          setState(() => _isAltHold = val);
+                          setSheetState(() {});
+                        },
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              const Text('⚡ 자주 쓰는 Windows 단축키 목록:', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
 
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _shortcutChip('💻 Win + D', 'win_d'),
-                  _shortcutChip('🔄 Alt + Tab', 'alt_tab'),
-                  _shortcutChip('↵ Enter', 'enter'),
+                  _shortcutChip('🚨 Ctrl+Alt+Del (작업관리자)', 'ctrl_alt_del'),
+                  _shortcutChip('🔒 Win + L (화면 잠금)', 'win_l'),
+                  _shortcutChip('💻 Win + D (바탕화면)', 'win_d'),
+                  _shortcutChip('🔄 Alt + Tab (창 전환)', 'alt_tab'),
+                  _shortcutChip('↵ Enter (엔터)', 'enter'),
                   _shortcutChip('⌫ Backspace', 'backspace'),
-                  _shortcutChip('⇥ Tab', 'tab'),
-                  _shortcutChip('⎋ Esc', 'esc'),
-                  _shortcutChip('↩ Ctrl + Z', 'ctrl_z'),
-                  _shortcutChip('📋 Ctrl + C', 'ctrl_c'),
-                  _shortcutChip('📌 Ctrl + V', 'ctrl_v'),
-                  _shortcutChip('🪟 Windows Key', 'win'),
-                  _shortcutChip('⬆️ Up', 'up'),
-                  _shortcutChip('⬇️ Down', 'down'),
-                  _shortcutChip('⬅️ Left', 'left'),
-                  _shortcutChip('➡️ Right', 'right'),
+                  _shortcutChip('⇥ Tab (탭)', 'tab'),
+                  _shortcutChip('⏹️ Esc (취소)', 'esc'),
+                  _shortcutChip('↩️ Ctrl + Z (되돌리기)', 'ctrl_z'),
+                  _shortcutChip('📋 Ctrl + C (복사)', 'ctrl_c'),
+                  _shortcutChip('📌 Ctrl + V (붙여넣기)', 'ctrl_v'),
+                  _shortcutChip('🪟 Windows 키', 'win'),
+                  _shortcutChip('⬆️ 위 (Up)', 'up'),
+                  _shortcutChip('⬇️ 아래 (Down)', 'down'),
+                  _shortcutChip('⬅️ 왼쪽 (Left)', 'left'),
+                  _shortcutChip('➡️ 오른쪽 (Right)', 'right'),
                 ],
               ),
             ],
@@ -935,33 +1148,42 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                               }
                             }
 
-                            // ── 2 Fingers: Pinch to Zoom & Smooth Pan ─────
+                             // ── 2 Fingers: Pinch to Zoom, Smooth Pan, and 2-Finger Wheel Scroll ─────
                             final delta = details.focalPointDelta;
                             final focal = details.localFocalPoint;
 
                             final newScale = (_scaleAtStart * details.scale).clamp(1.0, 4.0);
                             final scaleChange = newScale / _viewScale;
 
-                            final m = _transformationController.value.clone();
+                            // 2-Finger Vertical Swipe -> Automatic Mouse Wheel Scroll
+                            if (_viewScale <= 1.05 && (scaleChange - 1.0).abs() < 0.04 && delta.dy.abs() > 0.4) {
+                              final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+                              if (renderBox != null) {
+                                final localPos = _transformationController.toScene(focal);
+                                _sendNormalizedScroll(localPos, renderBox.size, -delta.dy);
+                              }
+                            } else {
+                              final m = _transformationController.value.clone();
 
-                            // Apply smooth pan
-                            if (delta.dx != 0 || delta.dy != 0) {
-                              m.translate(delta.dx / _viewScale, delta.dy / _viewScale);
+                              // Apply smooth pan
+                              if (delta.dx != 0 || delta.dy != 0) {
+                                m.translate(delta.dx / _viewScale, delta.dy / _viewScale);
+                              }
+
+                              // Apply zoom centered on pinch focal point
+                              if ((scaleChange - 1.0).abs() > 0.001) {
+                                final sceneFocal = _transformationController.toScene(focal);
+                                m.translate(sceneFocal.dx, sceneFocal.dy);
+                                m.scale(scaleChange);
+                                m.translate(-sceneFocal.dx, -sceneFocal.dy);
+                                _viewScale = newScale;
+                              }
+
+                              _transformationController.value = m;
+                              setState(() {});
+                              _showZoomIndicator();
+                              _notifyZoomRegion();
                             }
-
-                            // Apply zoom centered on pinch focal point
-                            if ((scaleChange - 1.0).abs() > 0.001) {
-                              final sceneFocal = _transformationController.toScene(focal);
-                              m.translate(sceneFocal.dx, sceneFocal.dy);
-                              m.scale(scaleChange);
-                              m.translate(-sceneFocal.dx, -sceneFocal.dy);
-                              _viewScale = newScale;
-                            }
-
-                            _transformationController.value = m;
-                            setState(() {});
-                            _showZoomIndicator();
-                            _notifyZoomRegion();
                           } else if (!_isScaling) {
                             // ── Single finger: move PC mouse / Drag / Scroll ─
                             final localPos = _transformationController.toScene(details.localFocalPoint);

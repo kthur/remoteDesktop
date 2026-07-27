@@ -518,6 +518,13 @@ class RemoteService extends ChangeNotifier {
     _channel = null;
   }
 
+  void requestWindowsList() {
+    _sendMsg({
+      "type": "request_windows",
+      "target_device_id": _targetDeviceId,
+    });
+  }
+
   void selectWindow(int handle) {
     _selectedWindowHandle = handle;
     _sendMsg({

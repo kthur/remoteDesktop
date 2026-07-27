@@ -46,9 +46,18 @@ class InputHandler:
         norm_x = cmd.get("x", 0.5)
         norm_y = cmd.get("y", 0.5)
 
-        abs_x, abs_y = self._get_absolute_coords(norm_x, norm_y, capturer)
+        # Sticky modifier key handling (Ctrl, Shift, Alt)
+        is_ctrl = cmd.get("ctrl", False)
+        is_shift = cmd.get("shift", False)
+        is_alt = cmd.get("alt", False)
 
         try:
+            if is_ctrl: pyautogui.keyDown('ctrl')
+            if is_shift: pyautogui.keyDown('shift')
+            if is_alt: pyautogui.keyDown('alt')
+
+            abs_x, abs_y = self._get_absolute_coords(norm_x, norm_y, capturer)
+
             if cmd_type == "move":
                 if self._mouse_pressed:
                     pyautogui.dragTo(abs_x, abs_y, button='left')
@@ -90,6 +99,10 @@ class InputHandler:
                         pyautogui.write(text_str)
         except Exception as e:
             print(f"Input injection error: {e}")
+        finally:
+            if is_ctrl: pyautogui.keyUp('ctrl')
+            if is_shift: pyautogui.keyUp('shift')
+            if is_alt: pyautogui.keyUp('alt')
 
     def _get_absolute_coords(self, norm_x, norm_y, capturer=None):
         if capturer and not capturer.is_full_desktop and capturer.selected_window_handle:
@@ -144,6 +157,17 @@ class InputHandler:
             pyautogui.hotkey('ctrl', 'c')
         elif s == "ctrl_v":
             pyautogui.hotkey('ctrl', 'v')
+        elif s == "win_l":
+            if sys.platform == "win32":
+                try:
+                    import ctypes
+                    ctypes.windll.user32.LockWorkStation()
+                except Exception:
+                    pyautogui.hotkey('win', 'l')
+            else:
+                pyautogui.hotkey('win', 'l')
+        elif s in ["ctrl_alt_del", "task_manager"]:
+            pyautogui.hotkey('ctrl', 'shift', 'esc')
         elif s == "win":
             if self.keyboard and Key:
                 self.keyboard.press(Key.cmd)
