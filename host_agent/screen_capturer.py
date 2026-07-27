@@ -52,6 +52,7 @@ class ScreenCapturer:
         self.selected_window_handle = None
         self.is_full_desktop = True
         self.is_background = False  # App background state flag
+        self.zoom_roi = None        # ROI dict: {'x': float, 'y': float, 'w': float, 'h': float, 'scale': float}
 
     def close(self):
         if self.sct:
@@ -59,6 +60,13 @@ class ScreenCapturer:
                 self.sct.close()
             except Exception:
                 pass
+
+    def set_zoom_roi(self, roi):
+        """Sets active zoom ROI crop box from client"""
+        if roi and roi.get('scale', 1.0) > 1.15:
+            self.zoom_roi = roi
+        else:
+            self.zoom_roi = None
 
     def list_windows(self):
         """Enumerates visible active windows with title and position"""
@@ -142,11 +150,35 @@ class ScreenCapturer:
                 img_bgr = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
                 h, w = img_bgr.shape[:2]
-                if target_width and target_width < w:
+
+                # ── Apply ROI Crop if zoomed ──────────────────────────────────────
+                current_quality = quality
+                if self.zoom_roi and self.zoom_roi.get('scale', 1.0) > 1.15:
+                    rx = max(0.0, min(1.0, self.zoom_roi.get('x', 0.0)))
+                    ry = max(0.0, min(1.0, self.zoom_roi.get('y', 0.0)))
+                    rw = max(0.05, min(1.0, self.zoom_roi.get('w', 1.0)))
+                    rh = max(0.05, min(1.0, self.zoom_roi.get('h', 1.0)))
+
+                    x1 = int(w * rx)
+                    y1 = int(h * ry)
+                    w1 = max(16, int(w * rw))
+                    h1 = max(16, int(h * rh))
+
+                    # Crop region of interest
+                    crop_bgr = img_bgr[y1:min(h, y1 + h1), x1:min(w, x1 + w1)]
+                    if crop_bgr.size > 0:
+                        ch, cw = crop_bgr.shape[:2]
+                        # Resize zoomed ROI using high-sharpness Lanczos4 interpolation
+                        target_w = target_width or 1920
+                        target_h = int(ch * (target_w / cw))
+                        img_bgr = cv2.resize(crop_bgr, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
+                        current_quality = max(92, quality) # Upgrade JPEG quality for zoomed text sharpness
+
+                elif target_width and target_width < w:
                     target_height = int(h * (target_width / w))
                     img_bgr = cv2.resize(img_bgr, (target_width, target_height), interpolation=cv2.INTER_AREA)
 
-                encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), quality]
+                encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), current_quality]
                 _, jpeg_buffer = cv2.imencode('.jpg', img_bgr, encode_param)
                 if jpeg_buffer is not None:
                     return jpeg_buffer.tobytes()
@@ -157,11 +189,24 @@ class ScreenCapturer:
         if ImageGrab:
             try:
                 pil_img = ImageGrab.grab(all_screens=True)
-                if target_width and target_width < pil_img.width:
+                current_quality = quality
+                if self.zoom_roi and self.zoom_roi.get('scale', 1.0) > 1.15:
+                    pw, ph = pil_img.width, pil_img.height
+                    rx = max(0.0, min(1.0, self.zoom_roi.get('x', 0.0)))
+                    ry = max(0.0, min(1.0, self.zoom_roi.get('y', 0.0)))
+                    rw = max(0.05, min(1.0, self.zoom_roi.get('w', 1.0)))
+                    rh = max(0.05, min(1.0, self.zoom_roi.get('h', 1.0)))
+                    box = (int(pw * rx), int(ph * ry), int(pw * (rx + rw)), int(ph * (ry + rh)))
+                    pil_img = pil_img.crop(box)
+                    if target_width:
+                        target_height = int(pil_img.height * (target_width / pil_img.width))
+                        pil_img = pil_img.resize((target_width, target_height))
+                    current_quality = max(92, quality)
+                elif target_width and target_width < pil_img.width:
                     target_height = int(pil_img.height * (target_width / pil_img.width))
                     pil_img = pil_img.resize((target_width, target_height))
                 buf = io.BytesIO()
-                pil_img.save(buf, format='JPEG', quality=quality)
+                pil_img.save(buf, format='JPEG', quality=current_quality)
                 return buf.getvalue()
             except Exception as e:
                 print(f"Fallback capture error: {e}")

@@ -44,6 +44,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
   bool _isScaling = false;       // true while 2-finger pinch is active
   bool _showZoomBadge = false;   // show zoom % badge during pinch
   Timer? _zoomBadgeTimer;
+  Timer? _zoomDebounceTimer;
 
   // ── Control Modes (Drag / Scroll / Floating Bar UX) ──────────
   bool _isDragMode = false;      // Drag Mode: 1-finger holds left mouse button
@@ -84,6 +85,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
   void dispose() {
     _touchFadeTimer?.cancel();
     _zoomBadgeTimer?.cancel();
+    _zoomDebounceTimer?.cancel();
     _transformationController.dispose();
     _keyboardFocusNode.dispose();
     WidgetsBinding.instance.removeObserver(this);
@@ -99,11 +101,46 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
     super.dispose();
   }
 
+  void _notifyZoomRegion() {
+    _zoomDebounceTimer?.cancel();
+    _zoomDebounceTimer = Timer(const Duration(milliseconds: 150), () {
+      if (!mounted) return;
+      if (_viewScale <= 1.15) {
+        _remoteService.sendInputEvent({
+          "type": "zoom_region",
+          "scale": 1.0,
+        });
+        return;
+      }
+      final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox == null || renderBox.size.isEmpty) return;
+
+      final Size canvasSize = renderBox.size;
+      final topLeft = _transformationController.toScene(Offset.zero);
+      final bottomRight = _transformationController.toScene(Offset(canvasSize.width, canvasSize.height));
+
+      final normX = (topLeft.dx / canvasSize.width).clamp(0.0, 1.0);
+      final normY = (topLeft.dy / canvasSize.height).clamp(0.0, 1.0);
+      final normW = ((bottomRight.dx - topLeft.dx) / canvasSize.width).clamp(0.05, 1.0);
+      final normH = ((bottomRight.dy - topLeft.dy) / canvasSize.height).clamp(0.05, 1.0);
+
+      _remoteService.sendInputEvent({
+        "type": "zoom_region",
+        "scale": _viewScale,
+        "x": normX,
+        "y": normY,
+        "w": normW,
+        "h": normH,
+      });
+    });
+  }
+
   void _resetZoom() {
     setState(() {
       _viewScale = 1.0;
     });
     _transformationController.value = Matrix4.identity();
+    _notifyZoomRegion();
   }
 
   void _showZoomIndicator() {
@@ -132,6 +169,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
     _transformationController.value = newM;
     setState(() => _viewScale = newScale);
     _showZoomIndicator();
+    _notifyZoomRegion();
   }
 
   void _zoomOut() {
@@ -923,6 +961,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                             _transformationController.value = m;
                             setState(() {});
                             _showZoomIndicator();
+                            _notifyZoomRegion();
                           } else if (!_isScaling) {
                             // ── Single finger: move PC mouse / Drag / Scroll ─
                             final localPos = _transformationController.toScene(details.localFocalPoint);
@@ -949,7 +988,11 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                             }
                           }
                           _isScaling = false;
-                          if (_viewScale < 1.05) _resetZoom();
+                          if (_viewScale < 1.05) {
+                            _resetZoom();
+                          } else {
+                            _notifyZoomRegion();
+                          }
                         },
                         child: Container(
                           color: Colors.black,
@@ -967,7 +1010,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                                     frameBytes,
                                     gaplessPlayback: true,
                                     fit: _fitMode,
-                                    filterQuality: FilterQuality.medium,
+                                    filterQuality: FilterQuality.high,
                                     width: double.infinity,
                                     height: double.infinity,
                                     errorBuilder: (context, error, stackTrace) {

@@ -239,6 +239,9 @@ async def run_host_agent(on_qr_ready=None):
                                 capturer.is_background = (state == "background")
                                 print(f" Mobile App state changed: {state.upper()} (Frame sending paused: {capturer.is_background})")
 
+                            elif msg_type == "zoom_region":
+                                capturer.set_zoom_roi(msg)
+
                             elif msg_type == "request_windows":
                                 updated_windows = capturer.list_windows()
                                 await ws.send(json.dumps({
