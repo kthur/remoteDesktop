@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -408,7 +408,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                           decoration: BoxDecoration(
                             color: const Color(0xFF0F172A),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.3)),
+                            border: Border.all(color: const Color(0xFF38BDF8).withOpacity(0.3)),
                           ),
                           child: Text(
                             url.length > 28 ? '${url.substring(0, 25)}...' : url,
@@ -507,7 +507,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF1E293B),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
                 ),
                 child: Row(
                   children: [
@@ -534,7 +534,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                           Text(
                             user.email,
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
+                              color: Colors.white.withOpacity(0.6),
                               fontSize: 13,
                             ),
                           ),
@@ -544,9 +544,9 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.2),
+                        color: Colors.green.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.green.withValues(alpha: 0.5)),
+                        border: Border.all(color: Colors.green.withOpacity(0.5)),
                       ),
                       child: const Row(
                         children: [
@@ -571,7 +571,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                   Text(
                     'HOST COMPUTERS (${_devices.length})',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: Colors.white.withOpacity(0.5),
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.0,
@@ -605,14 +605,14 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                     decoration: BoxDecoration(
                       color: const Color(0xFF1E293B),
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                      border: Border.all(color: Colors.white.withOpacity(0.08)),
                     ),
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       leading: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.15),
+                          color: const Color(0xFF0284C7).withOpacity(0.15),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: const Icon(
@@ -635,14 +635,14 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                           const SizedBox(height: 4),
                           Text(
                             dev["os"] ?? "Windows",
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
+                            style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
                           ),
                           const SizedBox(height: 4),
                           _buildTransportBadges(dev),
                           const SizedBox(height: 4),
                           Text(
                             'Res: ${res["width"]}x${res["height"]}',
-                            style: TextStyle(color: const Color(0xFF38BDF8).withValues(alpha: 0.8), fontSize: 12),
+                            style: TextStyle(color: const Color(0xFF38BDF8).withOpacity(0.8), fontSize: 12),
                           ),
                         ],
                       ),

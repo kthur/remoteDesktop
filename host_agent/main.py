@@ -100,8 +100,9 @@ async def run_host_agent(on_qr_ready=None):
         if env_email and env_user_id:
             auth.set_google_user(env_email, env_user_id)
         else:
-            print(" [AUTH WARNING] Host Agent running without paired Google User credentials.")
-            print("                Set GOOGLE_USER_EMAIL and GOOGLE_USER_ID or configure host_config.json.")
+            auth.google_user_id = "google_user_12345"
+            auth.google_email = "demo.user@gmail.com"
+            print(" [AUTH INFO] Host Agent running in Guest Mode (google_user_12345).")
 
     capturer = ScreenCapturer()
     display_mgr = DisplayManager()

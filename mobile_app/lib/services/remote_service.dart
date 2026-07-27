@@ -309,9 +309,9 @@ class RemoteService extends ChangeNotifier {
       }
     }
 
-    Timer(const Duration(seconds: 4), () {
+    Timer(const Duration(seconds: 8), () {
       if (!winnerFound && !probeCompleter.isCompleted) {
-        logDiagnostic("Candidate probing timeout reached (4s). Cleaning channels.");
+        logDiagnostic("Candidate probing timeout reached (8s). Cleaning channels.");
         for (var ch in openProbingChannels) {
           try {
             ch.sink.close();
