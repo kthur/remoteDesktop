@@ -72,10 +72,26 @@ class RemoteService extends ChangeNotifier {
 
   Uint8List? get latestFrameBytes => _latestFrameBytes;
   List<Map<String, dynamic>> get openWindows => _openWindows;
+  List<Map<String, dynamic>> _openMonitors = [];
+  int _selectedMonitorIndex = 0;
+
+  List<Map<String, dynamic>> get openMonitors => _openMonitors;
+  int get selectedMonitorIndex => _selectedMonitorIndex;
   Map<String, dynamic>? get currentResolution => _currentResolution;
   List<Map<String, dynamic>> get supportedResolutions => _supportedResolutions;
   int get selectedWindowHandle => _selectedWindowHandle;
   bool get isBackground => _isBackground;
+
+  void selectMonitor(int index) {
+    _selectedMonitorIndex = index;
+    _selectedWindowHandle = 0;
+    _sendMsg({
+      "type": "select_monitor",
+      "target_device_id": _targetDeviceId,
+      "index": index
+    });
+    notifyListeners();
+  }
 
   // Diagnostic Getters
   int get framesReceivedCount => _framesReceivedCount;
@@ -443,8 +459,11 @@ class RemoteService extends ChangeNotifier {
       } else if (msgType == "windows_list_update") {
         if (data["windows"] != null) {
           _openWindows = List<Map<String, dynamic>>.from(data["windows"]);
-          notifyListeners();
         }
+        if (data["monitors"] != null) {
+          _openMonitors = List<Map<String, dynamic>>.from(data["monitors"]);
+        }
+        notifyListeners();
       } else if (msgType == "resolution_updated") {
         if (data["resolution"] != null) {
           _currentResolution = Map<String, dynamic>.from(data["resolution"]);
@@ -456,6 +475,9 @@ class RemoteService extends ChangeNotifier {
           if (dev["device_id"] == _targetDeviceId) {
             if (dev["windows"] != null) {
               _openWindows = List<Map<String, dynamic>>.from(dev["windows"]);
+            }
+            if (dev["monitors"] != null) {
+              _openMonitors = List<Map<String, dynamic>>.from(dev["monitors"]);
             }
             if (dev["resolution"] != null) {
               _currentResolution = Map<String, dynamic>.from(dev["resolution"]);

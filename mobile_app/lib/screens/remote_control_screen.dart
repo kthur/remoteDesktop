@@ -49,6 +49,8 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
   // ── Control Modes (Drag / Scroll / Floating Bar UX) ──────────
   bool _isDragMode = false;      // Drag Mode: 1-finger holds left mouse button
   bool _isScrollMode = false;    // Scroll Mode: 1-finger drag sends mouse wheel scroll
+  bool _isTrackpadMode = false;  // Phase 2 UX: Trackpad Mode (relative mouse move)
+  Offset _trackpadVirtualPos = const Offset(0.5, 0.5); // Normalized trackpad cursor position
   bool _isDraggingMouse = false; // Currently holding mouse button down
   bool _isOverlayCollapsed = false; // Floating Bar UX: collapse into tiny trigger pill
   bool _overlayAtTop = false;     // Floating Bar UX: toggle position (Top vs Bottom)
@@ -487,10 +489,51 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    '작업표시줄에 실행 중인 Windows 앱을 선택하면 해당 앱만 독립적으로 화면에 스트리밍됩니다.',
+                    '연결된 모니터 또는 작업표시줄의 특정 앱을 선택하여 스트리밍 대상을 전환할 수 있습니다.',
                     style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
+
+                  // ── MULTI-MONITOR SELECTION ──────────────────────────────────
+                  if (_remoteService.openMonitors.isNotEmpty) ...[
+                    const Text('🖥️ 디스플레이 모니터 선택:', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      height: 38,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _remoteService.openMonitors.length,
+                        itemBuilder: (context, idx) {
+                          final mon = _remoteService.openMonitors[idx];
+                          final isSelectedMon = (currentHandle == 0 && _remoteService.selectedMonitorIndex == idx);
+                          final monTitle = mon["title"] ?? "Monitor $idx";
+
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              selected: isSelectedMon,
+                              selectedColor: const Color(0xFF0284C7),
+                              backgroundColor: const Color(0xFF0F172A),
+                              side: BorderSide(color: isSelectedMon ? const Color(0xFF38BDF8) : Colors.white24),
+                              label: Text(
+                                monTitle,
+                                style: TextStyle(
+                                  color: isSelectedMon ? Colors.white : Colors.white70,
+                                  fontSize: 11,
+                                  fontWeight: isSelectedMon ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                              onSelected: (_) {
+                                _remoteService.selectMonitor(idx);
+                                Navigator.pop(context);
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
 
                   // ── MODE 1: PC Full Desktop Option ──────────────────────────
                   Container(
@@ -1185,16 +1228,27 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                               _notifyZoomRegion();
                             }
                           } else if (!_isScaling) {
-                            // ── Single finger: move PC mouse / Drag / Scroll ─
-                            final localPos = _transformationController.toScene(details.localFocalPoint);
+                            // ── Single finger: move PC mouse / Drag / Scroll / Trackpad ─
                             final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
                             if (renderBox != null) {
                               if (_isScrollMode) {
                                 final dy = details.focalPointDelta.dy;
                                 if (dy.abs() > 0.3) {
+                                  final localPos = _transformationController.toScene(details.localFocalPoint);
                                   _sendNormalizedScroll(localPos, renderBox.size, -dy);
                                 }
+                              } else if (_isTrackpadMode) {
+                                // Trackpad mode: relative cursor movement
+                                final delta = details.focalPointDelta;
+                                final newNormX = (_trackpadVirtualPos.dx + (delta.dx / renderBox.size.width) / _viewScale).clamp(0.0, 1.0);
+                                final newNormY = (_trackpadVirtualPos.dy + (delta.dy / renderBox.size.height) / _viewScale).clamp(0.0, 1.0);
+                                _trackpadVirtualPos = Offset(newNormX, newNormY);
+
+                                final scenePos = Offset(newNormX * renderBox.size.width, newNormY * renderBox.size.height);
+                                _triggerTouchVisual(scenePos);
+                                _sendNormalizedInput("move", scenePos, renderBox.size);
                               } else {
+                                final localPos = _transformationController.toScene(details.localFocalPoint);
                                 _triggerTouchVisual(localPos);
                                 _sendNormalizedInput("move", localPos, renderBox.size);
                               }
@@ -1610,6 +1664,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
           );
 
           return Scaffold(
+            resizeToAvoidBottomInset: true,
             backgroundColor: Colors.black,
             appBar: _isFullscreen
                 ? null

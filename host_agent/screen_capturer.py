@@ -50,6 +50,7 @@ class ScreenCapturer:
     def __init__(self):
         self.sct = mss.mss() if mss else None
         self.selected_window_handle = None
+        self.selected_monitor_index = 0  # 0: all virtual monitors, 1: Monitor 1, 2: Monitor 2, etc.
         self.is_full_desktop = True
         self.is_background = False  # App background state flag
         self.zoom_roi = None        # ROI dict: {'x': float, 'y': float, 'w': float, 'h': float, 'scale': float}
@@ -60,6 +61,30 @@ class ScreenCapturer:
                 self.sct.close()
             except Exception:
                 pass
+
+    def list_monitors(self):
+        """Enumerates connected display monitors"""
+        monitors = []
+        if self.sct and self.sct.monitors:
+            for idx, mon in enumerate(self.sct.monitors):
+                title = f"🖥️ All Monitors ({mon['width']}x{mon['height']})" if idx == 0 else f"🖥️ Monitor {idx} ({mon['width']}x{mon['height']})"
+                monitors.append({
+                    "index": idx,
+                    "title": title,
+                    "width": mon["width"],
+                    "height": mon["height"],
+                    "left": mon.get("left", 0),
+                    "top": mon.get("top", 0)
+                })
+        return monitors
+
+    def set_target_monitor(self, index):
+        """Sets active monitor index for full desktop capture (0 = all monitors)"""
+        if self.sct and self.sct.monitors:
+            if 0 <= index < len(self.sct.monitors):
+                self.selected_monitor_index = index
+                self.is_full_desktop = True
+                self.selected_window_handle = None
 
     def set_zoom_roi(self, roi):
         """Sets active zoom ROI crop box from client"""
@@ -73,7 +98,7 @@ class ScreenCapturer:
         windows = []
         mon_w, mon_h = 1920, 1080
         if self.sct and self.sct.monitors:
-            monitor = self.sct.monitors[0]
+            monitor = self.sct.monitors[self.selected_monitor_index if self.selected_monitor_index < len(self.sct.monitors) else 0]
             mon_w, mon_h = monitor["width"], monitor["height"]
 
         windows.append({
@@ -127,7 +152,8 @@ class ScreenCapturer:
             try:
                 bbox = None
                 if self.is_full_desktop or not self.selected_window_handle:
-                    bbox = self.sct.monitors[0]
+                    mon_idx = self.selected_monitor_index if self.selected_monitor_index < len(self.sct.monitors) else 0
+                    bbox = self.sct.monitors[mon_idx]
                 else:
                     if sys.platform == "win32" and self.selected_window_handle and win32gui:
                         try:
@@ -138,9 +164,11 @@ class ScreenCapturer:
                             bbox = {"top": top, "left": left, "width": w, "height": h}
                         except Exception as e:
                             print(f"Window capture error: {e}")
-                            bbox = self.sct.monitors[0]
+                            mon_idx = self.selected_monitor_index if self.selected_monitor_index < len(self.sct.monitors) else 0
+                            bbox = self.sct.monitors[mon_idx]
                     else:
-                        bbox = self.sct.monitors[0]
+                        mon_idx = self.selected_monitor_index if self.selected_monitor_index < len(self.sct.monitors) else 0
+                        bbox = self.sct.monitors[mon_idx]
 
                 sct_img = self.sct.grab(bbox)
                 if np is None:

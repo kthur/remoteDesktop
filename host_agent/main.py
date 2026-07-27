@@ -179,6 +179,7 @@ async def run_host_agent(on_qr_ready=None):
                 async with websockets.connect(SERVER_URI) as ws:
                     res_info = display_mgr.get_current_resolution()
                     windows_list = capturer.list_windows()
+                    monitors_list = capturer.list_monitors()
                     net_info = current_net_info()
                     reg_payload = {
                         "type": "register_host",
@@ -189,6 +190,7 @@ async def run_host_agent(on_qr_ready=None):
                         "os": os_name,
                         "resolution": res_info,
                         "windows": windows_list,
+                        "monitors": monitors_list,
                         "supported_resolutions": display_mgr.list_supported_resolutions(),
                         "network_info": net_info
                     }
@@ -211,6 +213,11 @@ async def run_host_agent(on_qr_ready=None):
                                 handle = msg.get("handle")
                                 capturer.set_target_window(handle)
                                 print(f" Target capture switched to window handle: {handle}")
+
+                            elif msg_type == "select_monitor":
+                                index = msg.get("index", 0)
+                                capturer.set_target_monitor(index)
+                                print(f" Target capture switched to monitor index: {index}")
 
                             elif msg_type == "change_resolution":
                                 w = msg.get("width")
@@ -244,9 +251,11 @@ async def run_host_agent(on_qr_ready=None):
 
                             elif msg_type == "request_windows":
                                 updated_windows = capturer.list_windows()
+                                updated_monitors = capturer.list_monitors()
                                 await ws.send(json.dumps({
                                     "type": "windows_list_update",
-                                    "windows": updated_windows
+                                    "windows": updated_windows,
+                                    "monitors": updated_monitors
                                 }))
 
                     listener_task = asyncio.create_task(message_listener())
