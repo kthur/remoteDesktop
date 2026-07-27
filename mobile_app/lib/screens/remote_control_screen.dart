@@ -101,6 +101,49 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
     });
   }
 
+  void _zoomIn() {
+    final newScale = (_viewScale * 1.25).clamp(1.0, 4.0);
+    if (newScale == _viewScale) return;
+    final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+    final center = renderBox != null
+        ? Offset(renderBox.size.width / 2, renderBox.size.height / 2)
+        : const Offset(200, 300);
+    final scaleChange = newScale / _viewScale;
+    final oldM = _transformationController.value.clone();
+    final newM = Matrix4.identity()
+      ..translate(center.dx, center.dy)
+      ..scale(scaleChange)
+      ..translate(-center.dx, -center.dy)
+      ..multiply(oldM);
+
+    _transformationController.value = newM;
+    setState(() => _viewScale = newScale);
+    _showZoomIndicator();
+  }
+
+  void _zoomOut() {
+    final newScale = (_viewScale / 1.25).clamp(1.0, 4.0);
+    if (newScale <= 1.05) {
+      _resetZoom();
+      return;
+    }
+    final renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+    final center = renderBox != null
+        ? Offset(renderBox.size.width / 2, renderBox.size.height / 2)
+        : const Offset(200, 300);
+    final scaleChange = newScale / _viewScale;
+    final oldM = _transformationController.value.clone();
+    final newM = Matrix4.identity()
+      ..translate(center.dx, center.dy)
+      ..scale(scaleChange)
+      ..translate(-center.dx, -center.dy)
+      ..multiply(oldM);
+
+    _transformationController.value = newM;
+    setState(() => _viewScale = newScale);
+    _showZoomIndicator();
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
@@ -707,20 +750,19 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                         },
                         onScaleUpdate: (details) {
                           if (details.pointerCount > 1 || _isScaling) {
-                            // ── Pinch to zoom ──────────────────────────────
+                            // ── 2 Fingers: Pinch to Zoom & Pan Viewport ─────
                             _isScaling = true;
                             final newScale = (_scaleAtStart * details.scale).clamp(1.0, 4.0);
-                            if ((newScale - _viewScale).abs() < 0.001) return;
-
-                            // Apply zoom centered on the pinch focal point
-                            final focal = details.localFocalPoint;
-                            final oldM = _transformationController.value.clone();
                             final scaleChange = newScale / _viewScale;
+                            final focal = details.localFocalPoint;
+                            final delta = details.focalPointDelta;
 
+                            final oldM = _transformationController.value.clone();
                             final newM = Matrix4.identity()
                               ..translate(focal.dx, focal.dy)
                               ..scale(scaleChange)
                               ..translate(-focal.dx, -focal.dy)
+                              ..translate(delta.dx, delta.dy)
                               ..multiply(oldM);
 
                             _transformationController.value = newM;
@@ -981,6 +1023,56 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                           tooltip: 'Display Resolution',
                           icon: const Icon(Icons.aspect_ratio_rounded, color: Colors.white70),
                           onPressed: _showResolutionModal,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // Floating Zoom Controls (+ / - / Reset 1:1)
+              if (_showOverlay || _viewScale > 1.0)
+                Positioned(
+                  right: 16,
+                  bottom: _showOverlay ? 86 : 24,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.88),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.5)),
+                      boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 8)],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                          onPressed: _zoomIn,
+                          tooltip: 'Zoom In (+)',
+                        ),
+                        InkWell(
+                          onTap: _resetZoom,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            child: Text(
+                              '${(_viewScale * 100).round()}%',
+                              style: const TextStyle(
+                                color: Color(0xFF38BDF8),
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(Icons.remove_rounded, color: Colors.white, size: 20),
+                          onPressed: _zoomOut,
+                          tooltip: 'Zoom Out (-)',
                         ),
                       ],
                     ),
