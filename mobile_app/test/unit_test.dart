@@ -41,7 +41,7 @@ void main() {
       final service = RemoteService();
       expect(service.connectionState, equals(RemoteConnectionState.disconnected));
       expect(service.activeTransport, equals(ConnectionTransport.none));
-      expect(service.activeTransportBadge, equals('⚪ Disconnected'));
+      expect(service.activeTransportBadge, equals('🔴 Disconnected'));
       expect(service.isConnected, isFalse);
     });
   });

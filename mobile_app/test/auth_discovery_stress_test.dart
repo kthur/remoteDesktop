@@ -164,8 +164,15 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       // Verify zero mock window tiles displayed, and empty message shown
-      expect(find.text('No open windows reported by host.'), findsOneWidget);
-      expect(find.byType(ListTile), findsNothing);
+      // (the full-desktop tile always remains; only mock window tiles are excluded)
+      expect(find.text('호스트 PC에서 실행 중인 윈도우를 탐색 중입니다...'), findsOneWidget);
+      final fullDesktopTile = find.widgetWithText(ListTile, '1. 🖥️ PC 전체 화면 (Full Desktop)');
+      expect(fullDesktopTile, findsOneWidget);
+
+      // Let the in-flight UDP discovery/probe timers fire before the widget tree is disposed,
+      // so no timers remain pending after teardown.
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(const Duration(seconds: 2));
     });
   });
 }

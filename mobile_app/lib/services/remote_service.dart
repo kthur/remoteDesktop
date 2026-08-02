@@ -433,8 +433,9 @@ class RemoteService extends ChangeNotifier {
         _startFpsTimer();
 
         logDiagnostic("Registered client context for device: $_targetDeviceId");
-        if (data["target_device_id"] != null) {
-          _targetDeviceId = data["target_device_id"];
+        final resolvedDeviceId = data["resolved_device_id"] ?? data["target_device_id"];
+        if (resolvedDeviceId != null) {
+          _targetDeviceId = resolvedDeviceId;
           logDiagnostic("Server resolved device ID: $_targetDeviceId");
         }
 
@@ -624,6 +625,8 @@ class RemoteService extends ChangeNotifier {
     _activeUrl = null;
     _cancelReconnectTimer();
     _stopPingTimer();
+    _probeTimer?.cancel();
+    _probeTimer = null;
     _cleanupActiveChannel();
     _latestFrameBytes = null;
     notifyListeners();
@@ -634,6 +637,7 @@ class RemoteService extends ChangeNotifier {
     _reconnectTimer?.cancel();
     _pingTimer?.cancel();
     _fpsTimer?.cancel();
+    _probeTimer?.cancel();
     _streamSubscription?.cancel();
     _channel?.sink.close();
     frameNotifier.dispose();

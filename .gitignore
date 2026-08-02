@@ -26,3 +26,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# Host agent runtime QR artifacts
+host_agent/host_qr*.png

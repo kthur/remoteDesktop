@@ -70,9 +70,10 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
     _remoteService = RemoteService();
 
     final auth = Provider.of<AuthService>(context, listen: false);
+    if (!auth.isLoggedIn) return;
     auth.getValidIdToken().then((token) {
-      if (!mounted) return;
-      final userId = auth.currentUser?.id ?? "google_user_12345";
+      if (!mounted || !auth.isLoggedIn) return;
+      final userId = auth.currentUser!.id;
       final String serverUrl = (widget.directWsUrls != null && widget.directWsUrls!.isNotEmpty)
           ? widget.directWsUrls!.first
           : const String.fromEnvironment('SIGNALING_SERVER', defaultValue: 'ws://192.168.1.100:8080');
@@ -1771,9 +1772,12 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                       children: [
                         Row(
                           children: [
-                            Text(
-                              widget.deviceName,
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            Flexible(
+                              child: Text(
+                                widget.deviceName,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Container(

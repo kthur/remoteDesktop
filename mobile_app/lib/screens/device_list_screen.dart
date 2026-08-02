@@ -51,7 +51,11 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
 
   Future<void> _refreshDeviceList() async {
     final auth = Provider.of<AuthService>(context, listen: false);
-    final userId = auth.currentUser?.id ?? "google_user_12345";
+    final userId = auth.currentUser?.id;
+    if (userId == null) {
+      _devices = [];
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -98,38 +102,10 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
         }
       }
 
-      if (combined.isEmpty) {
-        _devices = [
-          {
-            "device_id": "pc_host_unknown",
-            "device_name": "💻 Local PC Host (Auto Detect)",
-            "os": "Windows PC",
-            "resolution": {"width": 1920, "height": 1080},
-            "status": "online",
-            "usb_available": true,
-            "local_ips": [],
-            "direct_ws_urls": [],
-            "windows": []
-          }
-        ];
-      } else {
-        _devices = combined;
-      }
+      _devices = combined;
     } catch (e) {
       debugPrint("Error refreshing devices: $e");
-      _devices = [
-        {
-          "device_id": "pc_host_unknown",
-          "device_name": "💻 Local PC Host (Auto Detect)",
-          "os": "Windows PC",
-          "resolution": {"width": 1920, "height": 1080},
-          "status": "online",
-          "usb_available": true,
-          "local_ips": [],
-          "direct_ws_urls": [],
-          "windows": []
-        }
-      ];
+      _devices = [];
     } finally {
       if (mounted) {
         setState(() {
