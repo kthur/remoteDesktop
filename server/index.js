@@ -7,6 +7,15 @@ const { OAuth2Client } = require('google-auth-library');
 
 const app = express();
 app.use(cors());
+// Security middleware
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    next();
+});
+
+
 app.use(express.json());
 
 const server = http.createServer(app);

@@ -11,6 +11,16 @@ import websockets
 
 if sys.platform == 'win32':
     try:
+        import ctypes
+        try:
+            ctypes.windll.shcore.SetProcessDpiAwareness(2)
+        except Exception:
+            ctypes.windll.user32.SetProcessDPIAware()
+    except Exception:
+        pass
+
+if sys.platform == 'win32':
+    try:
         if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
             sys.stdout.reconfigure(encoding='utf-8', errors='replace')
         if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
