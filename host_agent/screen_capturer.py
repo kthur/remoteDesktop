@@ -1,6 +1,17 @@
+try:
+    from turbojpeg import TurboJPEG
+    _jpeg_encoder = TurboJPEG()
+except Exception:
+    _jpeg_encoder = None
+
 import sys
 import time
 import io
+try:
+    from turbojpeg import TurboJPEG
+    _jpeg_encoder = TurboJPEG()
+except Exception:
+    _jpeg_encoder = None
 try:
     import numpy as np
 except ImportError:
@@ -208,6 +219,11 @@ class ScreenCapturer:
                     target_height = int(h * (target_width / w))
                     img_bgr = cv2.resize(img_bgr, (target_width, target_height), interpolation=cv2.INTER_AREA)
 
+                if _jpeg_encoder:
+                    try:
+                        return _jpeg_encoder.encode(img_bgr, quality=current_quality)
+                    except Exception:
+                        pass
                 encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), current_quality]
                 _, jpeg_buffer = cv2.imencode('.jpg', img_bgr, encode_param)
                 if jpeg_buffer is not None:

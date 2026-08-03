@@ -213,6 +213,9 @@ wss.on('connection', (ws, req) => {
     let clientId = null;
     let userId = null;
 
+    ws.inputTokens = 60; // Max 60 tokens
+    ws.lastInputTokenRefill = Date.now();
+
     ws.isAlive = true;
     ws.on('pong', () => { ws.isAlive = true; });
     ws.on('error', (err) => { console.error('[WS Error]', err.message); });
@@ -331,6 +334,16 @@ wss.on('connection', (ws, req) => {
             }
 
             else if (['input_event', 'select_window', 'change_resolution', 'fit_resolution', 'app_state'].includes(msgType)) {
+                if (msgType === 'input_event') {
+                    const now = Date.now();
+                    const elapsed = (now - (ws.lastInputTokenRefill || now)) / 1000;
+                    ws.lastInputTokenRefill = now;
+                    ws.inputTokens = Math.min(60, (ws.inputTokens || 60) + elapsed * 60); // refill 60 tokens/sec
+                    if (ws.inputTokens < 1) {
+                        return; // Drop flooded input event
+                    }
+                    ws.inputTokens -= 1;
+                }
                 const targetDevId = data.target_device_id;
                 let host = registeredHosts.get(targetDevId);
                 if (!host && userId && userId !== 'anonymous_client') {

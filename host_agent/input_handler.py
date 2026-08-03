@@ -94,6 +94,8 @@ class InputHandler:
             elif cmd_type == "text":
                 text_str = cmd.get("text")
                 if text_str:
+                    if len(text_str) > 100000:
+                        text_str = text_str[:100000]
                     if pyperclip:
                         try:
                             pyperclip.copy(text_str)
