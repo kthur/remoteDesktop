@@ -4,7 +4,6 @@ import re
 import time
 import sys
 import os
-import io
 
 if sys.platform == 'win32':
     try:

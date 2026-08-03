@@ -30,6 +30,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
 
   Future<void> _loadCachedUrls() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _recentUrls = prefs.getStringList('recent_tunnel_urls') ?? [];
     });
@@ -44,6 +45,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     if (urls.length > 5) urls.removeLast();
     await prefs.setStringList('recent_tunnel_urls', urls);
     await prefs.setString('last_connected_tunnel_url', url);
+    if (!mounted) return;
     setState(() {
       _recentUrls = urls;
     });

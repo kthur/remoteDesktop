@@ -1,5 +1,4 @@
 import sys
-import ctypes
 
 if sys.platform == "win32":
     try:
@@ -12,7 +11,7 @@ if sys.platform == "win32":
 class DisplayManager:
     """Handles Host PC screen resolution discovery, mode switching, and fit matching"""
     def __init__(self):
-        pass
+        self._original_resolution = None
 
     def get_current_resolution(self):
         """Returns current display width, height"""
@@ -59,6 +58,15 @@ class DisplayManager:
 
     def change_resolution(self, width, height):
         """Changes Windows display resolution to target width x height"""
+        try:
+            width = int(width)
+            height = int(height)
+        except (ValueError, TypeError):
+            return False, f"Invalid resolution values: {width}x{height}"
+        if width <= 0 or height <= 0 or width > 7680 or height > 4320:
+            return False, f"Resolution out of range: {width}x{height}"
+        if self._original_resolution is None:
+            self._original_resolution = self.get_current_resolution()
         if sys.platform == "win32" and win32api:
             try:
                 devmode = win32api.EnumDisplaySettings(None, win32con.ENUM_CURRENT_SETTINGS)
@@ -94,3 +102,13 @@ class DisplayManager:
         if best_match:
             return self.change_resolution(best_match["width"], best_match["height"])
         return False, "No matching resolution found"
+
+    def restore_original_resolution(self):
+        """Restores the display resolution to what it was before any changes"""
+        if self._original_resolution:
+            w = self._original_resolution["width"]
+            h = self._original_resolution["height"]
+            result = self.change_resolution(w, h)
+            self._original_resolution = None
+            return result
+        return True, "No resolution change to restore"

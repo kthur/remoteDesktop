@@ -278,6 +278,10 @@ wss.on('connection', (ws, req) => {
             }
 
             else if (msgType === 'register_client') {
+                // Clean up any previous registration for this socket
+                if (clientId && activeClients.has(clientId)) {
+                    activeClients.delete(clientId);
+                }
                 clientRole = 'client';
                 clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
                 userId = data.google_user_id || 'anonymous_client';
@@ -375,6 +379,9 @@ wss.on('connection', (ws, req) => {
         } else if (clientRole === 'client' && clientId) {
             console.log(`[CLIENT DISCONNECTED] ${clientId}`);
             activeClients.delete(clientId);
+        } else {
+            // Connection closed without completing registration
+            console.log('[WS] Unregistered connection closed.');
         }
     });
 });
@@ -412,6 +419,31 @@ function notifyClientsDeviceList(userId) {
 function jsonStr(obj) {
     return JSON.stringify(obj);
 }
+
+function gracefulShutdown(signal) {
+    console.log(`\n[SERVER] ${signal} received. Shutting down gracefully...`);
+    clearInterval(interval);
+    
+    // Close all WebSocket connections
+    wss.clients.forEach((ws) => {
+        ws.close(1001, 'Server shutting down');
+    });
+    
+    // Close HTTP server
+    server.close(() => {
+        console.log('[SERVER] HTTP server closed.');
+        process.exit(0);
+    });
+    
+    // Force exit after 5 seconds
+    setTimeout(() => {
+        console.error('[SERVER] Forced shutdown after timeout.');
+        process.exit(1);
+    }, 5000);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 const HOST = process.env.HOST || '0.0.0.0';
 const PORT = process.env.PORT || 8080;

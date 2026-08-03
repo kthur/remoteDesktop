@@ -1,24 +1,23 @@
 # Build & Distribution outputs
 /dist/
-/build/
+**/build/
 *.exe
 *.zip
 
 # Python
-__pycache__/
+**/__pycache__/
 *.py[cod]
 
 # Node / JavaScript
-node_modules/
+**/node_modules/
 npm-debug.log*
 
 # Flutter / Dart
-.dart_tool/
+**/.dart_tool/
 .packages
 .pub-cache/
 .pub/
-mobile_app/build/
-mobile_app/.dart_tool/
+*.dill
 
 # IDE & OS files
 .DS_Store
@@ -29,3 +28,20 @@ Thumbs.db
 
 # Host agent runtime QR artifacts
 host_agent/host_qr*.png
+host_agent/host_config.json
+
+# Environment & Secrets
+.env
+.env.*
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# PyInstaller cache
+.pyinstaller/
+
+# Flutter native build caches
+mobile_app/android/.gradle/
+mobile_app/ios/Pods/

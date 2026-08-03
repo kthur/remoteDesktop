@@ -1,7 +1,6 @@
 import os
 import json
 import sys
-import io
 
 if sys.platform == 'win32':
     try:
@@ -23,6 +22,14 @@ def generate_host_qr(device_id, device_name, primary_url, direct_urls=None, save
         from datetime import datetime
         ts = datetime.now().strftime('%Y%m%d_%H%M%S')
         save_filename = f"host_qr_{device_id}_{ts}.png"
+        # Clean up old QR files for this device
+        import glob
+        old_files = sorted(glob.glob(f"host_qr_{device_id}_*.png"))
+        while len(old_files) > 2:  # Keep at most 2 recent files
+            try:
+                os.remove(old_files.pop(0))
+            except Exception:
+                pass
         
     payload = {
         "service": "AnyRemote",

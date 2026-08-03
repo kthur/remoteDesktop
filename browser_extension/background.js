@@ -88,6 +88,11 @@ function stopHostAgent() {
     socket = null;
   }
   isConnected = false;
+  try {
+    chrome.offscreen.closeDocument();
+  } catch (e) {
+    // Offscreen document may not exist
+  }
 }
 
 async function setupOffscreenDocument() {
@@ -98,3 +103,16 @@ async function setupOffscreenDocument() {
     justification: 'Capture screen stream for remote control'
   });
 }
+
+// Cleanup on extension suspend/unload
+chrome.runtime.onSuspend.addListener(() => {
+  console.log('[BG] Extension suspending, cleaning up...');
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.close();
+  }
+  try {
+    chrome.offscreen.closeDocument();
+  } catch (e) {
+    // Offscreen document may not exist
+  }
+});

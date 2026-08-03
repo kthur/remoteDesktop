@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import 'device_list_screen.dart';
@@ -17,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     final auth = Provider.of<AuthService>(context, listen: false);
     final success = await auth.signInWithGoogle();
+    if (!mounted) return;
     setState(() => _isLoading = false);
 
     if (success && mounted) {

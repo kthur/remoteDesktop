@@ -43,8 +43,13 @@ class InputHandler:
             return
 
         cmd_type = cmd.get("type")
-        norm_x = cmd.get("x", 0.5)
-        norm_y = cmd.get("y", 0.5)
+        try:
+            norm_x = float(cmd.get("x", 0.5))
+            norm_y = float(cmd.get("y", 0.5))
+        except (ValueError, TypeError):
+            norm_x, norm_y = 0.5, 0.5
+        norm_x = max(0.0, min(1.0, norm_x))
+        norm_y = max(0.0, min(1.0, norm_y))
 
         # Sticky modifier key handling (Ctrl, Shift, Alt)
         is_ctrl = cmd.get("ctrl", False)
@@ -99,6 +104,12 @@ class InputHandler:
                         pyautogui.write(text_str)
         except Exception as e:
             print(f"Input injection error: {e}")
+            if self._mouse_pressed:
+                try:
+                    pyautogui.mouseUp(button='left')
+                except Exception:
+                    pass
+                self._mouse_pressed = False
         finally:
             if is_ctrl: pyautogui.keyUp('ctrl')
             if is_shift: pyautogui.keyUp('shift')

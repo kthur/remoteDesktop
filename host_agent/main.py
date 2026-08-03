@@ -207,7 +207,7 @@ async def run_host_agent(on_qr_ready=None):
 
                             if msg_type == "input_event":
                                 payload = msg.get("payload", {})
-                                asyncio.get_event_loop().run_in_executor(None, input_handler.process_command, payload, capturer)
+                                asyncio.get_running_loop().run_in_executor(None, input_handler.process_command, payload, capturer)
 
                             elif msg_type == "select_window":
                                 handle = msg.get("handle")
@@ -275,7 +275,9 @@ async def run_host_agent(on_qr_ready=None):
                             await ws.send(json.dumps({"type": "ping", "device_id": auth.device_id}))
                             await asyncio.sleep(2.0)
                         else:
-                            frame_bytes = capturer.capture_frame(target_width=1920, quality=82)
+                            frame_bytes = await asyncio.get_running_loop().run_in_executor(
+                                            None, capturer.capture_frame, 1920, 82
+                                        )
                             if frame_bytes:
                                 b64_frame = base64.b64encode(frame_bytes).decode('utf-8')
                                 frame_packet = {
@@ -296,6 +298,15 @@ async def run_host_agent(on_qr_ready=None):
     finally:
         if udp_transport:
             udp_transport.close()
+        try:
+            capturer.close()
+        except Exception:
+            pass
+        try:
+            tunnel_mgr.stop()
+        except Exception:
+            pass
+        input_handler.release_stuck_buttons()
 
 if __name__ == "__main__":
     try:

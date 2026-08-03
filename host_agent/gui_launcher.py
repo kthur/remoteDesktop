@@ -192,8 +192,14 @@ class AnyRemoteHostGUI:
 
     def stop_agent(self):
         self.is_running = False
-        if self.loop:
-            self.loop.call_soon_threadsafe(self.loop.stop)
+        if self.loop and self.loop.is_running():
+            async def _shutdown():
+                tasks = [t for t in asyncio.all_tasks(self.loop) if not t.done()]
+                for task in tasks:
+                    task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
+                self.loop.stop()
+            self.loop.call_soon_threadsafe(lambda: asyncio.ensure_future(_shutdown(), loop=self.loop))
 
     def on_close(self):
         self.stop_agent()

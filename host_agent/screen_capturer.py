@@ -1,7 +1,6 @@
 import sys
 import time
 import io
-import base64
 try:
     import numpy as np
 except ImportError:
@@ -25,7 +24,6 @@ except ImportError:
 if sys.platform == "win32":
     try:
         import win32gui
-        import win32process
         import win32con
     except ImportError:
         win32gui = None
@@ -157,13 +155,17 @@ class ScreenCapturer:
                 else:
                     if sys.platform == "win32" and self.selected_window_handle and win32gui:
                         try:
+                            if not win32gui.IsWindow(self.selected_window_handle):
+                                raise ValueError(f"Window handle {self.selected_window_handle} is no longer valid")
                             rect = win32gui.GetWindowRect(self.selected_window_handle)
                             left, top, right, bottom = rect
                             w = max(1, right - left)
                             h = max(1, bottom - top)
                             bbox = {"top": top, "left": left, "width": w, "height": h}
                         except Exception as e:
-                            print(f"Window capture error: {e}")
+                            print(f"Window capture error: {e}, reverting to full desktop")
+                            self.selected_window_handle = None
+                            self.is_full_desktop = True
                             mon_idx = self.selected_monitor_index if self.selected_monitor_index < len(self.sct.monitors) else 0
                             bbox = self.sct.monitors[mon_idx]
                     else:
