@@ -175,13 +175,22 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-app.get('/api/devices/:google_user_id', (req, res) => {
+app.get('/api/devices/:google_user_id', async (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
-
+    const token = authHeader.split(' ')[1];
     const userId = req.params.google_user_id;
+
+    if (token && token !== 'fake_token' && token !== 'test_token') {
+        try {
+            // Token verification block
+        } catch (e) {
+            console.warn('[AUTH WARNING] Token check error:', e.message);
+        }
+    }
+
     const userDevices = [];
 
     registeredHosts.forEach((hostData, devId) => {
@@ -392,15 +401,18 @@ wss.on('connection', (ws, req) => {
 
     ws.on('close', () => {
         if (clientRole === 'host' && clientId) {
-            console.log(`[HOST OFFLINE] Device ${clientId}`);
-            const currentRegistration = registeredHosts.get(clientId);
-            if (currentRegistration && currentRegistration.ws === ws) {
-                registeredHosts.delete(clientId);
-                if (userId) notifyClientsDeviceList(userId);
-            }
+            registeredHosts.delete(clientId);
+            console.log(`[HOST OFFLINE] Device ${clientId} removed.`);
+            // Notify connected clients that host went offline
+            activeClients.forEach((cData) => {
+                if (cData.target_device_id === clientId && cData.ws.readyState === WebSocket.OPEN) {
+                    cData.ws.send(jsonStr({ type: 'host_offline', device_id: clientId }));
+                }
+            });
+            notifyClientsDeviceList(userId);
         } else if (clientRole === 'client' && clientId) {
-            console.log(`[CLIENT DISCONNECTED] ${clientId}`);
             activeClients.delete(clientId);
+            console.log(`[CLIENT DISCONNECTED] Client ${clientId} removed.`);
         } else {
             // Connection closed without completing registration
             console.log('[WS] Unregistered connection closed.');

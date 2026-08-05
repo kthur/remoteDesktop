@@ -72,28 +72,34 @@ class ScreenCapturer:
                 pass
 
     def list_monitors(self):
-        """Enumerates connected display monitors"""
+        """Returns list of connected display monitors with bounds and indices."""
         monitors = []
         if self.sct and self.sct.monitors:
-            for idx, mon in enumerate(self.sct.monitors):
-                title = f"🖥️ All Monitors ({mon['width']}x{mon['height']})" if idx == 0 else f"🖥️ Monitor {idx} ({mon['width']}x{mon['height']})"
+            # Index 0 in mss is all monitors combined, 1..N are individual monitors
+            for idx, mon in enumerate(self.sct.monitors[1:], start=1):
                 monitors.append({
                     "index": idx,
-                    "title": title,
-                    "width": mon["width"],
-                    "height": mon["height"],
+                    "name": f"Monitor {idx}",
+                    "width": mon.get("width", 1920),
+                    "height": mon.get("height", 1080),
                     "left": mon.get("left", 0),
-                    "top": mon.get("top", 0)
+                    "top": mon.get("top", 0),
+                    "is_primary": idx == 1
                 })
         return monitors
 
-    def set_target_monitor(self, index):
-        """Sets active monitor index for full desktop capture (0 = all monitors)"""
-        if self.sct and self.sct.monitors:
-            if 0 <= index < len(self.sct.monitors):
-                self.selected_monitor_index = index
-                self.is_full_desktop = True
+    def set_target_monitor(self, monitor_index):
+        """Sets the active monitor index to capture."""
+        try:
+            idx = int(monitor_index)
+            if self.sct and 1 <= idx < len(self.sct.monitors):
+                self.selected_monitor_index = idx
                 self.selected_window_handle = None
+                self.is_full_desktop = True
+                return True, f"Switched capture to Monitor {idx}"
+        except Exception as e:
+            return False, f"Failed to switch monitor: {e}"
+        return False, f"Monitor index {monitor_index} out of range"
 
     def set_zoom_roi(self, roi):
         """Sets active zoom ROI crop box from client"""

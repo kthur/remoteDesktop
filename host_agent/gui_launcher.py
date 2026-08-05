@@ -4,6 +4,43 @@ import threading
 import asyncio
 import tkinter as tk
 from tkinter import ttk, messagebox
+import winreg
+
+def set_windows_autostart(enable=True):
+    """Adds or removes the host agent from Windows startup registry."""
+    if sys.platform != "win32":
+        return False
+    key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+    app_name = "AnyRemoteHostAgent"
+    exe_path = sys.executable if getattr(sys, 'frozen', False) else f'"{sys.executable}" "{os.path.abspath(__file__)}"'
+    try:
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_ALL_ACCESS)
+        if enable:
+            winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, exe_path)
+        else:
+            try:
+                winreg.DeleteValue(key, app_name)
+            except FileNotFoundError:
+                pass
+        winreg.CloseKey(key)
+        return True
+    except Exception as e:
+        print(f"Registry autostart error: {e}")
+        return False
+
+def get_windows_autostart():
+    """Checks if host agent is registered in Windows startup registry."""
+    if sys.platform != "win32":
+        return False
+    key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+    app_name = "AnyRemoteHostAgent"
+    try:
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_READ)
+        winreg.QueryValueEx(key, app_name)
+        winreg.CloseKey(key)
+        return True
+    except Exception:
+        return False
 
 try:
     from PIL import Image, ImageTk
@@ -101,6 +138,20 @@ class AnyRemoteHostGUI:
         )
         self.lbl_status_text.pack(side="left", padx=8)
 
+        # Autostart Checkbox
+        self.autostart_var = tk.BooleanVar(value=get_windows_autostart())
+        self.chk_autostart = tk.Checkbutton(
+            content,
+            text="Start with Windows",
+            font=("Segoe UI", 9),
+            fg="#94A3B8", bg="#0F172A",
+            activebackground="#0F172A", activeforeground="#94A3B8",
+            selectcolor="#1E293B",
+            variable=self.autostart_var,
+            command=self.toggle_autostart
+        )
+        self.chk_autostart.pack(fill="x", pady=(0, 6))
+
         # Start/Stop Button
         self.btn_toggle = tk.Button(
             content,
@@ -155,6 +206,10 @@ class AnyRemoteHostGUI:
         ).pack(side="bottom")
 
     # ── Agent Control ───────────────────────────────────────────
+    def toggle_autostart(self):
+        enable = self.autostart_var.get()
+        set_windows_autostart(enable)
+
     def toggle_agent(self):
         if not self.is_running:
             self.start_agent()

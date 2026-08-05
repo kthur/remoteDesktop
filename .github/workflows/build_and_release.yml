@@ -97,7 +97,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --dart-define=SIGNALING_SERVER=${{ secrets.SIGNALING_SERVER }}
 
 
 
@@ -270,7 +270,7 @@ jobs:
           echo "TAG=$TAG" >> $GITHUB_OUTPUT
 
       - name: Create Release and Upload Assets
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag_name.outputs.TAG }}
           files: |

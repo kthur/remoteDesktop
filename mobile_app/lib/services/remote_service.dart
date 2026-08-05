@@ -5,6 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'network_discovery_service.dart';
 
+Uint8List _decodeBase64Frame(String base64Str) {
+  return base64Decode(base64Str);
+}
+
 enum RemoteConnectionState {
   disconnected,
   connecting,
@@ -447,22 +451,28 @@ class RemoteService extends ChangeNotifier {
           _lastPingMs = DateTime.now().difference(_lastPingSentTime!).inMilliseconds;
         }
         notifyListeners();
-      } else if (msgType == "screen_frame") {
+      } else if (msgType == 'screen_frame') {
         _lastPongReceived = DateTime.now();
-        if (!_isBackground && data["frame"] != null) {
-          try {
-            final decodedBytes = base64Decode(data["frame"]);
-            if (decodedBytes.isNotEmpty) {
-              _latestFrameBytes = decodedBytes;
+        if (!_isBackground) {
+          final String? b64 = data['frame'];
+          if (b64 != null) {
+            compute(_decodeBase64Frame, b64).then((bytes) {
+              _latestFrameBytes = bytes;
+              frameNotifier.value = bytes;
               _framesReceivedCount++;
               _framesInLastSecond++;
-              _lastFrameSizeBytes = decodedBytes.length;
-              frameNotifier.value = _latestFrameBytes;
-            }
-          } catch (e) {
-            logDiagnostic("Frame decode error: $e");
+              _lastFrameSizeBytes = bytes.length;
+              notifyListeners();
+            }).catchError((e) {
+              logDiagnostic('Frame decode error: $e');
+            });
           }
         }
+      } else if (msgType == 'host_offline') {
+        _connectionState = RemoteConnectionState.reconnecting;
+        _lastErrorMsg = 'Host PC went offline. Retrying...';
+        notifyListeners();
+        _handleDisconnectOrError();
       } else if (msgType == "windows_list_update") {
         if (data["windows"] != null) {
           _openWindows = List<Map<String, dynamic>>.from(data["windows"]);

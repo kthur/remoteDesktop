@@ -191,6 +191,7 @@ async def run_host_agent(on_qr_ready=None):
                     windows_list = capturer.list_windows()
                     monitors_list = capturer.list_monitors()
                     net_info = current_net_info()
+                    net_info["monitors"] = monitors_list
                     reg_payload = {
                         "type": "register_host",
                         "google_user_id": auth.google_user_id,
@@ -225,9 +226,9 @@ async def run_host_agent(on_qr_ready=None):
                                 print(f" Target capture switched to window handle: {handle}")
 
                             elif msg_type == "select_monitor":
-                                index = msg.get("index", 0)
-                                capturer.set_target_monitor(index)
-                                print(f" Target capture switched to monitor index: {index}")
+                                mon_idx = msg.get("index", 1)
+                                ok, res_msg = capturer.set_target_monitor(mon_idx)
+                                print(f" Monitor switch result: {res_msg}")
 
                             elif msg_type == "change_resolution":
                                 w = msg.get("width")
