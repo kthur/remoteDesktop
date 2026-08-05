@@ -1114,6 +1114,29 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
     );
   }
 
+  Widget _buildReconnectionBanner() {
+    return Container(
+      width: double.infinity,
+      color: Colors.amber.shade900.withOpacity(0.9),
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+          ),
+          SizedBox(width: 10),
+          Text(
+            'Reconnecting to Host PC...',
+            style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
@@ -1122,6 +1145,13 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
         builder: (context, service, _) {
           final bodyContent = Stack(
             children: [
+              if (service.connectionState == RemoteConnectionState.reconnecting)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: _buildReconnectionBanner(),
+                ),
               Positioned.fill(
                 child: ValueListenableBuilder<Uint8List?>(
                   valueListenable: service.frameNotifier,
@@ -1526,6 +1556,19 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                                         behavior: SnackBarBehavior.floating,
                                       ),
                                     );
+                                  },
+                                ),
+                                // -- Trackpad Mode Toggle Button --
+                                IconButton(
+                                  tooltip: _isTrackpadMode ? 'Trackpad Mode (ON)' : 'Direct Touch Mode',
+                                  icon: Icon(
+                                    Icons.touch_app_rounded,
+                                    color: _isTrackpadMode ? Colors.amberAccent : Colors.white70,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _isTrackpadMode = !_isTrackpadMode;
+                                    });
                                   },
                                 ),
                                 // ── Drag Mode Toggle Button ──────────────────────

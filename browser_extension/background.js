@@ -8,8 +8,15 @@ let deviceId = "browser_ext_" + Math.random().toString(36).substr(2, 6);
 // Handle extension lifecycle and internal offscreen messages
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "START_HOST") {
-    startHostAgent(message.serverUrl || "ws://localhost:8080");
-    sendResponse({ status: "CONNECTING" });
+    chrome.desktopCapture.chooseDesktopMedia(["screen", "window", "tab"], (streamId) => {
+      if (streamId) {
+        startHostAgent(message.serverUrl || "ws://localhost:8080", streamId);
+        sendResponse({ status: "CONNECTING" });
+      } else {
+        sendResponse({ status: "CANCELLED" });
+      }
+    });
+    return true;
   } else if (message.type === "STOP_HOST") {
     stopHostAgent();
     sendResponse({ status: "STOPPED" });
