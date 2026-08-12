@@ -67,8 +67,8 @@ app.get('/', (req, res) => {
         hostsHtml += `
         <div class="card">
             <div class="card-header">
-                <h3>üñ•Ô∏è ${escapeHtml(hostData.info.device_name || 'PC Host')}</h3>
-                <span class="badge online">üü¢ Online</span>
+                <h3>?ñ•Ô∏?${escapeHtml(hostData.info.device_name || 'PC Host')}</h3>
+                <span class="badge online">?ü¢ Online</span>
             </div>
             <div class="card-body">
                 <p><strong>OS:</strong> ${escapeHtml(hostData.info.os || 'Windows')}</p>
@@ -76,11 +76,11 @@ app.get('/', (req, res) => {
                 
                 <div class="qr-container">
                     <img src="${qrUrl}" alt="Scan QR Code to Connect" title="Scan with Mobile App" />
-                    <p class="qr-label">üì± Scan with Mobile App to Connect</p>
+                    <p class="qr-label">?ì± Scan with Mobile App to Connect</p>
                 </div>
 
                 <div class="endpoints">
-                    <h4>üîå Available Connection Endpoints:</h4>
+                    <h4>?îå Available Connection Endpoints:</h4>
                     <ul>
                         ${urls.map(url => `
                             <li>
@@ -133,7 +133,7 @@ app.get('/', (req, res) => {
     <body>
         <div class="container">
             <header>
-                <h1>üåê AnyRemote PC Control Center</h1>
+                <h1>?åê AnyRemote PC Control Center</h1>
                 <p class="subtitle">Scan QR Code or copy WebSocket URL to pair your Mobile App</p>
             </header>
             ${hostsHtml}
@@ -351,7 +351,7 @@ wss.on('connection', (ws, req) => {
                 });
             }
 
-            else if (['input_event', 'select_window', 'change_resolution', 'fit_resolution', 'app_state'].includes(msgType)) {
+            else if (['input_event', 'select_window', 'select_monitor', 'change_resolution', 'fit_resolution', 'app_state'].includes(msgType)) {
                 if (msgType === 'input_event') {
                     const now = Date.now();
                     const elapsed = (now - (ws.lastInputTokenRefill || now)) / 1000;
@@ -483,7 +483,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, HOST, () => {
     console.log(`==================================================`);
-    console.log(` üåê Remote PC Signaling & Auth Server Running`);
+    console.log(` ?åê Remote PC Signaling & Auth Server Running`);
     console.log(` Host: ${HOST} | Port: ${PORT}`);
     console.log(` WebSocket URL: ws://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
     console.log(`==================================================`);
