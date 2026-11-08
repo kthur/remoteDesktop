@@ -21,10 +21,29 @@ chrome.runtime.onMessage.addListener((msg) => {
 
 async function startCapture() {
   try {
-    mediaStream = await navigator.mediaDevices.getDisplayMedia({
-      video: { cursor: "always" },
-      audio: false
-    });
+    // Use streamId from desktopCapture if available, else fall back to getDisplayMedia
+    let streamId = null;
+    try {
+      const result = await chrome.storage.session.get('captureStreamId');
+      streamId = result.captureStreamId || null;
+    } catch (e) {}
+
+    if (streamId) {
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          mandatory: {
+            chromeMediaSource: 'desktop',
+            chromeMediaSourceId: streamId
+          }
+        }
+      });
+    } else {
+      mediaStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { cursor: "always" },
+        audio: false
+      });
+    }
     video.srcObject = mediaStream;
 
     video.onloadedmetadata = () => {

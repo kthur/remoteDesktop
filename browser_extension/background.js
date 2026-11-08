@@ -35,7 +35,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-function startHostAgent(serverUrl) {
+function startHostAgent(serverUrl, streamId) {
+  // streamId is passed to the offscreen document for screen capture
+  if (streamId) {
+    chrome.storage.session.set({ captureStreamId: streamId });
+  }
   if (socket) socket.close();
 
   try {
@@ -114,8 +118,8 @@ async function setupOffscreenDocument() {
 // Cleanup on extension suspend/unload
 chrome.runtime.onSuspend.addListener(() => {
   console.log('[BG] Extension suspending, cleaning up...');
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.close();
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.close();
   }
   try {
     chrome.offscreen.closeDocument();

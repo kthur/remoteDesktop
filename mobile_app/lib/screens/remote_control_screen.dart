@@ -114,8 +114,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
     _zoomDebounceTimer = Timer(const Duration(milliseconds: 150), () {
       if (!mounted) return;
       if (_viewScale <= 1.15) {
-        _remoteService.sendInputEvent({
-          "type": "zoom_region",
+        _remoteService.sendZoomRegion({
           "scale": 1.0,
         });
         return;
@@ -132,8 +131,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
       final normW = ((bottomRight.dx - topLeft.dx) / canvasSize.width).clamp(0.05, 1.0);
       final normH = ((bottomRight.dy - topLeft.dy) / canvasSize.height).clamp(0.05, 1.0);
 
-      _remoteService.sendInputEvent({
-        "type": "zoom_region",
+      _remoteService.sendZoomRegion({
         "scale": _viewScale,
         "x": normX,
         "y": normY,

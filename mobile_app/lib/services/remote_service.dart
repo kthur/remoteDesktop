@@ -513,6 +513,9 @@ class RemoteService extends ChangeNotifier {
   }
 
   void _reSynchronizeSessionState() {
+    if (_selectedMonitorIndex != 0) {
+      selectMonitor(_selectedMonitorIndex);
+    }
     if (_selectedWindowHandle != 0) {
       selectWindow(_selectedWindowHandle);
     }
@@ -604,6 +607,15 @@ class RemoteService extends ChangeNotifier {
 
   void sendShortcut(String action) {
     sendInputEvent({"type": "shortcut", "action": action});
+  }
+
+  /// Sends zoom ROI as a top-level message so the host can handle it directly.
+  void sendZoomRegion(Map<String, dynamic> roi) {
+    _sendMsg({
+      "type": "zoom_region",
+      "target_device_id": _targetDeviceId,
+      ...roi,
+    });
   }
 
   void retryConnectionNow() {
