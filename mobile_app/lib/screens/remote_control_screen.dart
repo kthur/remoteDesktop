@@ -11,6 +11,7 @@ class RemoteControlScreen extends StatefulWidget {
   final String deviceName;
   final List<String>? directWsUrls;
   final List<String>? knownLocalIps;
+  final List<Map<String, dynamic>>? knownMonitors;
 
   const RemoteControlScreen({
     Key? key,
@@ -18,6 +19,7 @@ class RemoteControlScreen extends StatefulWidget {
     required this.deviceName,
     this.directWsUrls,
     this.knownLocalIps,
+    this.knownMonitors,
   }) : super(key: key);
 
   @override
@@ -78,6 +80,10 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
           ? widget.directWsUrls!.first
           : const String.fromEnvironment('SIGNALING_SERVER', defaultValue: 'ws://192.168.1.100:8080');
 
+      // Pre-seed monitors list from device discovery to show UI immediately
+      if (widget.knownMonitors != null && widget.knownMonitors!.isNotEmpty) {
+        _remoteService.seedMonitors(widget.knownMonitors!);
+      }
       _remoteService.connect(
         serverUrl,
         userId,

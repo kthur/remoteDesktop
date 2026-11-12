@@ -10,6 +10,7 @@ class DiscoveredHost {
   final String os;
   final Map<String, dynamic> resolution;
   final List<Map<String, dynamic>> windows;
+  final List<Map<String, dynamic>> monitors;
   final List<String> localIps;
   final String remoteIp;
   final bool usbAvailable;
@@ -23,6 +24,7 @@ class DiscoveredHost {
     required this.os,
     required this.resolution,
     required this.windows,
+    required this.monitors,
     required this.localIps,
     required this.remoteIp,
     required this.usbAvailable,
@@ -54,6 +56,7 @@ class DiscoveredHost {
       os: json['os'] ?? 'Windows',
       resolution: Map<String, dynamic>.from(json['resolution'] ?? {'width': 1920, 'height': 1080}),
       windows: List<Map<String, dynamic>>.from(json['windows'] ?? []),
+      monitors: List<Map<String, dynamic>>.from(json['monitors'] ?? []),
       localIps: localIpsList,
       remoteIp: json['remote_ip'] ?? '',
       usbAvailable: json['usb_available'] ?? false,

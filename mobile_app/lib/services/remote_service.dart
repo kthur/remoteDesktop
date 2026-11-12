@@ -609,6 +609,14 @@ class RemoteService extends ChangeNotifier {
     sendInputEvent({"type": "shortcut", "action": action});
   }
 
+  /// Pre-seeds the monitors list from device discovery data (before WS connection).
+  void seedMonitors(List<Map<String, dynamic>> monitors) {
+    if (monitors.isNotEmpty) {
+      _openMonitors = List.from(monitors);
+      notifyListeners();
+    }
+  }
+
   /// Sends zoom ROI as a top-level message so the host can handle it directly.
   void sendZoomRegion(Map<String, dynamic> roi) {
     _sendMsg({

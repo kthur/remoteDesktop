@@ -85,6 +85,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           "local_ips": host.localIps,
           "direct_ws_urls": host.directWsUrls,
           "windows": host.windows,
+          "monitors": host.monitors,
         });
       }
 
@@ -100,6 +101,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
             "local_ips": host.localIps,
             "direct_ws_urls": host.directWsUrls,
             "windows": host.windows,
+            "monitors": host.monitors,
           });
         }
       }
@@ -654,6 +656,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                                 deviceName: dev["device_name"],
                                 directWsUrls: directUrls,
                                 knownLocalIps: localIps,
+                                knownMonitors: (dev["monitors"] as List<dynamic>?)?.map((m) => Map<String, dynamic>.from(m)).toList(),
                               ),
                             ),
                           );
