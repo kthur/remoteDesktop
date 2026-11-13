@@ -510,7 +510,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                         itemCount: _remoteService.openMonitors.length,
                         itemBuilder: (context, idx) {
                           final mon = _remoteService.openMonitors[idx];
-                          final isSelectedMon = (currentHandle == 0 && _remoteService.selectedMonitorIndex == idx);
+                          final isSelectedMon = (currentHandle == 0 && _remoteService.selectedMonitorIndex == idx + 1);
                           final monTitle = mon["title"] ?? "Monitor $idx";
 
                           return Padding(
@@ -529,7 +529,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                                 ),
                               ),
                               onSelected: (_) {
-                                _remoteService.selectMonitor(idx);
+                                _remoteService.selectMonitor(idx + 1);
                                 Navigator.pop(context);
                               },
                             ),

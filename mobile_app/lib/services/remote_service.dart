@@ -371,7 +371,6 @@ class RemoteService extends ChangeNotifier {
     logDiagnostic('Successfully connected to $_activeUrl via $activeTransportBadge');
 
     _handleServerMessage(jsonEncode(firstMsg));
-    _reSynchronizeSessionState();
     notifyListeners();
   }
 
@@ -430,11 +429,11 @@ class RemoteService extends ChangeNotifier {
       final msgType = data["type"];
 
       if (msgType == "client_registered") {
+        // _startPingTimer, _startFpsTimer, _reSynchronizeSessionState are already
+        // called by _onSuccessfulConnection — do NOT call them again here.
         _connectionState = RemoteConnectionState.connected;
         _reconnectAttempts = 0;
         _lastPongReceived = DateTime.now();
-        _startPingTimer();
-        _startFpsTimer();
 
         logDiagnostic("Registered client context for device: $_targetDeviceId");
         final resolvedDeviceId = data["resolved_device_id"] ?? data["target_device_id"];
@@ -444,7 +443,6 @@ class RemoteService extends ChangeNotifier {
         }
 
         notifyListeners();
-        _reSynchronizeSessionState();
       } else if (msgType == "pong") {
         _lastPongReceived = DateTime.now();
         if (_lastPingSentTime != null) {

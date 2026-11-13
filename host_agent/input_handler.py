@@ -82,7 +82,9 @@ class InputHandler:
                 self._mouse_pressed = False
             elif cmd_type == "scroll":
                 dy = cmd.get("dy", 0)
-                pyautogui.scroll(-int(dy * 120), x=int(abs_x), y=int(abs_y))
+                # dy is raw gesture pixel delta from Flutter; clamp to avoid over-scrolling
+                scroll_clicks = max(-10, min(10, -int(dy * 0.5)))
+                pyautogui.scroll(scroll_clicks, x=int(abs_x), y=int(abs_y))
             elif cmd_type == "key":
                 key_val = cmd.get("key")
                 if key_val:

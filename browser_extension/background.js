@@ -36,6 +36,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 function startHostAgent(serverUrl, streamId) {
+  _currentServerUrl = serverUrl;
+  _currentStreamId = streamId;
+  if (_reconnectTimer) { clearTimeout(_reconnectTimer); _reconnectTimer = null; }
   // streamId is passed to the offscreen document for screen capture
   if (streamId) {
     chrome.storage.session.set({ captureStreamId: streamId });
@@ -47,6 +50,7 @@ function startHostAgent(serverUrl, streamId) {
 
     socket.onopen = () => {
       isConnected = true;
+      _reconnectAttempts = 0; // Reset on successful connect
       console.log("🚀 Extension Host Agent connected to signaling server.");
 
       const regMsg = {
@@ -94,6 +98,10 @@ function startHostAgent(serverUrl, streamId) {
 }
 
 function stopHostAgent() {
+  _currentServerUrl = null;
+  _currentStreamId = null;
+  if (_reconnectTimer) { clearTimeout(_reconnectTimer); _reconnectTimer = null; }
+  _reconnectAttempts = 0;
   if (socket) {
     socket.close();
     socket = null;
