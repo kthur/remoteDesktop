@@ -563,7 +563,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> with WidgetsB
                         'PC 모니터 전체 화면을 그대로 스트리밍합니다.',
                         style: TextStyle(color: Colors.white60, fontSize: 11),
                       ),
-                      trailing: currentHandle == 0
+                      trailing: (currentHandle == 0 && _remoteService.selectedMonitorIndex == 0)
                           ? const Icon(Icons.check_circle_rounded, color: Color(0xFF38BDF8))
                           : null,
                       onTap: () {

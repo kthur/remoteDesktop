@@ -100,12 +100,16 @@ class NetworkDiscoveryService {
 
   /// Fetches registered devices for a Google user from the central signaling server.
   static Future<List<DiscoveredHost>> fetchServerRegisteredDevices(
-      String serverBaseUrl, String googleUserId) async {
+      String serverBaseUrl, String googleUserId, {String? idToken}) async {
     final List<DiscoveredHost> devices = [];
     try {
       final httpUrl = serverBaseUrl.replaceFirst('ws://', 'http://').replaceFirst('wss://', 'https://');
       final uri = Uri.parse('$httpUrl/api/devices/$googleUserId');
-      final response = await http.get(uri).timeout(const Duration(seconds: 3));
+      final headers = <String, String>{};
+      final token = idToken ?? 'demo_token';
+      headers['Authorization'] = 'Bearer $token';
+
+      final response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 3));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -258,6 +262,7 @@ class NetworkDiscoveryService {
   static Future<List<String>> getPrioritizedCandidateUrls({
     required String serverBaseUrl,
     required String googleUserId,
+    String? idToken,
     String? targetDeviceId,
     List<String>? knownLocalIps,
     bool checkUsb = true,
@@ -293,7 +298,7 @@ class NetworkDiscoveryService {
     }
 
     // 4. Server Registered Host Details
-    final serverHosts = await fetchServerRegisteredDevices(serverBaseUrl, googleUserId);
+    final serverHosts = await fetchServerRegisteredDevices(serverBaseUrl, googleUserId, idToken: idToken);
     for (var host in serverHosts) {
       if (targetDeviceId == null || host.deviceId == targetDeviceId) {
         for (var url in host.directWsUrls) {

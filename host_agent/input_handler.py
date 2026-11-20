@@ -120,24 +120,41 @@ class InputHandler:
             if is_alt: pyautogui.keyUp('alt')
 
     def _get_absolute_coords(self, norm_x, norm_y, capturer=None):
-        if capturer and not capturer.is_full_desktop and capturer.selected_window_handle:
-            if sys.platform == "win32":
-                import win32gui
-                try:
-                    hwnd = capturer.selected_window_handle
-                    if win32gui.IsWindow(hwnd) and not win32gui.IsIconic(hwnd):
-                        client_rect = win32gui.GetClientRect(hwnd)
-                        top_left = win32gui.ClientToScreen(hwnd, (0, 0))
-                        left, top = top_left
-                        w = client_rect[2] - client_rect[0]
-                        h = client_rect[3] - client_rect[1]
-                        if w > 0 and h > 0:
-                            abs_x = left + int(norm_x * w)
-                            abs_y = top + int(norm_y * h)
-                            return abs_x, abs_y
-                except Exception:
-                    pass
+        if capturer:
+            # 1. Specific window capture mode
+            if not capturer.is_full_desktop and capturer.selected_window_handle:
+                if sys.platform == "win32":
+                    import win32gui
+                    try:
+                        hwnd = capturer.selected_window_handle
+                        if win32gui.IsWindow(hwnd) and not win32gui.IsIconic(hwnd):
+                            client_rect = win32gui.GetClientRect(hwnd)
+                            top_left = win32gui.ClientToScreen(hwnd, (0, 0))
+                            left, top = top_left
+                            w = client_rect[2] - client_rect[0]
+                            h = client_rect[3] - client_rect[1]
+                            if w > 0 and h > 0:
+                                abs_x = left + int(norm_x * w)
+                                abs_y = top + int(norm_y * h)
+                                return abs_x, abs_y
+                    except Exception:
+                        pass
 
+            # 2. Specific monitor capture mode (mss monitor index >= 1)
+            if capturer.sct and capturer.sct.monitors and getattr(capturer, "selected_monitor_index", 0) > 0:
+                idx = capturer.selected_monitor_index
+                if idx < len(capturer.sct.monitors):
+                    mon = capturer.sct.monitors[idx]
+                    m_left = mon.get("left", 0)
+                    m_top = mon.get("top", 0)
+                    m_w = mon.get("width", 1920)
+                    m_h = mon.get("height", 1080)
+                    if m_w > 0 and m_h > 0:
+                        abs_x = m_left + int(norm_x * m_w)
+                        abs_y = m_top + int(norm_y * m_h)
+                        return abs_x, abs_y
+
+        # 3. Full virtual desktop mode (all monitors combined)
         if sys.platform == "win32":
             try:
                 import win32api

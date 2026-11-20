@@ -86,7 +86,12 @@ class DisplayManager:
 
     def fit_mobile_resolution(self, mobile_width, mobile_height):
         """Matches PC resolution to best supported resolution for mobile aspect ratio"""
-        target_ratio = mobile_width / mobile_height if mobile_height else 16/9
+        if mobile_width and mobile_height:
+            w_max = max(float(mobile_width), float(mobile_height))
+            h_min = min(float(mobile_width), float(mobile_height))
+            target_ratio = w_max / h_min if h_min > 0 else 16/9
+        else:
+            target_ratio = 16/9
         supported = self.list_supported_resolutions()
 
         best_match = None

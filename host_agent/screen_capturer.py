@@ -1,12 +1,7 @@
-try:
-    from turbojpeg import TurboJPEG
-    _jpeg_encoder = TurboJPEG()
-except Exception:
-    _jpeg_encoder = None
-
 import sys
 import time
 import io
+
 try:
     from turbojpeg import TurboJPEG
     _jpeg_encoder = TurboJPEG()
@@ -153,6 +148,7 @@ class ScreenCapturer:
         if handle == 0 or handle is None:
             self.is_full_desktop = True
             self.selected_window_handle = None
+            self.selected_monitor_index = 0
         else:
             self.is_full_desktop = False
             self.selected_window_handle = handle
@@ -198,30 +194,13 @@ class ScreenCapturer:
 
                 h, w = img_bgr.shape[:2]
 
-                # ── Apply ROI Crop if zoomed ──────────────────────────────────────
+                # ── Quality adaptation when client is zoomed ──────────────────────
                 current_quality = quality
                 if self.zoom_roi and self.zoom_roi.get('scale', 1.0) > 1.15:
-                    rx = max(0.0, min(1.0, self.zoom_roi.get('x', 0.0)))
-                    ry = max(0.0, min(1.0, self.zoom_roi.get('y', 0.0)))
-                    rw = max(0.05, min(1.0, self.zoom_roi.get('w', 1.0)))
-                    rh = max(0.05, min(1.0, self.zoom_roi.get('h', 1.0)))
+                    # Upgrade quality to maximum sharpness so mobile local viewport zoom is crisp
+                    current_quality = max(92, quality)
 
-                    x1 = int(w * rx)
-                    y1 = int(h * ry)
-                    w1 = max(16, int(w * rw))
-                    h1 = max(16, int(h * rh))
-
-                    # Crop region of interest
-                    crop_bgr = img_bgr[y1:min(h, y1 + h1), x1:min(w, x1 + w1)]
-                    if crop_bgr.size > 0:
-                        ch, cw = crop_bgr.shape[:2]
-                        # Resize zoomed ROI using high-sharpness Lanczos4 interpolation
-                        target_w = target_width or 1920
-                        target_h = int(ch * (target_w / cw))
-                        img_bgr = cv2.resize(crop_bgr, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
-                        current_quality = max(92, quality) # Upgrade JPEG quality for zoomed text sharpness
-
-                elif target_width and target_width < w:
+                if target_width and target_width < w:
                     target_height = int(h * (target_width / w))
                     img_bgr = cv2.resize(img_bgr, (target_width, target_height), interpolation=cv2.INTER_AREA)
 
@@ -243,18 +222,8 @@ class ScreenCapturer:
                 pil_img = ImageGrab.grab(all_screens=True)
                 current_quality = quality
                 if self.zoom_roi and self.zoom_roi.get('scale', 1.0) > 1.15:
-                    pw, ph = pil_img.width, pil_img.height
-                    rx = max(0.0, min(1.0, self.zoom_roi.get('x', 0.0)))
-                    ry = max(0.0, min(1.0, self.zoom_roi.get('y', 0.0)))
-                    rw = max(0.05, min(1.0, self.zoom_roi.get('w', 1.0)))
-                    rh = max(0.05, min(1.0, self.zoom_roi.get('h', 1.0)))
-                    box = (int(pw * rx), int(ph * ry), int(pw * (rx + rw)), int(ph * (ry + rh)))
-                    pil_img = pil_img.crop(box)
-                    if target_width:
-                        target_height = int(pil_img.height * (target_width / pil_img.width))
-                        pil_img = pil_img.resize((target_width, target_height))
                     current_quality = max(92, quality)
-                elif target_width and target_width < pil_img.width:
+                if target_width and target_width < pil_img.width:
                     target_height = int(pil_img.height * (target_width / pil_img.width))
                     pil_img = pil_img.resize((target_width, target_height))
                 buf = io.BytesIO()

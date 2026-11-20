@@ -183,11 +183,21 @@ app.get('/api/devices/:google_user_id', async (req, res) => {
     const token = authHeader.split(' ')[1];
     const userId = req.params.google_user_id;
 
-    if (token && token !== 'fake_token' && token !== 'test_token') {
-        try {
-            // Token verification block
-        } catch (e) {
-            console.warn('[AUTH WARNING] Token check error:', e.message);
+    if (token && !['fake_token', 'test_token', 'demo_token', 'guest_token'].includes(token)) {
+        if (process.env.GOOGLE_CLIENT_ID) {
+            try {
+                const ticket = await googleClient.verifyIdToken({
+                    idToken: token,
+                    audience: process.env.GOOGLE_CLIENT_ID
+                });
+                const payload = ticket.getPayload();
+                if (payload.sub !== userId) {
+                    return res.status(403).json({ error: 'Forbidden: User ID mismatch' });
+                }
+            } catch (e) {
+                console.warn('[AUTH WARNING] Google token verification failed:', e.message);
+                return res.status(401).json({ error: 'Invalid Google ID Token' });
+            }
         }
     }
 

@@ -209,6 +209,7 @@ class RemoteService extends ChangeNotifier {
       final discoveredUrls = await NetworkDiscoveryService.getPrioritizedCandidateUrls(
         serverBaseUrl: _serverUrl ?? 'ws://localhost:8080',
         googleUserId: _googleUserId ?? 'google_user_12345',
+        idToken: _idToken,
         targetDeviceId: _targetDeviceId,
         knownLocalIps: _knownLocalIps,
       );
@@ -371,6 +372,7 @@ class RemoteService extends ChangeNotifier {
     logDiagnostic('Successfully connected to $_activeUrl via $activeTransportBadge');
 
     _handleServerMessage(jsonEncode(firstMsg));
+    _reSynchronizeSessionState();
     notifyListeners();
   }
 
@@ -568,6 +570,9 @@ class RemoteService extends ChangeNotifier {
 
   void selectWindow(int handle) {
     _selectedWindowHandle = handle;
+    if (handle == 0) {
+      _selectedMonitorIndex = 0;
+    }
     _sendMsg({
       "type": "select_window",
       "target_device_id": _targetDeviceId,

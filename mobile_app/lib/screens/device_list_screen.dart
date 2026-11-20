@@ -64,10 +64,12 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     });
 
     try {
+      final idToken = await auth.getValidIdToken();
       const String signalingServer = String.fromEnvironment('SIGNALING_SERVER', defaultValue: 'http://192.168.1.100:8080');
       final serverHosts = await NetworkDiscoveryService.fetchServerRegisteredDevices(
         signalingServer,
         userId,
+        idToken: idToken,
       );
 
       final udpHosts = await NetworkDiscoveryService.discoverViaUdpBroadcast();
