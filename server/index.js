@@ -67,8 +67,8 @@ app.get('/', (req, res) => {
         hostsHtml += `
         <div class="card">
             <div class="card-header">
-                <h3>?���?${escapeHtml(hostData.info.device_name || 'PC Host')}</h3>
-                <span class="badge online">?�� Online</span>
+                <h3>🖥️ ${escapeHtml(hostData.info.device_name || 'PC Host')}</h3>
+                <span class="badge online">🟢 Online</span>
             </div>
             <div class="card-body">
                 <p><strong>OS:</strong> ${escapeHtml(hostData.info.os || 'Windows')}</p>
@@ -76,11 +76,11 @@ app.get('/', (req, res) => {
                 
                 <div class="qr-container">
                     <img src="${qrUrl}" alt="Scan QR Code to Connect" title="Scan with Mobile App" />
-                    <p class="qr-label">?�� Scan with Mobile App to Connect</p>
+                    <p class="qr-label">📲 Scan with Mobile App to Connect</p>
                 </div>
 
                 <div class="endpoints">
-                    <h4>?�� Available Connection Endpoints:</h4>
+                    <h4>🌐 Available Connection Endpoints:</h4>
                     <ul>
                         ${urls.map(url => `
                             <li>
@@ -133,7 +133,7 @@ app.get('/', (req, res) => {
     <body>
         <div class="container">
             <header>
-                <h1>?�� AnyRemote PC Control Center</h1>
+                <h1>🖥️ AnyRemote PC Control Center</h1>
                 <p class="subtitle">Scan QR Code or copy WebSocket URL to pair your Mobile App</p>
             </header>
             ${hostsHtml}
@@ -499,7 +499,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, HOST, () => {
     console.log(`==================================================`);
-    console.log(` ?�� Remote PC Signaling & Auth Server Running`);
+    console.log(` 🚀 Remote PC Signaling & Auth Server Running`);
     console.log(` Host: ${HOST} | Port: ${PORT}`);
     console.log(` WebSocket URL: ws://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
     console.log(`==================================================`);

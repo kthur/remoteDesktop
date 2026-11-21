@@ -187,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: _handleGuestSignIn,
                             icon: const Icon(Icons.person_outline_rounded, color: Color(0xFF38BDF8)),
                             label: const Text(
-                              '?? Continue as Demo / Guest User',
+                              '🚀 Continue as Demo / Guest User',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,

@@ -46,6 +46,19 @@ async function startCapture() {
     }
     video.srcObject = mediaStream;
 
+    // Notify when user stops sharing via browser bar
+    if (mediaStream && mediaStream.getVideoTracks) {
+      mediaStream.getVideoTracks().forEach(track => {
+        track.onended = () => {
+          if (captureInterval) {
+            clearInterval(captureInterval);
+            captureInterval = null;
+          }
+          chrome.runtime.sendMessage({ type: "STREAM_ENDED" });
+        };
+      });
+    }
+
     video.onloadedmetadata = () => {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;

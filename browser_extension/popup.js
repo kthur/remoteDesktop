@@ -18,8 +18,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   btnToggle.addEventListener("click", () => {
     if (!isRunning) {
-      chrome.runtime.sendMessage({ type: "START_HOST" }, () => {
-        setRunningState(true);
+      chrome.runtime.sendMessage({ type: "START_HOST" }, (response) => {
+        if (response && response.status === "CONNECTING") {
+          setRunningState(true);
+        } else {
+          setRunningState(false);
+        }
       });
     } else {
       chrome.runtime.sendMessage({ type: "STOP_HOST" }, () => {

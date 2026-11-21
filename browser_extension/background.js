@@ -20,6 +20,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.type === "STOP_HOST") {
     stopHostAgent();
     sendResponse({ status: "STOPPED" });
+  } else if (message.type === "STREAM_ENDED") {
+    stopHostAgent();
   } else if (message.type === "GET_STATUS") {
     sendResponse({ isConnected: isConnected, deviceId: deviceId, email: googleEmail });
   } else if (message.type === "OFFSCREEN_FRAME") {
